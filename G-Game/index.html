@@ -339,13 +339,13 @@ window.addEventListener('unhandledrejection', function(e){
 <script type="importmap">
 {
   "imports": {
-    "three": "../方块十途/three.module.min.js",
+    "three": "./assets/vendor/three.module.min.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/"
   }
 }
 </script>
 <script type="module">
-import * as THREE from '../方块十途/three.module.min.js';
+import * as THREE from './assets/vendor/three.module.min.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const ABILITIES = [
