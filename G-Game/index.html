@@ -423,6 +423,7 @@ const portals = [];
 const portalMotifs = [];
 const zoneGroups = {};
 const crystals = {};
+const wisdomTreeParts = [];
 let activeGame = null;
 let hoveredPortal = null;
 let focusedPortal = null;
@@ -956,6 +957,166 @@ function createAbilityMonument(ability, color){
   return {group, core: core || plinth};
 }
 
+function buildWisdomTree(){
+  const tree = new THREE.Group();
+  tree.position.set(0,.28,0);
+  root.add(tree);
+
+  const barkMat = new THREE.MeshStandardMaterial({
+    color:0x6b5138,
+    roughness:.74,
+    metalness:.08,
+    emissive:new THREE.Color(0x241509),
+    emissiveIntensity:.08
+  });
+  const darkBarkMat = new THREE.MeshStandardMaterial({
+    color:0x3f2d21,
+    roughness:.82,
+    metalness:.06,
+    emissive:new THREE.Color(0x120b06),
+    emissiveIntensity:.04
+  });
+  const leafMats = [
+    new THREE.MeshStandardMaterial({color:0x244f39, roughness:.62, metalness:.02, emissive:new THREE.Color(0x0e3d2d), emissiveIntensity:.2}),
+    new THREE.MeshStandardMaterial({color:0x3a7652, roughness:.58, metalness:.04, emissive:new THREE.Color(0x145d44), emissiveIntensity:.18}),
+    new THREE.MeshStandardMaterial({color:0x7d9f66, roughness:.55, metalness:.04, emissive:new THREE.Color(0x315f31), emissiveIntensity:.14})
+  ];
+  const rootGlow = makeGlowMat(0x8ef7d4,.36);
+  const coreGlow = makeGlowMat(0x9fd8ff,.44);
+  const gold = makeMat(0xc9a45a,.34,.24,.08);
+
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.65,.2,72), makeMat(0x171c24,.72,.12));
+  soil.position.y = .1;
+  soil.receiveShadow = true;
+  soil.castShadow = true;
+  tree.add(soil);
+
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(2.68,.055,12,96), gold);
+  baseRing.rotation.x = Math.PI/2;
+  baseRing.position.y = .24;
+  tree.add(baseRing);
+
+  const rootRing = new THREE.Mesh(new THREE.TorusGeometry(3.62,.035,10,128), rootGlow);
+  rootRing.rotation.x = Math.PI/2;
+  rootRing.position.y = .29;
+  rootRing.userData.floatBaseY = rootRing.position.y;
+  rootRing.userData.kind = 'ring';
+  wisdomTreeParts.push(rootRing);
+  tree.add(rootRing);
+
+  for(let i=0;i<12;i++){
+    const angle = i / 12 * Math.PI * 2;
+    const len = i % 3 === 0 ? 4.45 : 3.48;
+    addTube(tree, [.45*Math.cos(angle+.18), .3, .45*Math.sin(angle+.18)], [len*Math.cos(angle), .33, len*Math.sin(angle)], i % 2 ? .026 : .034, i % 2 ? rootGlow : darkBarkMat);
+  }
+
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.58,.9,3.18,28), barkMat);
+  trunk.position.y = 1.72;
+  trunk.rotation.z = -.045;
+  trunk.castShadow = true;
+  trunk.receiveShadow = true;
+  tree.add(trunk);
+
+  const trunkRidgeGeo = new THREE.CylinderGeometry(.032,.048,3.28,8);
+  for(let i=0;i<7;i++){
+    const ridge = new THREE.Mesh(trunkRidgeGeo, darkBarkMat);
+    const angle = i / 7 * Math.PI * 2;
+    ridge.position.set(Math.cos(angle)*.51,1.73,Math.sin(angle)*.51);
+    ridge.rotation.z = Math.sin(angle)*.08;
+    ridge.rotation.x = Math.cos(angle)*.05;
+    ridge.castShadow = true;
+    tree.add(ridge);
+  }
+
+  addTube(tree, [0,.38,.08], [.1,3.42,.05], .05, coreGlow);
+
+  [
+    [[0,2.45,0],[-1.55,3.42,-.8],.19],
+    [[0,2.78,0],[1.72,3.72,-.62],.17],
+    [[.03,2.94,0],[-.55,4.14,1.38],.15],
+    [[0,3.05,0],[.82,4.4,1.08],.13],
+    [[0,2.56,0],[.36,3.42,-1.82],.14],
+    [[-.05,3.14,0],[-1.28,4.38,.5],.12]
+  ].forEach(([from,to,r], i)=>{
+    addTube(tree, from, to, r, barkMat);
+    if(i < 4) addTube(tree, from, to, r*.16, coreGlow);
+  });
+
+  const crownGeo = new THREE.SphereGeometry(1,36,22);
+  [
+    {pos:[0,4.42,0], scale:[1.95,1.18,1.55], mat:leafMats[1]},
+    {pos:[-1.1,4.08,-.42], scale:[1.25,.82,1.04], mat:leafMats[0]},
+    {pos:[1.18,4.22,-.35], scale:[1.34,.9,1.05], mat:leafMats[2]},
+    {pos:[-.58,4.82,.62], scale:[1.12,.78,.98], mat:leafMats[2]},
+    {pos:[.68,4.9,.36], scale:[1.05,.72,.92], mat:leafMats[1]},
+    {pos:[.08,5.18,-.18], scale:[.84,.62,.78], mat:leafMats[0]}
+  ].forEach((item,i)=>{
+    const crown = new THREE.Mesh(crownGeo, item.mat);
+    crown.position.set(...item.pos);
+    crown.scale.set(...item.scale);
+    crown.castShadow = true;
+    crown.receiveShadow = true;
+    crown.userData.kind = 'crown';
+    crown.userData.floatBaseY = crown.position.y;
+    crown.userData.floatAmp = .035 + i*.006;
+    wisdomTreeParts.push(crown);
+    tree.add(crown);
+  });
+
+  ABILITIES.forEach((ability,i)=>{
+    const angle = i / ABILITIES.length * Math.PI * 2 - Math.PI/2;
+    const color = new THREE.Color(ability.color);
+    const fruit = new THREE.Mesh(new THREE.SphereGeometry(.18,26,16), makeMat(color,.25,.18,.7));
+    fruit.position.set(Math.cos(angle)*1.56, 4.22 + (i%3)*.36, Math.sin(angle)*1.18);
+    fruit.castShadow = true;
+    fruit.userData.kind = 'fruit';
+    fruit.userData.floatBaseY = fruit.position.y;
+    fruit.userData.floatAmp = .07;
+    wisdomTreeParts.push(fruit);
+    tree.add(fruit);
+
+    const fruitHalo = new THREE.Mesh(new THREE.TorusGeometry(.29,.018,8,42), makeGlowMat(color,.38));
+    fruitHalo.position.copy(fruit.position);
+    fruitHalo.rotation.x = Math.PI/2;
+    fruitHalo.userData.kind = 'fruitHalo';
+    fruitHalo.userData.floatBaseY = fruitHalo.position.y;
+    fruitHalo.userData.floatAmp = .07;
+    wisdomTreeParts.push(fruitHalo);
+    tree.add(fruitHalo);
+  });
+
+  for(let i=0;i<42;i++){
+    const angle = i * 2.399963;
+    const radius = .62 + (i % 9) * .18;
+    const leaf = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(.055 + (i%4)*.014,0),
+      i % 5 === 0 ? makeGlowMat(ABILITIES[i % ABILITIES.length].color,.28) : leafMats[i % leafMats.length]
+    );
+    leaf.position.set(Math.cos(angle)*radius, 3.62 + (i%11)*.16, Math.sin(angle)*radius*.78);
+    leaf.rotation.set(i*.37,i*.22,i*.51);
+    leaf.castShadow = true;
+    leaf.userData.kind = 'leaf';
+    leaf.userData.floatBaseY = leaf.position.y;
+    leaf.userData.floatAmp = .045 + (i%5)*.01;
+    wisdomTreeParts.push(leaf);
+    tree.add(leaf);
+  }
+
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.82,.026,8,128), makeGlowMat(0x9fd8ff,.3));
+  halo.rotation.x = Math.PI/2;
+  halo.position.y = 4.55;
+  halo.userData.kind = 'halo';
+  wisdomTreeParts.push(halo);
+  tree.add(halo);
+
+  const treeLight = new THREE.PointLight(0xa9ffd6,18,22,1.55);
+  treeLight.position.set(0,4.45,0);
+  tree.add(treeLight);
+  const warmLight = new THREE.PointLight(0xffd166,7,16,1.9);
+  warmLight.position.set(-1.2,2.2,1.4);
+  tree.add(warmLight);
+}
+
 function buildWorld(){
   buildSecretRoom();
   const floorMat = makeAviationFloorMaterial(5);
@@ -970,15 +1131,9 @@ function buildWorld(){
   center.castShadow = true;
   root.add(center);
 
-  const beaconMat = new THREE.MeshBasicMaterial({color:0x9fd8ff, transparent:true, opacity:.34, depthWrite:false});
-  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(.07,.16,5.6,32), beaconMat);
-  beacon.position.y = 3.15;
-  root.add(beacon);
-  const beaconGlow = new THREE.Mesh(new THREE.SphereGeometry(.72,32,16), new THREE.MeshBasicMaterial({color:0x9fd8ff, transparent:true, opacity:.28, depthWrite:false}));
-  beaconGlow.position.y = 6.15;
-  root.add(beaconGlow);
-  const centerLight = new THREE.PointLight(0x9fd8ff, 30, 34, 1.4);
-  centerLight.position.set(0,6,0);
+  buildWisdomTree();
+  const centerLight = new THREE.PointLight(0x9fd8ff, 22, 34, 1.45);
+  centerLight.position.set(0,5.4,0);
   root.add(centerLight);
 
   ABILITIES.forEach((ability, i)=>{
@@ -1488,28 +1643,8 @@ function buildAvatar(){
 
 function createAstronautKit(){
   const root = new THREE.Group();
-  const shellMat = makeMat(0xe9eef2,.5,.08,.02);
   const darkMat = makeMat(0x101827,.42,.28,.04);
   const trimMat = makeMat(0x78d9ff,.28,.18,.18);
-  const goldMat = makeMat(0xffd166,.34,.22,.08);
-
-  const backpack = new THREE.Mesh(new THREE.BoxGeometry(.52,.72,.18), shellMat);
-  backpack.position.set(0,1.2,-.34);
-  backpack.castShadow = true;
-  backpack.receiveShadow = true;
-  root.add(backpack);
-
-  [-1,1].forEach(side => {
-    const tank = new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.68,18), shellMat);
-    tank.position.set(side*.22,1.18,-.47);
-    tank.rotation.x = .04;
-    tank.castShadow = true;
-    root.add(tank);
-    const cap = new THREE.Mesh(new THREE.SphereGeometry(.065,16,10), goldMat);
-    cap.position.set(side*.22,1.55,-.47);
-    cap.castShadow = true;
-    root.add(cap);
-  });
 
   const chest = new THREE.Mesh(new THREE.BoxGeometry(.46,.3,.045), darkMat);
   chest.position.set(0,1.34,.34);
@@ -2904,6 +3039,23 @@ function renderLoop(now=performance.now()){
     const baseY = c.userData.floatBaseY ?? c.position.y;
     const amp = c.userData.floatAmp ?? .12;
     c.position.y = baseY + Math.sin(now/650+i)*amp;
+  });
+  wisdomTreeParts.forEach((part,i)=>{
+    const kind = part.userData.kind;
+    if(kind === 'crown'){
+      part.position.y = part.userData.floatBaseY + Math.sin(now/1150+i)*part.userData.floatAmp;
+      part.rotation.y += dt * (.035 + i*.003);
+    }else if(kind === 'fruit' || kind === 'fruitHalo'){
+      part.position.y = part.userData.floatBaseY + Math.sin(now/520+i)*part.userData.floatAmp;
+      part.rotation.y += dt * 1.25;
+      part.rotation.z += dt * .35;
+    }else if(kind === 'leaf'){
+      part.position.y = part.userData.floatBaseY + Math.sin(now/620+i)*part.userData.floatAmp;
+      part.rotation.x += dt * .45;
+      part.rotation.y += dt * .62;
+    }else if(kind === 'halo' || kind === 'ring'){
+      part.rotation.z += dt * (kind === 'halo' ? .34 : .16);
+    }
   });
   renderer.render(scene,camera);
   requestAnimationFrame(renderLoop);
