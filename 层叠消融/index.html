@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>见证谜语：层叠消融</title>
+<style>
+  :root{
+    --ink:#070707;
+    --paper:#201916;
+    --panel:#261d18;
+    --line:rgba(255,232,185,.18);
+    --dot:#8f887d;
+    --surface:#efe2c9;
+    --surface2:#e2cfad;
+    --text:#fff1d0;
+    --muted:#b9aa8e;
+    --accent:#f0b65b;
+    --teal:#5fc8b5;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;min-height:100%;background:#161311;color:var(--text);}
+  body{
+    min-height:100dvh;
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,Segoe UI,sans-serif;
+    padding:8px;
+    background:
+      radial-gradient(900px 520px at 18% -10%,rgba(240,182,91,.18),transparent 58%),
+      radial-gradient(760px 680px at 115% 110%,rgba(95,200,181,.12),transparent 52%),
+      linear-gradient(155deg,#171311,#231814 56%,#101714);
+  }
+
+  button{font:inherit;touch-action:manipulation;}
+
+  .app{
+    width:min(410px,100%);
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:0;
+    align-items:start;
+  }
+
+  .paper,.panel{
+    border-radius:8px;
+    background:rgba(255,241,208,.055);
+    box-shadow:0 18px 55px rgba(0,0,0,.32);
+    border:1px solid var(--line);
+  }
+
+  .paper{padding:6px;}
+
+  #game{
+    width:min(100%,390px);
+    aspect-ratio:390/760;
+    display:block;
+    margin:0 auto;
+    background:var(--paper);
+    border-radius:6px;
+    touch-action:none;
+    cursor:grab;
+  }
+
+  #game:active{cursor:grabbing;}
+
+  .panel{
+    padding:10px;
+    display:none;
+    flex-direction:column;
+    gap:8px;
+  }
+
+  h1{
+    margin:0;
+    font-size:24px;
+    line-height:1.1;
+    letter-spacing:0;
+    color:#ffe4a6;
+  }
+
+  .sub{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.55;
+    margin-top:6px;
+  }
+
+  .phase-grid,.level-grid,.controls{
+    display:grid;
+    gap:8px;
+  }
+
+  .phase-grid{grid-template-columns:repeat(3,1fr);}
+  .level-grid{grid-template-columns:repeat(5,1fr);}
+  .controls{grid-template-columns:repeat(2,1fr);}
+
+  .btn{
+    min-height:36px;
+    border:1px solid #c9c4bb;
+    border-radius:4px;
+    background:rgba(0,0,0,.18);
+    color:var(--text);
+    font-weight:800;
+    cursor:pointer;
+    transition:transform .08s ease,background .15s ease,border-color .15s ease;
+  }
+
+  .btn:active{transform:translateY(1px);}
+  .btn.active,.btn.primary{
+    color:#24170f;
+    background:linear-gradient(155deg,#ffe5a8,var(--accent));
+    border-color:#ffd37a;
+  }
+
+  .btn:disabled{
+    opacity:.35;
+    cursor:default;
+    transform:none;
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+  }
+
+  .stat{
+    min-height:46px;
+    padding:7px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:rgba(0,0,0,.16);
+  }
+
+  .stat span{
+    display:block;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:700;
+  }
+
+  .stat strong{
+    display:block;
+    margin-top:3px;
+    font-size:19px;
+    line-height:1;
+    font-weight:900;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:13px;
+    font-weight:900;
+    padding-top:2px;
+  }
+
+  .selected{
+    min-height:42px;
+    padding:8px 10px;
+    display:grid;
+    grid-template-columns:24px 1fr;
+    gap:9px;
+    align-items:center;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:rgba(0,0,0,.16);
+    font-weight:900;
+  }
+
+  .selected i{
+    width:24px;
+    height:24px;
+    display:block;
+    background:#111;
+    border-radius:3px;
+  }
+
+  .legend{
+    display:none;
+    grid-template-columns:1fr;
+    gap:6px;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+  }
+
+  .legend b{color:#111;}
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translate(-50%,14px);
+    max-width:min(480px,calc(100vw - 32px));
+    padding:11px 15px;
+    border-radius:999px;
+    background:#111;
+    color:#fff;
+    font-size:14px;
+    font-weight:900;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .18s ease,transform .18s ease;
+    z-index:20;
+  }
+
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+
+  @media (max-width:430px){
+    body{padding:6px;}
+    .paper,.panel{box-shadow:0 10px 28px rgba(0,0,0,.14);}
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <section class="paper">
+      <canvas id="game" width="390" height="760" aria-label="层叠消融题面与作答区"></canvas>
+    </section>
+
+    <aside class="panel">
+      <div>
+        <h1>层叠消融</h1>
+        <div class="sub">基础图形叠加：奇数次保留，偶数次消融。先看题目，再进入作答。</div>
+      </div>
+
+      <div class="phase-grid">
+        <button class="btn active" id="phaseQuestion" type="button">题目</button>
+        <button class="btn" id="phaseAnswer" type="button">作答</button>
+        <button class="btn" id="phaseResult" type="button">答案</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>差异</span><strong id="diffText">0</strong></div>
+        <div class="stat"><span>完成</span><strong id="matchText">0%</strong></div>
+        <div class="stat"><span>步数</span><strong id="moveText">0</strong></div>
+        <div class="stat"><span>用时</span><strong id="timeText">00:00</strong></div>
+      </div>
+
+      <div class="section-title">
+        <span>题目</span>
+        <span id="targetMeta">—</span>
+      </div>
+      <div class="level-grid" id="levelGrid"></div>
+
+      <div class="section-title">
+        <span>选中图形</span>
+        <span id="pieceState">—</span>
+      </div>
+      <div class="selected">
+        <i></i>
+        <span id="selectedName">—</span>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="rotBtn" type="button">右转</button>
+        <button class="btn" id="flipBtn" type="button">翻面</button>
+        <button class="btn" id="undoBtn" type="button">撤销</button>
+        <button class="btn" id="hintBtn" type="button">提示</button>
+        <button class="btn active" id="musicBtn" type="button">音乐开</button>
+        <button class="btn" id="resetBtn" type="button">重置</button>
+        <button class="btn primary" id="nextBtn" type="button">下一题</button>
+      </div>
+
+      <div class="legend">
+        <div><b>题目：</b>上方小圆是目标，下面大圆是可用基础图形。</div>
+        <div><b>作答：</b>把下方图形拖进圆形点阵，重叠两次的区域会消失。</div>
+        <div><b>答案：</b>完成后显示最终结果，也可手动切换查看。</div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const diffText = document.getElementById('diffText');
+  const matchText = document.getElementById('matchText');
+  const moveText = document.getElementById('moveText');
+  const timeText = document.getElementById('timeText');
+  const levelGrid = document.getElementById('levelGrid');
+  const targetMeta = document.getElementById('targetMeta');
+  const selectedName = document.getElementById('selectedName');
+  const pieceState = document.getElementById('pieceState');
+  const toast = document.getElementById('toast');
+  const musicBtn = document.getElementById('musicBtn');
+  const phaseBtns = {
+    question:document.getElementById('phaseQuestion'),
+    answer:document.getElementById('phaseAnswer'),
+    result:document.getElementById('phaseResult')
+  };
+
+  const BGM_URL = 'audio/bgm.mp3';
+  const W = 390;
+  const H = 760;
+  const board = {cx:195, cy:405, r:112, size:0, cell:0, x:0, y:0};
+  const answerBoard = {cx:195, cy:405, r:112, size:0, cell:0, x:0, y:0};
+  const small = {cx:195, cy:202, r:58};
+
+  const audioState = {
+    ctx:null,
+    music:null,
+    muted:false,
+    musicWanted:true,
+    musicStarted:false
+  };
+
+  function updateMusicButton(){
+    musicBtn.textContent = audioState.muted ? '音乐关' : '音乐开';
+    musicBtn.classList.toggle('active',!audioState.muted);
+  }
+
+  function startMusic(){
+    if(audioState.muted || !audioState.musicWanted) return;
+    if(!audioState.music){
+      audioState.music = new Audio(BGM_URL);
+      audioState.music.loop = true;
+      audioState.music.preload = 'auto';
+      audioState.music.volume = .34;
+      audioState.music.addEventListener('error',() => showToast('背景音乐加载失败'));
+    }
+    const play = audioState.music.play();
+    if(play){
+      play.then(() => {
+        audioState.musicStarted = true;
+        updateMusicButton();
+      }).catch(() => {
+        audioState.musicStarted = false;
+        updateMusicButton();
+      });
+    }
+  }
+
+  function stopMusic(){
+    if(audioState.music) audioState.music.pause();
+    audioState.musicStarted = false;
+  }
+
+  function ensureAudio(){
+    if(audioState.muted) return null;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if(!AudioContextClass) return null;
+    if(!audioState.ctx) audioState.ctx = new AudioContextClass();
+    if(audioState.ctx.state === 'suspended') audioState.ctx.resume();
+    startMusic();
+    return audioState.ctx;
+  }
+
+  function playTone(freq,duration,delay,type,gain){
+    const ac = ensureAudio();
+    if(!ac) return;
+    const osc = ac.createOscillator();
+    const amp = ac.createGain();
+    const t = ac.currentTime + (delay || 0);
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq,t);
+    amp.gain.setValueAtTime(0,t);
+    amp.gain.linearRampToValueAtTime(gain || .045,t+.01);
+    amp.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    osc.connect(amp).connect(ac.destination);
+    osc.start(t);
+    osc.stop(t+duration+.02);
+  }
+
+  function playSweep(from,to,duration,type,gain){
+    const ac = ensureAudio();
+    if(!ac) return;
+    const osc = ac.createOscillator();
+    const amp = ac.createGain();
+    const t = ac.currentTime;
+    osc.type = type || 'triangle';
+    osc.frequency.setValueAtTime(from,t);
+    osc.frequency.exponentialRampToValueAtTime(to,t+duration);
+    amp.gain.setValueAtTime(gain || .055,t);
+    amp.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    osc.connect(amp).connect(ac.destination);
+    osc.start(t);
+    osc.stop(t+duration+.03);
+  }
+
+  function playTap(){ playTone(520,.075,0,'triangle',.035); }
+  function playPlace(){ playTone(260,.08,0,'sine',.04); playTone(520,.12,.055,'triangle',.035); }
+  function playErase(){ playSweep(620,150,.16,'sawtooth',.032); }
+  function playUndo(){ playSweep(360,170,.12,'triangle',.035); }
+  function playWin(){
+    [392,523,659,784].forEach((freq,index) => playTone(freq,.18,index*.075,'triangle',.042));
+  }
+
+  function toggleMusic(){
+    audioState.muted = !audioState.muted;
+    audioState.musicWanted = !audioState.muted;
+    if(audioState.muted){
+      stopMusic();
+      showToast('音乐已关');
+    }else{
+      ensureAudio();
+      playTap();
+      showToast('音乐已开');
+    }
+    updateMusicButton();
+  }
+
+  function unlockAudio(){
+    ensureAudio();
+  }
+
+  function rows(pattern){
+    const cells = [];
+    pattern.forEach((row,y) => [...row].forEach((ch,x) => {
+      if(ch === '#') cells.push([x,y]);
+    }));
+    return cells;
+  }
+
+  function rect(w,h){
+    const out = [];
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++) out.push([x,y]);
+    return out;
+  }
+
+  function piece(name,cells,solution,home){
+    return {name,cells,solution,home};
+  }
+
+  const lib = {
+    square5:rect(5,5),
+    square4:rect(4,4),
+    square3:rect(3,3),
+    square2:rect(2,2),
+    bar5:rect(5,1),
+    bar4:rect(4,1),
+    bar3:rect(3,1),
+    bar2:rect(2,1),
+    rect23:rect(2,3),
+    rect32:rect(3,2),
+    tri4:rows(['#...','##..','###.','####']),
+    tri3:rows(['#..','##.','###']),
+    diag:rows(['#..','##.','.##']),
+    elbow:rows(['#..','#..','###']),
+    hook:rows(['###','#..','#..','##.']),
+    diamond:rows(['.#.','###','.#.'])
+  };
+
+  const levels = [
+    {
+      icon:'1',
+      name:'单块放置',
+      size:7,
+      par:1,
+      tip:'教学 1：拖到对应位置',
+      pieces:[
+        piece('中心块',lib.square3,{x:2,y:2,r:0,f:false},{x:150,y:350,r:0,f:false,s:23})
+      ]
+    },
+    {
+      icon:'2',
+      name:'双块拼接',
+      size:7,
+      par:2,
+      tip:'教学 2：两块先拼起来',
+      pieces:[
+        piece('左小块',lib.square2,{x:1,y:3,r:0,f:false},{x:120,y:320,r:0,f:false,s:28}),
+        piece('右竖块',lib.rect23,{x:3,y:2,r:0,f:false},{x:285,y:425,r:0,f:false,s:28})
+      ]
+    },
+    {
+      icon:'3',
+      name:'消融窗口',
+      size:7,
+      par:2,
+      tip:'教学 3：同格叠两次会消失',
+      pieces:[
+        piece('外方块',lib.square4,{x:1,y:1,r:0,f:false},{x:120,y:320,r:0,f:false,s:28}),
+        piece('消融块',lib.square2,{x:2,y:2,r:0,f:false},{x:285,y:425,r:0,f:false,s:28})
+      ]
+    },
+    {
+      icon:'4',
+      name:'三块台阶',
+      size:7,
+      par:3,
+      tip:'教学 4：三块组成台阶',
+      pieces:[
+        piece('下阶',lib.square2,{x:1,y:4,r:0,f:false},{x:90,y:360,r:0,f:false,s:24}),
+        piece('中阶',lib.square2,{x:3,y:3,r:0,f:false},{x:195,y:360,r:0,f:false,s:24}),
+        piece('上阶',lib.square2,{x:4,y:2,r:0,f:false},{x:300,y:360,r:0,f:false,s:24})
+      ]
+    },
+    {
+      icon:'5',
+      name:'转角练习',
+      size:7,
+      par:3,
+      tip:'教学 5：旋转后再补块',
+      pieces:[
+        piece('转角块',lib.elbow,{x:1,y:2,r:1,f:false},{x:100,y:350,r:0,f:false,s:24}),
+        piece('横条',lib.bar3,{x:3,y:4,r:0,f:false},{x:210,y:350,r:0,f:false,s:24}),
+        piece('补块',lib.square2,{x:3,y:2,r:0,f:false},{x:310,y:350,r:0,f:false,s:24})
+      ]
+    },
+    {
+      icon:'6',
+      name:'四块小桥',
+      size:7,
+      par:4,
+      tip:'进阶 1：四块开始组合',
+      pieces:[
+        piece('左柱',lib.rect23,{x:1,y:2,r:0,f:false},{x:75,y:345,r:0,f:false,s:22}),
+        piece('右柱',lib.rect23,{x:4,y:2,r:0,f:false},{x:165,y:345,r:0,f:false,s:22}),
+        piece('桥面',lib.bar4,{x:1,y:4,r:0,f:false},{x:255,y:345,r:0,f:false,s:22}),
+        piece('中擦',lib.square2,{x:3,y:3,r:0,f:false},{x:330,y:345,r:0,f:false,s:22})
+      ]
+    },
+    {
+      icon:'7',
+      name:'旋窗',
+      size:7,
+      par:5,
+      tip:'挑战：围绕中心组合',
+      pieces:[
+        piece('中心块',lib.square3,{x:2,y:2,r:0,f:false},{x:275,y:395,r:0,f:false,s:26}),
+        piece('上三角',lib.tri4,{x:2,y:0,r:1,f:false},{x:260,y:230,r:1,f:false,s:23}),
+        piece('右三角',lib.tri4,{x:3,y:2,r:2,f:false},{x:420,y:360,r:2,f:false,s:23}),
+        piece('下三角',lib.tri4,{x:2,y:3,r:3,f:false},{x:285,y:535,r:3,f:false,s:23}),
+        piece('左三角',lib.tri4,{x:0,y:2,r:0,f:false},{x:125,y:365,r:0,f:false,s:23})
+      ]
+    },
+    {
+      icon:'8',
+      name:'机关印',
+      size:7,
+      par:6,
+      tip:'高阶：六块封顶',
+      pieces:[
+        piece('左钩',lib.hook,{x:0,y:1,r:0,f:false},{x:105,y:320,r:0,f:false,s:22}),
+        piece('右钩',lib.hook,{x:4,y:1,r:2,f:true},{x:390,y:320,r:2,f:true,s:22}),
+        piece('中心',lib.square3,{x:2,y:2,r:0,f:false},{x:270,y:395,r:0,f:false,s:25}),
+        piece('擦除',lib.square2,{x:3,y:3,r:0,f:false},{x:280,y:285,r:0,f:false,s:28}),
+        piece('横梁',lib.bar4,{x:1,y:5,r:0,f:false},{x:145,y:520,r:0,f:false,s:25}),
+        piece('斜阶',lib.diag,{x:4,y:4,r:0,f:false},{x:395,y:520,r:0,f:false,s:25})
+      ]
+    }
+  ];
+
+  const runLength = levels.length;
+
+  const state = {
+    levelIndex:0,
+    phase:'question',
+    pieces:[],
+    target:[],
+    selectedId:null,
+    drag:null,
+    hover:null,
+    renderHits:[],
+    uiHits:[],
+    history:[],
+    moves:0,
+    startedAt:performance.now(),
+    completedAt:null,
+    toastTimer:null,
+    autoTimer:null,
+    finished:false,
+    solvedCount:0
+  };
+
+  function currentLevel(){ return levels[Math.min(state.levelIndex,levels.length - 1)]; }
+
+  function transformCells(cells,r,flip){
+    const raw = cells.map(([x,y]) => {
+      let nx = flip ? -x : x;
+      let ny = y;
+      for(let i=0;i<r;i++){
+        const t = nx;
+        nx = ny;
+        ny = -t;
+      }
+      return [nx,ny];
+    });
+    const minX = Math.min(...raw.map(c => c[0]));
+    const minY = Math.min(...raw.map(c => c[1]));
+    return raw.map(([x,y]) => [x - minX, y - minY]);
+  }
+
+  function bounds(cells){
+    return {
+      w:Math.max(...cells.map(c => c[0])) + 1,
+      h:Math.max(...cells.map(c => c[1])) + 1
+    };
+  }
+
+  function clonePiece(p,index){
+    return {
+      id:'p' + index,
+      name:p.name,
+      cells:p.cells.map(c => [...c]),
+      solution:{...p.solution},
+      home:{...p.home},
+      placed:false,
+      x:0,
+      y:0,
+      r:p.home.r || 0,
+      f:Boolean(p.home.f)
+    };
+  }
+
+  function pieceCells(p,override){
+    return transformCells(p.cells, override?.r ?? p.r, override?.f ?? p.f);
+  }
+
+  function occupied(p,override){
+    const x = override?.x ?? p.x;
+    const y = override?.y ?? p.y;
+    return pieceCells(p,override).map(([cx,cy]) => [x + cx, y + cy]);
+  }
+
+  function emptyGrid(size){
+    return Array.from({length:size},() => Array(size).fill(0));
+  }
+
+  function xorGrid(size,placements){
+    const counts = emptyGrid(size);
+    placements.forEach(({piece,override}) => {
+      occupied(piece,override).forEach(([x,y]) => {
+        if(x >= 0 && y >= 0 && x < size && y < size) counts[y][x] += 1;
+      });
+    });
+    return counts.map(row => row.map(v => v % 2));
+  }
+
+  function computeTarget(){
+    const level = currentLevel();
+    return xorGrid(level.size, level.pieces.map((p,index) => ({
+      piece:clonePiece(p,index),
+      override:p.solution
+    })));
+  }
+
+  function currentGrid(extra){
+    const placements = state.pieces
+      .filter(p => p.placed && p.id !== extra?.exclude)
+      .map(p => ({piece:p}));
+    if(extra?.piece && extra?.override) placements.push({piece:extra.piece,override:extra.override});
+    return xorGrid(currentLevel().size,placements);
+  }
+
+  function diffInfo(){
+    if(state.finished) return {diff:0, match:100};
+    const level = currentLevel();
+    const current = currentGrid();
+    let diff = 0;
+    for(let y=0;y<level.size;y++){
+      for(let x=0;x<level.size;x++){
+        if(current[y][x] !== state.target[y][x]) diff += 1;
+      }
+    }
+    const total = level.size * level.size;
+    return {diff, match:Math.round((total - diff) / total * 100)};
+  }
+
+  function snapshot(){
+    return state.pieces.map(p => ({id:p.id,placed:p.placed,x:p.x,y:p.y,r:p.r,f:p.f}));
+  }
+
+  function restore(snap){
+    snap.forEach(saved => {
+      const p = state.pieces.find(piece => piece.id === saved.id);
+      if(p) Object.assign(p,saved);
+    });
+  }
+
+  function clearAutoAdvance(){
+    clearTimeout(state.autoTimer);
+    state.autoTimer = null;
+  }
+
+  function finishRun(){
+    clearAutoAdvance();
+    state.finished = true;
+    state.phase = 'result';
+    state.drag = null;
+    state.hover = null;
+    state.completedAt = elapsed();
+    showToast('本轮结束');
+    updateUI();
+    requestDraw();
+  }
+
+  function loadLevel(index){
+    clearAutoAdvance();
+    if(index >= runLength){
+      finishRun();
+      return;
+    }
+    state.finished = false;
+    state.levelIndex = Math.max(0,index);
+    state.pieces = currentLevel().pieces.map(clonePiece);
+    state.target = computeTarget();
+    state.selectedId = state.pieces[0]?.id || null;
+    state.phase = 'answer';
+    state.drag = null;
+    state.hover = null;
+    state.history = [];
+    state.moves = 0;
+    state.startedAt = performance.now();
+    state.completedAt = null;
+    state.solvedCount = state.levelIndex;
+    updateUI();
+    requestDraw();
+  }
+
+  function elapsed(){
+    const t = state.completedAt ?? Math.floor((performance.now() - state.startedAt) / 1000);
+    return Math.max(0,t);
+  }
+
+  function formatTime(s){
+    return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+  }
+
+  function selectedPiece(){
+    return state.pieces.find(p => p.id === state.selectedId) || state.pieces[0] || null;
+  }
+
+  function setPhase(phase){
+    if(state.finished) return;
+    state.phase = phase;
+    if(phase === 'answer' && !state.completedAt) state.startedAt = performance.now();
+    updateUI();
+    requestDraw();
+  }
+
+  function updateUI(){
+    const info = diffInfo();
+    diffText.textContent = String(info.diff);
+    matchText.textContent = info.match + '%';
+    moveText.textContent = String(state.moves);
+    timeText.textContent = formatTime(elapsed());
+    targetMeta.textContent = state.finished ? '退场' : currentLevel().name + ' · ' + currentLevel().size + '×' + currentLevel().size;
+    Object.entries(phaseBtns).forEach(([key,button]) => button.classList.toggle('active',state.phase === key));
+    Array.from(levelGrid.children).forEach((btn,index) => btn.classList.toggle('active',index === state.levelIndex));
+    const p = selectedPiece();
+    selectedName.textContent = p ? p.name : '—';
+    pieceState.textContent = p ? (p.placed ? '已入场' : '待放置') : '—';
+  }
+
+  function showToast(text){
+    clearTimeout(state.toastTimer);
+    toast.textContent = text;
+    toast.classList.add('show');
+    state.toastTimer = setTimeout(() => toast.classList.remove('show'),1300);
+  }
+
+  function fitBoard(target,size,cx,cy,r){
+    target.size = size;
+    target.cell = Math.floor(r * 1.26 / size);
+    target.x = cx - target.cell * size / 2;
+    target.y = cy - target.cell * size / 2;
+  }
+
+  function roundedRect(c,x,y,w,h,r){
+    const rr = Math.min(r,w/2,h/2);
+    c.beginPath();
+    c.moveTo(x+rr,y);
+    c.lineTo(x+w-rr,y);
+    c.quadraticCurveTo(x+w,y,x+w,y+rr);
+    c.lineTo(x+w,y+h-rr);
+    c.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+    c.lineTo(x+rr,y+h);
+    c.quadraticCurveTo(x,y+h,x,y+h-rr);
+    c.lineTo(x,y+rr);
+    c.quadraticCurveTo(x,y,x+rr,y);
+    c.closePath();
+  }
+
+  function drawLabel(text,x,y,size){
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 ' + size + 'px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(text,x,y);
+  }
+
+  function drawPaperTexture(){
+    const bg = ctx.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,'#2a1d18');
+    bg.addColorStop(.58,'#191512');
+    bg.addColorStop(1,'#111816');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  function drawDots(cx,cy,r,spacing){
+    ctx.save();
+    ctx.fillStyle = '#8f8f8f';
+    for(let y=cy-r+spacing;y<=cy+r-spacing;y+=spacing){
+      for(let x=cx-r+spacing;x<=cx+r-spacing;x+=spacing){
+        if(Math.hypot(x-cx,y-cy) < r-10){
+          ctx.beginPath();
+          ctx.arc(x,y,1.25,0,Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawMatrixDots(target,size,cx,cy,r){
+    fitBoard(target,size,cx,cy,r);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle = '#8b8579';
+    const dot = Math.max(1.15,Math.min(2,target.cell * .065));
+    for(let y=0;y<size;y++){
+      for(let x=0;x<size;x++){
+        ctx.beginPath();
+        ctx.arc(
+          target.x + (x + .5) * target.cell,
+          target.y + (y + .5) * target.cell,
+          dot,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawCircle(cx,cy,r){
+    ctx.save();
+    const fill = ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+    fill.addColorStop(0,'#f2e8d4');
+    fill.addColorStop(1,'#d9c49f');
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#928878';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawCellShape(cells,x,y,cell,fill,alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? 1 : alpha;
+    ctx.fillStyle = fill;
+    cells.forEach(([cx,cy]) => {
+      ctx.fillRect(x + cx * cell, y + cy * cell, cell, cell);
+    });
+    ctx.restore();
+  }
+
+  function drawGridShape(grid,target,cx,cy,r,cellColor){
+    fitBoard(target,grid.length,cx,cy,r);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.clip();
+    ctx.fillStyle = cellColor;
+    for(let y=0;y<grid.length;y++){
+      for(let x=0;x<grid.length;x++){
+        if(grid[y][x]){
+          ctx.fillRect(target.x + x*target.cell, target.y + y*target.cell, target.cell, target.cell);
+        }
+      }
+    }
+    ctx.restore();
+  }
+
+  function addUiHit(action,x,y,w,h,disabled){
+    state.uiHits.push({action,x,y,w,h,disabled:Boolean(disabled)});
+  }
+
+  function drawCanvasButton(text,action,x,y,w,h,active,disabled){
+    roundedRect(ctx,x,y,w,h,6);
+    ctx.fillStyle = active
+      ? 'rgba(240,182,91,.95)'
+      : disabled
+        ? 'rgba(255,244,220,.07)'
+        : 'rgba(255,244,220,.13)';
+    ctx.fill();
+    ctx.strokeStyle = active ? '#ffe4a6' : 'rgba(255,232,185,.25)';
+    ctx.lineWidth = active ? 2 : 1;
+    ctx.stroke();
+    ctx.fillStyle = active ? '#24170f' : disabled ? 'rgba(255,241,208,.38)' : '#fff1d0';
+    ctx.font = '900 13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text,x + w / 2,y + h / 2 + 1);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    addUiHit(action,x,y,w,h,disabled);
+  }
+
+  function drawMiniStat(label,value,x,y,w){
+    roundedRect(ctx,x,y,w,34,5);
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,232,185,.16)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '800 10px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(label,x+8,y+13);
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 15px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(value,x+8,y+29);
+  }
+
+  function drawHud(){
+    const level = currentLevel();
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 22px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('见证谜语',18,30);
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '900 12px "PingFang SC","Microsoft YaHei",sans-serif';
+    const progress = state.finished ? runLength + '/' + runLength : (state.levelIndex + 1) + '/' + runLength;
+    ctx.fillText(progress + ' · 层叠消融',286,29);
+
+    const tabs = [
+      ['题目','phaseQuestion','question'],
+      ['作答','phaseAnswer','answer'],
+      ['答案','phaseResult','result']
+    ];
+    tabs.forEach(([text,action,phase],index) => {
+      drawCanvasButton(text,action,18 + index * 118,45,108,32,state.phase === phase,state.finished);
+    });
+
+    const info = diffInfo();
+    drawMiniStat('差异',String(info.diff),18,88,82);
+    drawMiniStat('完成',info.match + '%',108,88,82);
+    drawMiniStat('步数',String(state.moves),198,88,82);
+    drawMiniStat('用时',formatTime(elapsed()),288,88,82);
+  }
+
+  function drawBoards(mode){
+    const level = currentLevel();
+    const current = mode === 'result' ? state.target : currentGrid();
+
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 14px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('题目',178,142);
+    ctx.fillText(mode === 'result' ? '答案' : '作答',178,288);
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '800 11px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(level.name + ' · 7×7',18,136);
+    ctx.fillText(level.tip || '',110,136);
+
+    drawCircle(small.cx,small.cy,small.r);
+    drawMatrixDots({size:0,cell:0,x:0,y:0},level.size,small.cx,small.cy,small.r);
+    drawGridShape(state.target,{size:0,cell:0,x:0,y:0},small.cx,small.cy,small.r,'#000');
+
+    drawCircle(answerBoard.cx,answerBoard.cy,answerBoard.r);
+    drawMatrixDots(answerBoard,level.size,answerBoard.cx,answerBoard.cy,answerBoard.r);
+    drawGridShape(current,answerBoard,answerBoard.cx,answerBoard.cy,answerBoard.r,'#000');
+    drawPreview(answerBoard);
+  }
+
+  function drawTray(){
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 15px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('基础图形',18,535);
+    const p = selectedPiece();
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '800 11px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(p ? '选中：' + p.name : '选中：—',105,535);
+
+    const cardW = 56;
+    const cardH = 48;
+    const gap = 6;
+    const startX = 12;
+    const startY = 546;
+    state.pieces.forEach((piece,index) => {
+      const col = index % 6;
+      const row = Math.floor(index / 6);
+      const x = startX + col * (cardW + gap);
+      const y = startY + row * (cardH + gap);
+      const active = piece.id === state.selectedId;
+      roundedRect(ctx,x,y,cardW,cardH,6);
+      ctx.fillStyle = piece.placed ? 'rgba(255,228,166,.10)' : 'rgba(255,244,220,.92)';
+      ctx.fill();
+      ctx.strokeStyle = active ? '#ffe4a6' : 'rgba(255,244,220,.36)';
+      ctx.lineWidth = active ? 2 : 1;
+      ctx.stroke();
+      const cells = pieceCells(piece);
+      const b = bounds(cells);
+      const cell = Math.min(11,Math.floor(25 / Math.max(b.w,b.h)));
+      drawCellShape(cells,x + 7,y + 6,cell,'#000',piece.placed ? .35 : 1);
+      ctx.fillStyle = piece.placed ? '#a99b83' : '#111';
+      ctx.font = '900 9px "PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.fillText(piece.name,x+6,y+cardH-6);
+      state.renderHits.push({id:piece.id,kind:'tray',x,y,w:cardW,h:cardH});
+    });
+
+    state.pieces.forEach(piece => {
+      if(!piece.placed) return;
+      const b = bounds(pieceCells(piece));
+      state.renderHits.push({
+        id:piece.id,
+        kind:'board',
+        x:answerBoard.x + piece.x * answerBoard.cell,
+        y:answerBoard.y + piece.y * answerBoard.cell,
+        w:b.w * answerBoard.cell,
+        h:b.h * answerBoard.cell
+      });
+    });
+  }
+
+  function drawActionBar(){
+    const disabled = state.phase !== 'answer' || state.finished;
+    drawCanvasButton('旋转','rotate',18,610,108,36,false,disabled);
+    drawCanvasButton('翻面','flip',141,610,108,36,false,disabled);
+    drawCanvasButton('撤销','undo',264,610,108,36,false,disabled || !state.history.length);
+    drawCanvasButton('提示','hint',18,654,108,36,false,disabled);
+    drawCanvasButton('重置','reset',141,654,108,36,false,state.finished);
+    drawCanvasButton(audioState.muted ? '音乐关' : '音乐开','music',264,654,108,36,!audioState.muted,false);
+  }
+
+  function drawProgressRail(){
+    const y = 712;
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '800 11px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(state.finished ? '本轮完成，退场' : '完成后自动进入下一题',18,y);
+    const x0 = 18;
+    const gap = 7;
+    const w = (354 - gap * (runLength - 1)) / runLength;
+    for(let i=0;i<runLength;i++){
+      roundedRect(ctx,x0 + i * (w + gap),y + 12,w,10,5);
+      ctx.fillStyle = i < state.levelIndex || state.finished ? '#f0b65b' : i === state.levelIndex ? '#5fc8b5' : 'rgba(255,244,220,.16)';
+      ctx.fill();
+    }
+  }
+
+  function drawFinish(){
+    drawHud();
+    ctx.fillStyle = '#ffe4a6';
+    ctx.font = '900 40px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('退场',144,260);
+    ctx.fillStyle = '#fff1d0';
+    ctx.font = '900 18px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('本轮见证完成',124,304);
+    ctx.fillStyle = '#b9aa8e';
+    ctx.font = '800 13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('完成 ' + runLength + ' 题 · 用时 ' + formatTime(elapsed()),113,332);
+    drawCanvasButton('再玩一轮','restartRun',116,382,158,44,true,false);
+    drawProgressRail();
+  }
+
+  function drawQuestion(){
+    drawHud();
+    drawBoards('question');
+    drawTray();
+    drawActionBar();
+    drawProgressRail();
+  }
+
+  function drawPreview(target){
+    if(!state.hover?.valid || !state.drag) return;
+    const p = state.drag.piece;
+    const before = currentGrid({exclude:p.id});
+    const cells = occupied(p,state.hover);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(target.cx,target.cy,target.r,0,Math.PI*2);
+    ctx.clip();
+    cells.forEach(([gx,gy]) => {
+      if(gx < 0 || gy < 0 || gx >= currentLevel().size || gy >= currentLevel().size) return;
+      const px = target.x + gx * target.cell;
+      const py = target.y + gy * target.cell;
+      if(before[gy][gx]){
+        ctx.fillStyle = 'rgba(255,255,255,.78)';
+        ctx.fillRect(px,py,target.cell,target.cell);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px+4,py+4);
+        ctx.lineTo(px+target.cell-4,py+target.cell-4);
+        ctx.moveTo(px+target.cell-4,py+4);
+        ctx.lineTo(px+4,py+target.cell-4);
+        ctx.stroke();
+      }else{
+        ctx.fillStyle = 'rgba(0,0,0,.62)';
+        ctx.fillRect(px,py,target.cell,target.cell);
+      }
+    });
+    ctx.restore();
+  }
+
+  function drawAnswer(){
+    drawHud();
+    drawBoards('answer');
+    drawTray();
+    drawActionBar();
+    drawProgressRail();
+  }
+
+  function drawResult(){
+    drawHud();
+    drawBoards('result');
+    drawTray();
+    drawActionBar();
+    ctx.fillStyle = '#5fc8b5';
+    ctx.font = '900 14px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(state.completedAt == null ? '标准答案' : '作答成功，准备下一题',18,522);
+    drawProgressRail();
+  }
+
+  function drawDrag(){
+    if(!state.drag) return;
+    const p = state.drag.piece;
+    const cells = pieceCells(p);
+    const cell = state.hover?.valid ? answerBoard.cell : 20;
+    const x = state.hover?.valid ? answerBoard.x + state.hover.x * answerBoard.cell : state.drag.x - state.drag.offsetX;
+    const y = state.hover?.valid ? answerBoard.y + state.hover.y * answerBoard.cell : state.drag.y - state.drag.offsetY;
+    drawCellShape(cells,x,y,cell,'#000',.72);
+  }
+
+  let pendingDraw = false;
+  function requestDraw(){
+    if(pendingDraw) return;
+    pendingDraw = true;
+    requestAnimationFrame(() => {
+      pendingDraw = false;
+      draw();
+    });
+  }
+
+  function draw(){
+    const dpr = canvas.width / W;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    state.renderHits = [];
+    state.uiHits = [];
+    drawPaperTexture();
+    if(state.finished){
+      drawFinish();
+      updateUI();
+      return;
+    }
+    fitBoard(answerBoard,currentLevel().size,answerBoard.cx,answerBoard.cy,answerBoard.r);
+
+    if(state.phase === 'question') drawQuestion();
+    if(state.phase === 'answer') drawAnswer();
+    if(state.phase === 'result') drawResult();
+    drawDrag();
+    updateUI();
+  }
+
+  function resizeCanvas(){
+    const dpr = Math.max(1,Math.min(window.devicePixelRatio || 1,2.5));
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    requestDraw();
+  }
+
+  function canvasPoint(event){
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x:(event.clientX - rect.left) / rect.width * W,
+      y:(event.clientY - rect.top) / rect.height * H
+    };
+  }
+
+  function hitTest(pt){
+    for(let i=state.renderHits.length-1;i>=0;i--){
+      const h = state.renderHits[i];
+      if(pt.x >= h.x && pt.y >= h.y && pt.x <= h.x+h.w && pt.y <= h.y+h.h) return h;
+    }
+    return null;
+  }
+
+  function hitUi(pt){
+    for(let i=state.uiHits.length-1;i>=0;i--){
+      const h = state.uiHits[i];
+      if(pt.x >= h.x && pt.y >= h.y && pt.x <= h.x+h.w && pt.y <= h.y+h.h) return h;
+    }
+    return null;
+  }
+
+  function handleUi(action){
+    if(!action) return;
+    if(action === 'phaseQuestion'){ playTap(); setPhase('question'); return; }
+    if(action === 'phaseAnswer'){ playTap(); setPhase('answer'); return; }
+    if(action === 'phaseResult'){ playTap(); setPhase('result'); return; }
+    if(action === 'rotate'){ rotateSelected(); return; }
+    if(action === 'flip'){ flipSelected(); return; }
+    if(action === 'undo'){ undo(); return; }
+    if(action === 'hint'){ hint(); return; }
+    if(action === 'reset'){ playTap(); loadLevel(state.levelIndex); return; }
+    if(action === 'music'){ toggleMusic(); return; }
+    if(action === 'restartRun'){ playTap(); loadLevel(0); return; }
+  }
+
+  function updateHover(){
+    if(!state.drag) return;
+    const p = state.drag.piece;
+    const gx = Math.round((state.drag.x - state.drag.offsetX - answerBoard.x) / answerBoard.cell);
+    const gy = Math.round((state.drag.y - state.drag.offsetY - answerBoard.y) / answerBoard.cell);
+    const test = {x:gx,y:gy,r:p.r,f:p.f};
+    const cells = occupied(p,test);
+    const valid = cells.every(([x,y]) => x >= 0 && y >= 0 && x < currentLevel().size && y < currentLevel().size);
+    state.hover = {...test, valid};
+  }
+
+  function pointerDown(event){
+    const pt = canvasPoint(event);
+    const ui = hitUi(pt);
+    if(ui){
+      event.preventDefault();
+      if(!ui.disabled) handleUi(ui.action);
+      return;
+    }
+    if(state.phase !== 'answer' || state.finished) return;
+    const hit = hitTest(pt);
+    if(!hit) return;
+    event.preventDefault();
+    const p = state.pieces.find(piece => piece.id === hit.id);
+    if(!p) return;
+    playTap();
+    state.selectedId = p.id;
+    state.drag = {
+      piece:p,
+      x:pt.x,
+      y:pt.y,
+      offsetX:pt.x - hit.x,
+      offsetY:pt.y - hit.y,
+      before:snapshot()
+    };
+    updateHover();
+    canvas.setPointerCapture?.(event.pointerId);
+    requestDraw();
+  }
+
+  function pointerMove(event){
+    if(!state.drag) return;
+    const pt = canvasPoint(event);
+    state.drag.x = pt.x;
+    state.drag.y = pt.y;
+    updateHover();
+    requestDraw();
+  }
+
+  function samePlacement(p,s){
+    return p.placed === s.placed && p.x === s.x && p.y === s.y && p.r === s.r && p.f === s.f;
+  }
+
+  function pointerUp(event){
+    if(!state.drag) return;
+    const p = state.drag.piece;
+    const before = state.drag.before;
+    let hadErase = false;
+    if(state.hover?.valid){
+      const beforeGrid = currentGrid({exclude:p.id});
+      hadErase = occupied(p,state.hover).some(([x,y]) => beforeGrid[y]?.[x]);
+      p.placed = true;
+      p.x = state.hover.x;
+      p.y = state.hover.y;
+    }else{
+      p.placed = false;
+    }
+    state.drag = null;
+    state.hover = null;
+    canvas.releasePointerCapture?.(event.pointerId);
+    const saved = before.find(s => s.id === p.id);
+    if(saved && !samePlacement(p,saved)){
+      state.history.push(before);
+      state.moves += 1;
+      if(p.placed){
+        hadErase ? playErase() : playPlace();
+      }else{
+        playUndo();
+      }
+      showToast('差异 ' + diffInfo().diff);
+      checkWin();
+    }
+    requestDraw();
+  }
+
+  function checkWin(){
+    const info = diffInfo();
+    if(info.diff === 0 && state.completedAt == null){
+      state.completedAt = elapsed();
+      state.phase = 'result';
+      state.solvedCount = Math.max(state.solvedCount,state.levelIndex + 1);
+      playWin();
+      showToast('作答成功');
+      clearAutoAdvance();
+      state.autoTimer = setTimeout(() => {
+        if(state.levelIndex >= runLength - 1){
+          finishRun();
+        }else{
+          loadLevel(state.levelIndex + 1);
+        }
+      },1050);
+    }
+  }
+
+  function rotateSelected(){
+    if(state.finished || state.completedAt != null) return;
+    clearAutoAdvance();
+    if(state.phase !== 'answer') setPhase('answer');
+    const p = selectedPiece();
+    if(!p) return;
+    playTap();
+    const before = snapshot();
+    p.r = (p.r + 1) % 4;
+    state.history.push(before);
+    state.moves += 1;
+    updateHover();
+    checkWin();
+    requestDraw();
+  }
+
+  function flipSelected(){
+    if(state.finished || state.completedAt != null) return;
+    clearAutoAdvance();
+    if(state.phase !== 'answer') setPhase('answer');
+    const p = selectedPiece();
+    if(!p) return;
+    playTap();
+    const before = snapshot();
+    p.f = !p.f;
+    state.history.push(before);
+    state.moves += 1;
+    updateHover();
+    checkWin();
+    requestDraw();
+  }
+
+  function undo(){
+    if(state.finished) return;
+    clearAutoAdvance();
+    const last = state.history.pop();
+    if(!last) return;
+    playUndo();
+    restore(last);
+    state.moves = Math.max(0,state.moves - 1);
+    state.completedAt = null;
+    if(state.phase === 'result') state.phase = 'answer';
+    requestDraw();
+  }
+
+  function hint(){
+    if(state.finished || state.completedAt != null) return;
+    clearAutoAdvance();
+    const p = selectedPiece();
+    if(!p) return;
+    playTap();
+    p.r = p.solution.r;
+    p.f = p.solution.f;
+    showToast(p.name + '：参考目标位置 ' + (p.solution.x + 1) + ',' + (p.solution.y + 1));
+    setPhase('answer');
+  }
+
+  function populateLevels(){
+    levelGrid.innerHTML = '';
+    levels.forEach((level,index) => {
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.type = 'button';
+      b.textContent = level.icon;
+      b.title = level.name;
+      b.addEventListener('click',() => {
+        playTap();
+        loadLevel(index);
+      });
+      levelGrid.appendChild(b);
+    });
+  }
+
+  phaseBtns.question.addEventListener('click',() => { playTap(); setPhase('question'); });
+  phaseBtns.answer.addEventListener('click',() => { playTap(); setPhase('answer'); });
+  phaseBtns.result.addEventListener('click',() => { playTap(); setPhase('result'); });
+  document.getElementById('rotBtn').addEventListener('click',rotateSelected);
+  document.getElementById('flipBtn').addEventListener('click',flipSelected);
+  document.getElementById('undoBtn').addEventListener('click',undo);
+  document.getElementById('hintBtn').addEventListener('click',hint);
+  musicBtn.addEventListener('click',toggleMusic);
+  document.getElementById('resetBtn').addEventListener('click',() => {
+    playTap();
+    loadLevel(state.levelIndex);
+  });
+  document.getElementById('nextBtn').addEventListener('click',() => {
+    playTap();
+    loadLevel(state.levelIndex + 1);
+  });
+  canvas.addEventListener('pointerdown',pointerDown);
+  canvas.addEventListener('pointermove',pointerMove);
+  canvas.addEventListener('pointerup',pointerUp);
+  canvas.addEventListener('pointercancel',pointerUp);
+  document.addEventListener('pointerdown',unlockAudio,{once:true,passive:true});
+  document.addEventListener('keydown',unlockAudio,{once:true});
+  window.addEventListener('resize',resizeCanvas);
+  setInterval(updateUI,250);
+
+  function forceDraw(){
+    pendingDraw = false;
+    draw();
+  }
+
+  populateLevels();
+  resizeCanvas();
+  loadLevel(0);
+  updateMusicButton();
+  requestAnimationFrame(forceDraw);
+  setTimeout(forceDraw,80);
+})();
+</script>
+</body>
+</html>

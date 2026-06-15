@@ -1,0 +1,317 @@
+{
+  "level": "A",
+  "draft": {
+    "updatedAt": "2026-06-12T22:19:41.457Z",
+    "pieces": [
+      {
+        "id": "A",
+        "name": "左上角块",
+        "color": "#ff8f9b",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": 126,
+        "homeDy": 254
+      },
+      {
+        "id": "B",
+        "name": "顶部横条",
+        "color": "#ffd36a",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            3,
+            0
+          ]
+        ],
+        "homeRot": 1,
+        "homeFlip": false,
+        "homeDx": -65,
+        "homeDy": 12
+      },
+      {
+        "id": "C",
+        "name": "右上T块",
+        "color": "#8fe58e",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": 202,
+        "homeDy": -33
+      },
+      {
+        "id": "D",
+        "name": "左侧C块",
+        "color": "#67c7ff",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        "homeRot": 3,
+        "homeFlip": true,
+        "homeDx": -57,
+        "homeDy": -64
+      },
+      {
+        "id": "E",
+        "name": "左侧竖钩",
+        "color": "#c395ff",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "homeRot": 3,
+        "homeFlip": false,
+        "homeDx": 29,
+        "homeDy": 254
+      },
+      {
+        "id": "F",
+        "name": "底部左钩",
+        "color": "#ff9bd8",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": -64,
+        "homeDy": 227
+      },
+      {
+        "id": "G",
+        "name": "底部中钩",
+        "color": "#7ee0cf",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": 73,
+        "homeDy": -34
+      },
+      {
+        "id": "H",
+        "name": "右侧折块",
+        "color": "#f2a261",
+        "cells": [
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        "homeRot": 2,
+        "homeFlip": false,
+        "homeDx": -64,
+        "homeDy": 125
+      },
+      {
+        "id": "I",
+        "name": "右下角块",
+        "color": "#b5dd64",
+        "cells": [
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": 209,
+        "homeDy": 226
+      },
+      {
+        "id": "J",
+        "name": "右侧竖折",
+        "color": "#f5b2a8",
+        "cells": [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            0,
+            3
+          ]
+        ],
+        "homeRot": 0,
+        "homeFlip": false,
+        "homeDx": 236,
+        "homeDy": 24
+      },
+      {
+        "id": "K",
+        "name": "新增小块K",
+        "color": "#f97316",
+        "cells": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        "homeRot": 2,
+        "homeFlip": false,
+        "homeDx": 263,
+        "homeDy": 144
+      }
+    ]
+  }
+}

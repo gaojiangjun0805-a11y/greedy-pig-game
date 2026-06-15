@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>提笔乾坤</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --line:rgba(255,255,255,.22);
+  --gold:#ffce33;
+  --blue:#2f6fe6;
+  --mint:#62f0c2;
+  --text:#f4f6ff;
+}
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  min-height:100dvh;
+  font-family:"Microsoft YaHei",system-ui,-apple-system,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 16% 12%,rgba(255,206,51,.22),transparent 34%),
+    radial-gradient(circle at 84% 16%,rgba(47,111,230,.30),transparent 32%),
+    radial-gradient(circle at 50% 92%,rgba(98,240,194,.18),transparent 40%),
+    linear-gradient(160deg,#1a1140,#241a5a 46%,#0d1030);
+  display:flex;justify-content:center;
+}
+#app{
+  position:relative;z-index:1;width:100%;max-width:760px;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  padding:12px 14px max(12px,env(safe-area-inset-bottom));
+}
+#top{
+  width:100%;display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;
+  padding:9px 12px;border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,206,51,.10),rgba(47,111,230,.12));
+  box-shadow:0 16px 48px rgba(8,10,40,.4),inset 0 1px 0 rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+#brand{min-width:0}
+h1{
+  font-size:clamp(1.7rem,5.4vw,2.5rem);line-height:1;font-weight:900;letter-spacing:2px;
+  background:linear-gradient(110deg,#fff2c0,#ffce33 36%,#7fb0ff 70%,#62f0c2);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 16px rgba(255,206,51,.28));white-space:nowrap;
+}
+#subtitle{font-size:.78rem;color:#cfd6ff;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#help{
+  width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.34);
+  background:rgba(255,255,255,.12);color:#fff;font:900 1.1rem system-ui;cursor:pointer;flex:none;
+}
+#topbtns{display:flex;gap:8px;flex:none}
+.iconbtn{
+  width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.34);
+  background:rgba(255,255,255,.12);color:#fff;font:900 1.02rem system-ui;cursor:pointer;flex:none;
+  display:grid;place-items:center;padding:0;transition:opacity .15s,transform .12s;
+}
+.iconbtn:active{transform:scale(.92)}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#hud{
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;
+  padding:7px 14px;border:1px solid var(--line);border-radius:10px;
+  background:rgba(16,18,52,.5);color:#d7ddff;font-size:.85rem;
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+}
+#hud b{color:#ffe08a}
+#hud .sep{opacity:.35}
+#boardWrap{
+  width:min(94vw,560px,calc(100dvh - 232px));aspect-ratio:1/1;min-width:260px;
+  padding:10px;border-radius:16px;border:1px solid rgba(255,255,255,.2);
+  background:
+    radial-gradient(circle at 30% 16%,rgba(255,255,255,.12),transparent 44%),
+    linear-gradient(150deg,rgba(34,26,92,.7),rgba(13,16,48,.86));
+  box-shadow:0 0 0 1px rgba(255,255,255,.08) inset,0 24px 70px rgba(6,8,34,.5);
+}
+#board{width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
+#tools{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;width:100%}
+button{
+  height:42px;padding:0 16px;border:1px solid transparent;border-radius:10px;
+  font:900 .88rem "Microsoft YaHei",system-ui,sans-serif;letter-spacing:1px;cursor:pointer;
+  color:#0c1030;background:var(--gold);
+  box-shadow:0 8px 22px rgba(8,10,40,.32),inset 0 2px 0 rgba(255,255,255,.4);
+  transition:transform .12s ease,filter .12s ease,opacity .12s ease;touch-action:manipulation;
+}
+button:active{transform:scale(.95)}
+button:disabled{opacity:.4;pointer-events:none;filter:saturate(.5)}
+.ghost{background:rgba(255,255,255,.14);color:#eef1ff;border-color:rgba(255,255,255,.26)}
+.nav{height:42px;width:46px;padding:0;font-size:1.2rem}
+#msg{
+  min-height:24px;text-align:center;color:#ffe08a;font-weight:900;font-size:.9rem;
+  text-shadow:0 0 14px rgba(255,206,51,.4);transition:opacity .2s;opacity:0;
+}
+#msg.show{opacity:1}
+.overlay{
+  position:fixed;inset:0;z-index:5;display:none;place-items:center;background:rgba(6,7,24,.78);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:18px;
+}
+.overlay.show{display:grid}
+.card{
+  width:min(92vw,440px);padding:26px 24px 22px;border-radius:16px;text-align:center;
+  border:1px solid rgba(255,255,255,.32);
+  background:linear-gradient(155deg,rgba(40,30,96,.97),rgba(20,22,60,.97));
+  box-shadow:0 30px 90px rgba(6,8,34,.6);
+}
+.card h2{font-size:1.7rem;margin-bottom:10px;color:#fff}
+.card p{color:#cfd6ff;line-height:1.85;margin-bottom:14px;font-size:.92rem;text-align:left}
+.card p b{color:#ffe08a}
+.legend{display:flex;gap:14px;justify-content:center;margin:6px 0 16px;font-size:.82rem;color:#cfd6ff}
+.legend i{display:inline-block;width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:5px;border:2px solid #0c1530}
+#winStats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:6px 0 18px}
+.stat{padding:10px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:.74rem;color:#cfd6ff}
+.stat b{display:block;margin-top:4px;color:#ffe08a;font-size:1.2rem}
+.btns{display:flex;gap:10px}
+.btns button{flex:1}
+#welcome-mask{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 28%,#302266,#0d1030 72%);
+  transition:opacity .45s ease;
+}
+#welcome-mask.hide{opacity:0;pointer-events:none}
+#welcome-card{text-align:center;padding:0 24px;animation:ggCoverIn .55s ease both}
+@keyframes ggCoverIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
+#welcome-logo{
+  font-size:clamp(46px,13vw,88px);font-weight:900;letter-spacing:2px;
+  background:linear-gradient(135deg,#fff2c0,#ffce33,#62f0c2);-webkit-background-clip:text;background-clip:text;
+  color:transparent;filter:drop-shadow(0 4px 26px rgba(255,206,51,.38));margin-bottom:8px;
+}
+#welcome-title{font-size:clamp(22px,5.5vw,32px);font-weight:900;color:#f4f6ff;letter-spacing:3px;margin-bottom:12px}
+#welcome-sub{font-size:clamp(13px,3.4vw,16px);color:#cfd6ff;line-height:1.7;max-width:430px;margin:0 auto 22px}
+.welcome-demo{display:grid;grid-template-columns:repeat(5,20px);gap:8px;justify-content:center;margin:0 auto 30px}
+.welcome-demo span{width:20px;height:20px;border-radius:6px;background:#2f6fe6;border:2px solid #0c1530;box-shadow:0 0 16px rgba(98,240,194,.22)}
+.welcome-demo span:nth-child(2),.welcome-demo span:nth-child(4){background:#ffce33}
+.welcome-demo span:nth-child(3){box-shadow:0 0 18px var(--mint)}
+#welcome-start{
+  height:auto;min-height:0;display:inline-flex;align-items:center;justify-content:center;border:none;
+  font-size:clamp(18px,4.6vw,22px);font-weight:900;color:#0c1030;cursor:pointer;
+  padding:16px 56px;border-radius:999px;background:linear-gradient(135deg,#fff2c0,#ffce33);
+  box-shadow:0 8px 32px rgba(255,206,51,.44);animation:ggCoverPulse 1.8s ease-in-out infinite;
+}
+@keyframes ggCoverPulse{0%,100%{box-shadow:0 8px 32px rgba(255,206,51,.44)}50%{box-shadow:0 8px 44px rgba(98,240,194,.62)}}
+</style>
+</head>
+<body>
+<div id="welcome-mask">
+  <div id="welcome-card">
+    <div id="welcome-logo">G-Game</div>
+    <div id="welcome-title">提笔乾坤</div>
+    <div id="welcome-sub">一笔连格，调整蜂巢每一圈的颜色。</div>
+    <div class="welcome-demo"><span></span><span></span><span></span><span></span><span></span></div>
+    <button id="welcome-start" type="button">开始游戏</button>
+  </div>
+</div>
+<canvas id="bg-canvas"></canvas>
+<audio id="bgm" src="bgm.mp3" loop preload="auto"></audio>
+<div id="app">
+  <div id="top">
+    <div id="brand">
+      <h1>提笔乾坤</h1>
+      <div id="subtitle">一笔连格 · 每圈同色</div>
+    </div>
+    <div id="topbtns">
+      <button class="iconbtn" id="music" title="音乐开关">🔇</button>
+      <button class="iconbtn" id="help" title="玩法">?</button>
+    </div>
+  </div>
+
+  <div id="hud">
+    <span>关卡 <b id="hLevel">1</b></span><span class="sep">|</span>
+    <span>圈数 <b id="hRings">3</b></span><span class="sep">|</span>
+    <span>完成 <b id="hDone">0</b>/<b id="hTotal">3</b> 圈</span>
+  </div>
+
+  <div id="boardWrap"><canvas id="board"></canvas></div>
+
+  <div id="msg"></div>
+
+  <div id="tools">
+    <button class="nav ghost" id="prev" title="上一关">‹</button>
+    <button class="ghost" id="reset">重置</button>
+    <button id="hint">提示</button>
+    <button class="ghost" id="newp">换一题</button>
+    <button class="nav ghost" id="next" title="下一关">›</button>
+  </div>
+</div>
+
+<div class="overlay" id="winOv">
+  <div class="card">
+    <h2 id="winTitle">过关！</h2>
+    <p id="winSub" style="text-align:center">每一圈都已同色 ✦</p>
+    <div id="winStats">
+      <div class="stat">关卡<b id="wLevel">1</b></div>
+      <div class="stat">笔画长度<b id="wLen">0</b></div>
+    </div>
+    <div class="btns">
+      <button class="ghost" id="wReplay">重玩本关</button>
+      <button id="wNext">下一关 ›</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="helpOv">
+  <div class="card">
+    <h2>玩法</h2>
+    <p>
+      盘面是一座六边形蜂巢，由内向外分成一圈圈宫格。<br>
+      ① <b>按住</b>任意宫格开始，<b>拖动</b>把相邻宫格连成<b>一笔</b>；<br>
+      ② 经过的宫格会<b>反色</b>（想反悔可原路拖回一格撤销）；<br>
+      ③ <b>松手</b>判定：若<b>每一圈</b>的宫格颜色都一致即<b>过关</b>；<br>
+      ④ 未完成则自动<b>重置</b>，再来一次。<br>
+      完成的圈会泛起<b style="color:var(--mint)">绿光</b>提示你已经搞定。
+    </p>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>蓝</span>
+      <span><i style="background:var(--gold)"></i>黄</span>
+      <span><i style="background:var(--blue);box-shadow:0 0 8px var(--mint)"></i>该圈已同色</span>
+    </div>
+    <div class="btns"><button id="helpClose">开始挑战</button></div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById('board'),ctx=cv.getContext('2d');
+const DPR=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+const $=id=>document.getElementById(id);
+
+const COL={a:'#2f6fe6',b:'#ffce33',border:'#0c1530',done:'#62f0c2'};
+const DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+const S3=Math.sqrt(3);
+let S=null;
+
+/* ============ audio: synth-piano BGM + sfx (matched to sibling games) ============ */
+let audioCtx=null,masterGain=null,masterFilter=null;
+let musicPlaying=false,musicNodes=new Set(),schedulerTimer=null,_autoStartDone=false;
+function track(node){musicNodes.add(node);node.onended=()=>musicNodes.delete(node);}
+function getAC(){
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain();masterGain.gain.value=0.5;
+    masterFilter=audioCtx.createBiquadFilter();masterFilter.type='lowpass';masterFilter.frequency.value=6500;masterFilter.Q.value=0.2;
+    masterGain.connect(masterFilter);masterFilter.connect(audioCtx.destination);
+  }
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  return audioCtx;
+}
+const N={C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:784,A5:880,B5:987.77,C6:1046.5,E6:1318.5};
+function ntof(n){const m=/^([A-G])(#|b)?(\d)$/.exec(n);const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]];const acc=m[2]==='#'?1:m[2]==='b'?-1:0;const midi=base+acc+(+m[3]+1)*12;return 440*Math.pow(2,(midi-69)/12);}
+function playNote(freq,when,dur,vol=0.08,type='sine'){
+  const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(masterGain);o.type=type;o.frequency.setValueAtTime(freq,when);
+  g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(vol,when+0.015);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0001,vol*0.6),when+dur*0.4);
+  g.gain.linearRampToValueAtTime(0,when+dur);
+  o.start(when);o.stop(when+dur+0.01);track(o);
+}
+let _noiseBuf=null;
+function getNoise(ac){if(!_noiseBuf){const len=Math.floor(ac.sampleRate*0.05);_noiseBuf=ac.createBuffer(1,len,ac.sampleRate);const d=_noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;}return _noiseBuf;}
+function playPiano(freq,when,dur,vel){
+  const ac=getAC();const isMel=vel>0.6,nP=isMel?7:5,B=0.0005;
+  const baseDecay=(isMel?3.6:2.2)+Math.max(0,(340-freq)/340)*2.2;
+  const voices=isMel?[-4,4]:[0];
+  const out=ac.createGain();out.gain.value=Math.max(0.04,vel)*0.5;out.connect(masterGain);
+  voices.forEach(cents=>{const det=Math.pow(2,cents/1200);
+    for(let n=1;n<=nP;n++){const pf=freq*n*Math.sqrt(1+B*n*n)*det;if(pf>ac.sampleRate*0.45)break;
+      const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(pf,when);o.connect(g);g.connect(out);
+      const amp=(1/Math.pow(n,1.25))/voices.length,dk=baseDecay/(1+(n-1)*0.7);
+      g.gain.setValueAtTime(0.0001,when);g.gain.exponentialRampToValueAtTime(Math.max(0.0002,amp),when+0.004);g.gain.exponentialRampToValueAtTime(0.0001,when+dk);
+      o.start(when);o.stop(when+dk+0.05);track(o);}});
+  const src=ac.createBufferSource();src.buffer=getNoise(ac);const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=Math.min(6000,freq*4);bp.Q.value=0.7;
+  const ng=ac.createGain();ng.gain.setValueAtTime(vel*0.05,when);ng.gain.exponentialRampToValueAtTime(0.0001,when+0.04);
+  src.connect(bp);bp.connect(ng);ng.connect(masterGain);src.start(when);src.stop(when+0.06);track(src);
+}
+/* background music — Suno track「糖果小径」(local bgm.mp3), looped */
+const bgm=document.getElementById('bgm');
+bgm.loop=true;bgm.volume=0.5;
+function updateMusicBtn(){const b=$('music');if(b){b.textContent=musicPlaying?'🎵':'🔇';b.style.opacity=musicPlaying?'1':'.55';}}
+function reflectMusic(){musicPlaying=!bgm.paused&&!bgm.ended;updateMusicBtn();}
+bgm.addEventListener('play',reflectMusic);
+bgm.addEventListener('pause',reflectMusic);
+function startMusic(){_autoStartDone=true;musicPlaying=true;updateMusicBtn();const p=bgm.play();if(p&&p.catch)p.catch(()=>{musicPlaying=false;updateMusicBtn();});}
+function stopMusic(){musicPlaying=false;updateMusicBtn();bgm.pause();}
+function toggleMusic(){bgm.paused?startMusic():stopMusic();}
+function _tryAutoMusic(){if(!_autoStartDone)startMusic();}
+
+/* sfx — bright blips that rise along the stroke, chimes on ring complete (loud enough to cut through the music) */
+function sfxStart(){const t=getAC().currentTime;playNote(N.G4,t,0.11,0.16,'triangle');playNote(N.C5,t+0.04,0.13,0.13,'sine');}
+const STEP_SCALE=[N.C5,N.D5,N.E5,N.G5,N.A5,N.C6,N.A5,N.G5];
+function sfxStep(k){const t=getAC().currentTime,f=STEP_SCALE[(k-1)%STEP_SCALE.length];playNote(f,t,0.13,0.18,'triangle');playNote(f*2,t+0.012,0.07,0.06,'sine');}
+function sfxBack(){const t=getAC().currentTime;playNote(N.A4,t,0.11,0.13,'triangle');playNote(N.E4,t+0.04,0.11,0.1,'sine');}
+function sfxRing(){const t=getAC().currentTime;playNote(N.D5,t,0.11,0.12,'sine');playNote(N.F5,t+0.06,0.11,0.1,'sine');playNote(N.A5,t+0.12,0.16,0.09,'triangle');}
+function sfxMiss(){const t=getAC().currentTime;playNote(196,t,0.16,0.12,'sawtooth');playNote(146.83,t+0.06,0.22,0.09,'triangle');}
+function sfxWin(){const t=getAC().currentTime;[N.C5,N.E5,N.G5,N.C6,N.E6].forEach((f,i)=>playPiano(f,t+i*0.11,0.5,0.85));setTimeout(()=>{const t2=getAC().currentTime;[N.G5,N.C6,N.E6].forEach((f,i)=>playNote(f,t2+i*0.09,0.5,0.07,'triangle'));},620);}
+
+/* ============ floating-icon background (matched to sibling games) ============ */
+const bgc=document.getElementById('bg-canvas'),bgx=bgc.getContext('2d');
+const FLO=[],ICONS=['⬡','⬢','✦','✧','◆','◇','✻','✶'];
+function initBg(){
+  bgc.width=innerWidth;bgc.height=innerHeight;FLO.length=0;
+  for(let i=0;i<26;i++)FLO.push({x:Math.random()*bgc.width,y:Math.random()*bgc.height,
+    icon:ICONS[(Math.random()*ICONS.length)|0],size:10+Math.random()*18,
+    vx:(Math.random()-.5)*.3,vy:-.14-Math.random()*.34,alpha:.05+Math.random()*.14,
+    rot:Math.random()*6,rotV:(Math.random()-.5)*.015,col:Math.random()<.5?'#ffce33':'#6ea0ff'});
+}
+function animBg(){
+  const W=bgc.width,H=bgc.height;bgx.clearRect(0,0,W,H);
+  for(const f of FLO){
+    f.x+=f.vx;f.y+=f.vy;f.rot+=f.rotV;
+    if(f.y+f.size<0){f.y=H+f.size;f.x=Math.random()*W;}
+    if(f.x<-f.size)f.x=W+f.size;if(f.x>W+f.size)f.x=-f.size;
+    bgx.save();bgx.globalAlpha=f.alpha;bgx.translate(f.x,f.y);bgx.rotate(f.rot);
+    bgx.font=f.size+'px serif';bgx.textAlign='center';bgx.textBaseline='middle';
+    bgx.fillStyle=f.col;bgx.fillText(f.icon,0,0);bgx.restore();
+  }
+  requestAnimationFrame(animBg);
+}
+
+function levelRadius(n){return n<=3?3:4;}   // 前3关3圈教学，之后4圈封顶——难度不靠盘面变大
+function scrambleLenFor(n,cellCount){        // 难度主轴：打乱覆盖比例随关卡递增，分布越来越复杂
+  const frac = n<=3 ? [0,0.11,0.17,0.24][n] : Math.min(0.70,0.30+(n-3)*0.045);
+  return Math.max(3,Math.min(cellCount-3,Math.round(cellCount*frac)));
+}
+function cubeRing(q,r){const x=q,z=r,y=-x-z;return (Math.abs(x)+Math.abs(y)+Math.abs(z))/2;}
+
+function buildBoard(R){
+  const cells=[],index=new Map();
+  for(let q=-R;q<=R;q++)for(let r=-R;r<=R;r++){
+    if(cubeRing(q,r)<=R){index.set(q+','+r,cells.length);cells.push({q,r,ring:cubeRing(q,r)});}
+  }
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  for(const c of cells){
+    c.ux=1.5*c.q; c.uy=S3*(c.r+c.q/2);
+    minx=Math.min(minx,c.ux-1);maxx=Math.max(maxx,c.ux+1);
+    miny=Math.min(miny,c.uy-S3/2);maxy=Math.max(maxy,c.uy+S3/2);
+  }
+  const neigh=cells.map(c=>{
+    const a=[];for(const[dq,dr]of DIRS){const id=index.get((c.q+dq)+','+(c.r+dr));if(id!==undefined)a.push(id);}return a;
+  });
+  const ringCells=[];for(let r=0;r<=R;r++)ringCells.push([]);
+  cells.forEach((c,i)=>ringCells[c.ring].push(i));
+  return {R,cells,neigh,ringCells,bbox:{minx,maxx,miny,maxy}};
+}
+
+function layout(){
+  const cssW=cv.clientWidth,cssH=cv.clientHeight;
+  if(cssW<10||cssH<10)return;          // not sized yet — ResizeObserver will retry
+  cv.width=Math.round(cssW*DPR);cv.height=Math.round(cssH*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const b=S.board.bbox,m=6,bw=b.maxx-b.minx,bh=b.maxy-b.miny;
+  const size=Math.min((cssW-2*m)/bw,(cssH-2*m)/bh);
+  const ox=(cssW-size*bw)/2-size*b.minx, oy=(cssH-size*bh)/2-size*b.miny;
+  S.size=size;
+  for(const c of S.board.cells){c.cx=ox+size*c.ux;c.cy=oy+size*c.uy;}
+  paint();   // 算完坐标立刻同步画一帧，保证棋盘出现（不等 rAF）
+}
+
+// ---- generation (guaranteed solvable: scramble a solved board along a simple path) ----
+function isUniform(colors){
+  for(let r=1;r<=S.board.R;r++){const g=S.board.ringCells[r],c0=colors[g[0]];
+    for(const id of g)if(colors[id]!==c0)return false;}
+  return true;
+}
+// Warnsdorff 启发式：优先走「剩余未访问邻居最少」的格子，能可靠走出又长又曲折的简单路径
+function buildLongPath(target){
+  const n=S.board.cells.length,neigh=S.board.neigh;
+  let best=[];
+  for(let a=0;a<28&&best.length<target;a++){
+    const used=new Uint8Array(n);
+    let cur=(Math.random()*n)|0;used[cur]=1;
+    const path=[cur];
+    while(path.length<target){
+      const opts=neigh[cur].filter(id=>!used[id]);
+      if(!opts.length)break;
+      let mn=99,cand=[];
+      for(const o of opts){let d=0;const nb=neigh[o];for(let j=0;j<nb.length;j++)if(!used[nb[j]])d++;
+        if(d<mn){mn=d;cand=[o];}else if(d===mn)cand.push(o);}
+      cur=cand[(Math.random()*cand.length)|0];used[cur]=1;path.push(cur);
+    }
+    if(path.length>best.length)best=path;
+  }
+  return best;
+}
+function genPuzzle(){
+  const n=S.board.cells.length,target=scrambleLenFor(S.level,n);
+  for(let a=0;a<400;a++){
+    const ringColor=[];for(let r=0;r<=S.board.R;r++)ringColor.push((Math.random()*2)|0);
+    const puzzle=new Uint8Array(n);
+    S.board.cells.forEach((c,i)=>puzzle[i]=ringColor[c.ring]);
+    const P=buildLongPath(target);
+    const out=puzzle.slice();
+    for(const id of P)out[id]^=1;
+    if(!isUniform(out)){S.puzzle=out;S.solution=P;return;}
+  }
+  // fallback
+  const out=new Uint8Array(n);out[0]=1;S.puzzle=out;S.solution=[0];
+}
+
+// ---- state helpers ----
+function displayColor(i){return S.puzzle[i]^S.inPath[i];}
+function ringDoneDisplay(r){const g=S.board.ringCells[r],c0=displayColor(g[0]);
+  for(const id of g)if(displayColor(id)!==c0)return false;return true;}
+function solvedDisplay(){for(let r=1;r<=S.board.R;r++)if(!ringDoneDisplay(r))return false;return true;}
+
+function pulse(i,dir){S.pulse[i]=performance.now();S.pulseDir[i]=dir;}
+function clearPath(){for(const id of S.path)S.inPath[id]=0;S.path.length=0;}
+function pushCell(id){S.path.push(id);S.inPath[id]=1;pulse(id,1);}
+function adj(a,b){return S.board.neigh[a].includes(b);}
+
+function extendTo(t){
+  const p=S.path,last=p[p.length-1];
+  if(t===last)return;
+  if(p.length>=2&&t===p[p.length-2]){S.inPath[last]=0;p.pop();pulse(last,-1);return;}
+  if(S.inPath[t])return;
+  if(adj(last,t)){pushCell(t);return;}
+  for(const m of S.board.neigh[last])if(!S.inPath[m]&&adj(m,t)){pushCell(m);pushCell(t);return;}
+}
+
+// ---- level flow ----
+function loadLevel(n){
+  S=S||{};
+  S.level=n;S.won=false;
+  S.board=buildBoard(levelRadius(n));
+  const cc=S.board.cells.length;
+  S.inPath=new Uint8Array(cc);S.path=[];
+  S.pulse=new Float64Array(cc);S.pulseDir=new Float64Array(cc);
+  S.size=0;S.drawing=false;S.hint=0;
+  genPuzzle();
+  layout();
+  updateHUD();
+  localStorage.setItem('fengchao_level',Math.max(n,+(localStorage.getItem('fengchao_level')||1)));
+}
+function doneCount(){let d=0;for(let r=1;r<=S.board.R;r++)if(ringDoneDisplay(r))d++;return d;}
+function updateHUD(){
+  $('hLevel').textContent=S.level;
+  $('hRings').textContent=S.board.R;
+  $('hTotal').textContent=S.board.R;
+  $('hDone').textContent=doneCount();
+  $('prev').disabled=S.level<=1;
+}
+let msgT=null;
+function flash(t,col){const m=$('msg');m.textContent=t;m.style.color=col||'#ffe08a';m.classList.add('show');
+  clearTimeout(msgT);msgT=setTimeout(()=>m.classList.remove('show'),1300);}
+
+function commit(){
+  if(!S.path.length)return;
+  if(solvedDisplay()){win();}
+  else{flash('未能一笔完成，已重置',' #ff9a8a');sfxMiss();clearPath();updateHUD();paint();}
+}
+function win(){
+  S.won=true;S.drawing=false;sfxWin();
+  $('wLevel').textContent=S.level;
+  $('wLen').textContent=S.path.length;
+  $('winOv').classList.add('show');
+}
+
+// ---- render ----
+function hexPath(cx,cy,rad){ctx.beginPath();
+  for(let i=0;i<6;i++){const a=Math.PI/180*(60*i),x=cx+rad*Math.cos(a),y=cy+rad*Math.sin(a);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.closePath();}
+
+function render(t){
+  if(!S)return;
+  ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);
+  const size=S.size,rad=size*0.9;
+  const done=new Uint8Array(S.board.R+1);
+  for(let r=1;r<=S.board.R;r++)done[r]=ringDoneDisplay(r)?1:0;
+  for(let i=0;i<S.board.cells.length;i++){
+    const c=S.board.cells[i];let sc=1;
+    if(S.pulse[i]){const dt=(t-S.pulse[i])/200;if(dt<1)sc=1+0.16*Math.sin(Math.PI*dt)*S.pulseDir[i];else S.pulse[i]=0;}
+    const rr=rad*sc;
+    hexPath(c.cx,c.cy,rr);
+    ctx.fillStyle=displayColor(i)?COL.b:COL.a;
+    if(done[c.ring]){ctx.shadowColor=COL.done;ctx.shadowBlur=size*0.55;}else ctx.shadowBlur=0;
+    ctx.fill();ctx.shadowBlur=0;
+    ctx.lineJoin='round';ctx.lineWidth=size*0.12;ctx.strokeStyle=COL.border;ctx.stroke();
+    if(done[c.ring]){hexPath(c.cx,c.cy,rr*0.8);ctx.lineWidth=size*0.06;ctx.strokeStyle=COL.done;ctx.stroke();}
+  }
+  drawTrail(t);
+}
+let _rafId=0;
+function loopFrame(t){render(t);_rafId=requestAnimationFrame(loopFrame);}
+function startLoop(){if(_rafId)cancelAnimationFrame(_rafId);_rafId=requestAnimationFrame(loopFrame);}
+function paint(){if(S)render(performance.now());}   // 同步画一帧，不依赖 rAF（页面 hidden 时 rAF 会被暂停）
+function drawTrail(t){
+  const p=S.path;
+  if(p.length){
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();for(let i=0;i<p.length;i++){const c=S.board.cells[p[i]];i?ctx.lineTo(c.cx,c.cy):ctx.moveTo(c.cx,c.cy);}
+    ctx.strokeStyle='rgba(255,255,255,.32)';ctx.lineWidth=S.size*0.46;ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=S.size*0.15;ctx.stroke();
+    const s=S.board.cells[p[0]];ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.cx,s.cy,S.size*0.15,0,7);ctx.fill();
+    const h=S.board.cells[p[p.length-1]];ctx.fillStyle='#cdeaff';ctx.beginPath();ctx.arc(h.cx,h.cy,S.size*0.19,0,7);ctx.fill();
+  }
+  if(S.hint){
+    const dt=(t-S.hint)/1400;
+    if(dt>=1.4)S.hint=0;
+    else{
+      const sol=S.solution,prog=Math.min(1,dt/1.0),count=Math.max(1,Math.floor(prog*sol.length));
+      const alpha=dt>1?(1.4-dt)/0.4:1;
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
+      for(let i=0;i<count;i++){const c=S.board.cells[sol[i]];i?ctx.lineTo(c.cx,c.cy):ctx.moveTo(c.cx,c.cy);}
+      ctx.strokeStyle='rgba(255,206,51,'+(0.85*alpha)+')';ctx.lineWidth=S.size*0.2;ctx.stroke();
+      const s=S.board.cells[sol[0]];ctx.fillStyle='rgba(255,206,51,'+alpha+')';ctx.beginPath();ctx.arc(s.cx,s.cy,S.size*0.17,0,7);ctx.fill();
+    }
+  }
+}
+
+// ---- input ----
+function pos(e){const r=cv.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+function cellAt(x,y){let best=-1,bd=1e9;
+  for(let i=0;i<S.board.cells.length;i++){const c=S.board.cells[i],dx=x-c.cx,dy=y-c.cy,d=dx*dx+dy*dy;if(d<bd){bd=d;best=i;}}
+  return Math.sqrt(bd)<=S.size*0.98?best:-1;}
+cv.addEventListener('pointerdown',e=>{
+  if(S.won)return;e.preventDefault();const[x,y]=pos(e);const id=cellAt(x,y);if(id<0)return;
+  cv.setPointerCapture(e.pointerId);_tryAutoMusic();S.drawing=true;clearPath();pushCell(id);
+  sfxStart();S.lastDone=doneCount();updateHUD();paint();
+});
+cv.addEventListener('pointermove',e=>{
+  if(!S.drawing)return;e.preventDefault();const[x,y]=pos(e);const id=cellAt(x,y);if(id<0)return;
+  const before=S.path.length;extendTo(id);
+  if(S.path.length!==before){
+    S.path.length>before?sfxStep(S.path.length):sfxBack();
+    const d=doneCount();if(d>S.lastDone)sfxRing();S.lastDone=d;
+    updateHUD();paint();
+  }
+});
+function endStroke(e){if(!S.drawing)return;e&&e.preventDefault();S.drawing=false;commit();}
+cv.addEventListener('pointerup',endStroke);
+cv.addEventListener('pointercancel',endStroke);
+
+// ---- buttons ----
+$('reset').onclick=()=>{clearPath();updateHUD();paint();};
+$('newp').onclick=()=>loadLevel(S.level);
+$('hint').onclick=()=>{if(!S.drawing&&!S.path.length&&!S.won){S.hint=performance.now();startLoop();paint();}};
+$('prev').onclick=()=>{if(S.level>1)loadLevel(S.level-1);};
+$('next').onclick=()=>loadLevel(S.level+1);
+$('wReplay').onclick=()=>{$('winOv').classList.remove('show');loadLevel(S.level);};
+$('wNext').onclick=()=>{$('winOv').classList.remove('show');loadLevel(S.level+1);};
+$('help').onclick=()=>$('helpOv').classList.add('show');
+$('helpClose').onclick=()=>{$('helpOv').classList.remove('show');_tryAutoMusic();};
+$('music').onclick=toggleMusic;
+$('welcome-start').onclick=()=>{
+  const mask=$('welcome-mask');
+  mask.classList.add('hide');
+  setTimeout(()=>mask.remove(),500);
+};
+
+window.addEventListener('resize',()=>{if(S)layout();initBg();});
+window.addEventListener('orientationchange',()=>setTimeout(()=>{if(S)layout();initBg();},250));
+window.addEventListener('load',()=>{if(S)layout();});
+// re-layout the moment the board element actually gets a size (fixes blank board on cold open)
+if(window.ResizeObserver){new ResizeObserver(()=>{if(S)layout();}).observe(document.getElementById('boardWrap'));}
+// auto-start the BGM on the first interaction anywhere (matches sibling games)
+document.addEventListener('pointerdown',_tryAutoMusic,{once:true});
+
+// ---- boot ----
+initBg();animBg();
+loadLevel(Math.max(1,+(localStorage.getItem('fengchao_level')||1)));
+if(!localStorage.getItem('fengchao_seen')){localStorage.setItem('fengchao_seen','1');}
+updateMusicBtn();
+// 页面可见时跑动画循环；hidden 时 rAF 被浏览器暂停，但交互与状态变化已用同步 paint() 重绘，棋盘照样可见可玩
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){startLoop();paint();}});
+paint();
+startLoop();
+</script>
+</body>
+</html>

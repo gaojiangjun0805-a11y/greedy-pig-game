@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eafff7"/>
+      <stop offset="0.55" stop-color="#d6f7ff"/>
+      <stop offset="1" stop-color="#fff3cf"/>
+    </linearGradient>
+    <radialGradient id="bubble" cx="34%" cy="24%" r="70%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.22" stop-color="#d9fff6"/>
+      <stop offset="0.62" stop-color="#8fe7d6"/>
+      <stop offset="1" stop-color="#4ea9b2"/>
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#1e6a72" flood-opacity="0.18"/>
+    </filter>
+    <filter id="arrowShadow" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#123235" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="760" fill="url(#bg)"/>
+  <text x="70" y="74" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="38" font-weight="800" fill="#123235">箭阵谜域 · 箭头风格参考</text>
+  <text x="70" y="113" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="21" font-weight="600" fill="#41757b">选一个方向，我再按这个调到游戏里：更宽、更大、不用红色。</text>
+
+  <g transform="translate(70 160)">
+    <rect width="500" height="235" rx="28" fill="#ffffff" opacity="0.74" filter="url(#softShadow)"/>
+    <circle cx="123" cy="118" r="76" fill="url(#bubble)" stroke="#ffffff" stroke-width="8"/>
+    <ellipse cx="96" cy="82" rx="27" ry="13" fill="#ffffff" opacity="0.72" transform="rotate(-25 96 82)"/>
+    <g transform="translate(123 118)" filter="url(#arrowShadow)">
+      <path d="M-63 0 L42 0" stroke="#ffffff" stroke-width="22" stroke-linecap="round"/>
+      <path d="M-63 0 L42 0" stroke="#ffe28a" stroke-width="14" stroke-linecap="round"/>
+      <path d="M73 0 L29 -30 L38 0 L29 30 Z" fill="#ffe28a" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-58 -18 Q-82 0 -58 18" fill="none" stroke="#69d8c8" stroke-width="10" stroke-linecap="round"/>
+    </g>
+    <text x="236" y="88" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#123235">A. 奶油宽箭</text>
+    <text x="236" y="125" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="19" fill="#4c6e73">最适合可爱泡泡，清楚、圆润、没有攻击感。</text>
+    <text x="236" y="158" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" fill="#6b8589">颜色：奶黄 / 薄荷 / 白描边</text>
+  </g>
+
+  <g transform="translate(630 160)">
+    <rect width="500" height="235" rx="28" fill="#ffffff" opacity="0.74" filter="url(#softShadow)"/>
+    <circle cx="123" cy="118" r="76" fill="url(#bubble)" stroke="#ffffff" stroke-width="8"/>
+    <ellipse cx="96" cy="82" rx="27" ry="13" fill="#ffffff" opacity="0.72" transform="rotate(-25 96 82)"/>
+    <g transform="translate(123 118)" filter="url(#arrowShadow)">
+      <path d="M-61 0 L38 0" stroke="#ffffff" stroke-width="24" stroke-linecap="round"/>
+      <path d="M-61 0 L38 0" stroke="#9a6b3d" stroke-width="14" stroke-linecap="round"/>
+      <path d="M72 0 L27 -28 L36 0 L27 28 Z" fill="#7ed9d0" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-50 -19 L-83 -33 L-68 -4 Z" fill="#ffd166" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M-50 19 L-83 33 L-68 4 Z" fill="#ffd166" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+    </g>
+    <text x="236" y="88" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#123235">B. 玩具木箭</text>
+    <text x="236" y="125" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="19" fill="#4c6e73">像儿童玩具，弓箭感更强，但不凶。</text>
+    <text x="236" y="158" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" fill="#6b8589">颜色：木棕 / 青绿箭头 / 黄羽毛</text>
+  </g>
+
+  <g transform="translate(70 445)">
+    <rect width="500" height="235" rx="28" fill="#ffffff" opacity="0.74" filter="url(#softShadow)"/>
+    <circle cx="123" cy="118" r="76" fill="url(#bubble)" stroke="#ffffff" stroke-width="8"/>
+    <ellipse cx="96" cy="82" rx="27" ry="13" fill="#ffffff" opacity="0.72" transform="rotate(-25 96 82)"/>
+    <g transform="translate(123 118)" filter="url(#arrowShadow)">
+      <path d="M-60 0 L38 0" stroke="#ffffff" stroke-width="26" stroke-linecap="round"/>
+      <path d="M-60 0 L38 0" stroke="#61cfe4" stroke-width="17" stroke-linecap="round"/>
+      <path d="M74 0 L26 -33 L37 0 L26 33 Z" fill="#61cfe4" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
+      <circle cx="-42" cy="0" r="12" fill="#ffffff" opacity="0.52"/>
+      <circle cx="-10" cy="0" r="8" fill="#ffffff" opacity="0.36"/>
+    </g>
+    <text x="236" y="88" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#123235">C. 果冻箭头</text>
+    <text x="236" y="125" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="19" fill="#4c6e73">最简洁，适合小格子，读方向最快。</text>
+    <text x="236" y="158" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" fill="#6b8589">颜色：水蓝 / 白描边 / 高光点</text>
+  </g>
+
+  <g transform="translate(630 445)">
+    <rect width="500" height="235" rx="28" fill="#ffffff" opacity="0.74" filter="url(#softShadow)"/>
+    <circle cx="123" cy="118" r="76" fill="url(#bubble)" stroke="#ffffff" stroke-width="8"/>
+    <ellipse cx="96" cy="82" rx="27" ry="13" fill="#ffffff" opacity="0.72" transform="rotate(-25 96 82)"/>
+    <g transform="translate(123 118)" filter="url(#arrowShadow)">
+      <path d="M-65 0 L38 0" stroke="#ffffff" stroke-width="25" stroke-linecap="round"/>
+      <path d="M-65 0 L38 0" stroke="#2d486e" stroke-width="15" stroke-linecap="round"/>
+      <path d="M74 0 L25 -31 L36 0 L25 31 Z" fill="#f7f1de" stroke="#2d486e" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-58 -20 Q-86 0 -58 20" fill="none" stroke="#f7f1de" stroke-width="8" stroke-linecap="round"/>
+      <path d="M-58 -20 Q-86 0 -58 20" fill="none" stroke="#2d486e" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <text x="236" y="88" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="28" font-weight="800" fill="#123235">D. 白芯深描边</text>
+    <text x="236" y="125" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="19" fill="#4c6e73">对比最强，盘面复杂时不容易糊。</text>
+    <text x="236" y="158" font-family="Arial, 'Microsoft YaHei', sans-serif" font-size="18" fill="#6b8589">颜色：奶白 / 深蓝描边 / 少量弓弧</text>
+  </g>
+</svg>

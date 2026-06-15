@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>数字华容道</title>
+<style>
+  :root{
+    --bg1:#1b2440;
+    --bg2:#0e1424;
+    --board:#cbb89a;
+    --board-edge:#a8946f;
+    --tile1:#f7e9c8;
+    --tile2:#efd8a6;
+    --tile-text:#5a4326;
+    --accent:#ffcd6b;
+    --accent2:#ff9d4d;
+    --good:#7bd88f;
+    --panel:rgba(255,255,255,.08);
+    --panel-line:rgba(255,255,255,.14);
+    --text:#f4eee2;
+    --muted:#a9b0c5;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 18% -10%, #2c3a66 0%, transparent 55%),
+      radial-gradient(1000px 800px at 110% 120%, #3a2a55 0%, transparent 50%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100%;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px 16px;
+    overflow-x:hidden;
+  }
+  .wrap{width:100%;max-width:460px;}
+
+  header{text-align:center;margin-bottom:18px;}
+  h1{
+    margin:0;
+    font-size:30px;letter-spacing:6px;font-weight:800;
+    background:linear-gradient(90deg,var(--accent),#ffe6a8,var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 2px 14px rgba(255,180,80,.18);
+  }
+  .subtitle{margin-top:6px;font-size:13px;color:var(--muted);letter-spacing:1px;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+  .stat{
+    background:var(--panel);border:1px solid var(--panel-line);
+    border-radius:14px;padding:10px 8px;text-align:center;backdrop-filter:blur(6px);
+  }
+  .stat .label{font-size:11px;color:var(--muted);letter-spacing:1px;}
+  .stat .value{font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;}
+
+  .board-wrap{position:relative;}
+  #board{
+    --pad:12px;
+    position:relative;width:100%;aspect-ratio:1/1;
+    background:linear-gradient(145deg,var(--board),var(--board-edge));
+    border-radius:18px;padding:var(--pad);
+    box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.35), inset 0 -3px 8px rgba(0,0,0,.22);
+    touch-action:none;
+  }
+  .slot{
+    position:absolute;border-radius:12px;
+    background:linear-gradient(145deg, rgba(0,0,0,.14), rgba(0,0,0,.05));
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.28);
+  }
+  .tile{
+    position:absolute;display:flex;align-items:center;justify-content:center;
+    border-radius:12px;font-weight:800;color:var(--tile-text);
+    background:linear-gradient(150deg,var(--tile1),var(--tile2));
+    box-shadow:0 4px 0 rgba(150,120,70,.55), 0 8px 14px rgba(0,0,0,.30),
+      inset 0 2px 2px rgba(255,255,255,.8), inset 0 -3px 4px rgba(160,120,60,.35);
+    cursor:default;user-select:none;
+    transition:left .16s cubic-bezier(.34,1.3,.5,1), top .16s cubic-bezier(.34,1.3,.5,1), transform .08s ease, box-shadow .14s ease, background .14s ease, color .14s ease;
+    will-change:left,top;
+  }
+  .tile.movable{cursor:pointer;}
+  .tile.movable:active{transform:scale(.95);}
+  .tile.correct{
+    background:linear-gradient(150deg,#dff3d6,#bfe7b2);color:#33692f;
+    box-shadow:0 4px 0 rgba(90,150,80,.55), 0 8px 14px rgba(0,0,0,.28),
+      inset 0 2px 2px rgba(255,255,255,.85), inset 0 -3px 4px rgba(90,150,70,.30);
+  }
+  .tile .num{pointer-events:none;}
+
+  .board-overlay{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background:rgba(10,14,26,.72);border-radius:18px;backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:30;text-align:center;padding:16px;
+  }
+  .board-overlay.show{opacity:1;pointer-events:auto;}
+  .board-overlay .big{font-size:34px;font-weight:900;color:var(--accent);letter-spacing:3px;}
+  .board-overlay .sub{margin-top:10px;color:var(--text);font-size:15px;line-height:1.7;}
+  .board-overlay .sub b{color:var(--good);}
+
+  .controls{display:flex;gap:12px;margin-top:18px;}
+  button{
+    flex:1;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:1px;
+    padding:13px 10px;border-radius:14px;border:none;cursor:pointer;color:#3a2a10;
+    background:linear-gradient(160deg,var(--accent),var(--accent2));
+    box-shadow:0 6px 16px rgba(255,150,60,.35), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .08s ease, box-shadow .12s ease, opacity .2s;
+  }
+  button.ghost{color:var(--text);background:var(--panel);border:1px solid var(--panel-line);box-shadow:none;}
+  button:active{transform:translateY(2px);}
+  button:disabled{opacity:.4;cursor:default;transform:none;}
+
+  .hint{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7;}
+  .hint kbd{
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:5px;
+    padding:1px 6px;font-size:11px;color:var(--text);font-family:inherit;
+  }
+
+  .confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:50;border-radius:2px;pointer-events:none;}
+
+  #welcome-mask{
+    position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 28%,#25335f,#0c1224 72%);
+    transition:opacity .45s ease;
+  }
+  #welcome-mask.hide{opacity:0;pointer-events:none;}
+  #welcome-card{text-align:center;padding:0 24px;animation:ggCoverIn .55s ease both;}
+  @keyframes ggCoverIn{from{opacity:0;transform:translateY(22px) scale(.96);}to{opacity:1;transform:none;}}
+  #welcome-logo{
+    font-size:clamp(46px,13vw,86px);font-weight:900;letter-spacing:2px;
+    background:linear-gradient(135deg,#ffe6a8,#ffcd6b,#ff9d4d);-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 4px 24px rgba(255,180,80,.36));margin-bottom:8px;
+  }
+  #welcome-title{font-size:clamp(22px,5.5vw,32px);font-weight:800;color:#f4eee2;letter-spacing:3px;margin-bottom:12px;}
+  #welcome-sub{font-size:clamp(13px,3.4vw,16px);color:#b7bfd4;line-height:1.7;max-width:430px;margin:0 auto 22px;}
+  .welcome-demo{display:grid;grid-template-columns:repeat(4,24px);gap:6px;justify-content:center;margin:0 auto 30px;}
+  .welcome-demo span{width:24px;height:24px;border-radius:7px;background:linear-gradient(150deg,var(--tile1),var(--tile2));box-shadow:0 4px 0 rgba(150,120,70,.45),0 0 16px rgba(255,205,107,.18);}
+  .welcome-demo span:nth-child(4){opacity:.2;}
+  #welcome-start{
+    flex:none;height:auto;border:none;font-size:clamp(18px,4.6vw,22px);font-weight:800;color:#3a2a10;cursor:pointer;
+    padding:16px 56px;border-radius:999px;background:linear-gradient(135deg,#ffe6a8,#ff9d4d);
+    box-shadow:0 8px 32px rgba(255,157,77,.44);animation:ggCoverPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ggCoverPulse{0%,100%{box-shadow:0 8px 32px rgba(255,157,77,.44);}50%{box-shadow:0 8px 44px rgba(255,205,107,.72);}}
+
+  @media (max-width:380px){
+    h1{font-size:25px;letter-spacing:4px;}
+    .stat .value{font-size:19px;}
+    button{font-size:15px;}
+  }
+</style>
+</head>
+<body>
+  <div id="welcome-mask">
+    <div id="welcome-card">
+      <div id="welcome-logo">G-Game</div>
+      <div id="welcome-title">数字华容道</div>
+      <div id="welcome-sub">滑动数字块，按 1 到 15 的顺序复原。</div>
+      <div class="welcome-demo"><span></span><span></span><span></span><span></span></div>
+      <button id="welcome-start" type="button">开始游戏</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <header>
+      <h1>数字华容道</h1>
+      <div class="subtitle">滑动数字块，按 1–15 顺序复原</div>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="label">步数</div><div class="value" id="moves">0</div></div>
+      <div class="stat"><div class="label">用时</div><div class="value" id="time">00:00</div></div>
+      <div class="stat"><div class="label">最佳步数</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="board-wrap">
+      <div id="board" aria-label="数字华容道盘面"></div>
+      <div class="board-overlay" id="overlay">
+        <div class="big">🎉 完成！</div>
+        <div class="sub" id="overlay-sub"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="shuffle">打乱重开</button>
+      <button id="undo" class="ghost" disabled>撤销一步</button>
+    </div>
+
+    <div class="hint">
+      点击空格同一行/列的方块，整排一起滑动 · 也可用 <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 键<br>
+      或在方块上朝空格方向滑动手指
+    </div>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  const N = 4, SIZE = N*N, EMPTY = 0;
+  const board = document.getElementById('board');
+  const movesEl = document.getElementById('moves');
+  const timeEl  = document.getElementById('time');
+  const bestEl  = document.getElementById('best');
+  const overlay = document.getElementById('overlay');
+  const overlaySub = document.getElementById('overlay-sub');
+  const shuffleBtn = document.getElementById('shuffle');
+  const undoBtn = document.getElementById('undo');
+  const BEST_KEY = 'huarongdao15_best';
+  const GAME_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8dbcd6ec3.mp3';
+  const EMBEDDED = (()=>{ try{ return window.self !== window.top; }catch(e){ return true; } })();
+  let audioCtx = null, bgm = null;
+
+  // state[cellIndex] = number (0 = empty), row-major
+  let state = [];
+  let tiles = {};          // number -> element
+  let moves = 0;
+  let startTime = null, timerId = null;
+  let won = false;
+  let history = [];        // emptyBefore index for each move, for Undo
+
+  function ensureAudioContext(){
+    const AudioClass = window.AudioContext || window.webkitAudioContext;
+    if(!AudioClass) return null;
+    if(!audioCtx) audioCtx = new AudioClass();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function startBgm(){
+    if(EMBEDDED) return;
+    if(!bgm){
+      bgm = new Audio(GAME_MUSIC);
+      bgm.loop = true;
+      bgm.preload = 'auto';
+      bgm.volume = .42;
+    }
+    bgm.play().catch(()=>{});
+  }
+  function playSlideSound(count=1, tone=.95){
+    const ctx = ensureAudioContext();
+    if(!ctx) return;
+    const hits = Math.min(4, Math.max(1, count));
+    for(let i=0;i<hits;i++){
+      const t = ctx.currentTime + i*.045;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime((260 - i*18) * tone, t);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(950 - i*90, t);
+      gain.gain.setValueAtTime(.0001, t);
+      gain.gain.exponentialRampToValueAtTime(.07, t + .012);
+      gain.gain.exponentialRampToValueAtTime(.0001, t + .12);
+      osc.connect(filter).connect(gain).connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + .13);
+    }
+    const len = Math.floor(ctx.sampleRate * .055);
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<len;i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.2);
+    const noise = ctx.createBufferSource();
+    const noiseFilter = ctx.createBiquadFilter();
+    const noiseGain = ctx.createGain();
+    noise.buffer = buffer;
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(620, ctx.currentTime);
+    noiseFilter.Q.setValueAtTime(.8, ctx.currentTime);
+    noiseGain.gain.setValueAtTime(.035, ctx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + .075);
+    noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+    noise.start();
+    noise.stop(ctx.currentTime + .08);
+  }
+
+  /* ---------- geometry ---------- */
+  function metrics(){
+    const rect = board.getBoundingClientRect();
+    const pad = parseFloat(getComputedStyle(board).getPropertyValue('--pad')) || 12;
+    const gap = Math.max(6, rect.width*0.018);
+    const cell = (rect.width - pad*2 - gap*(N-1)) / N;
+    return {pad, gap, cell};
+  }
+  function cellPos(idx){
+    const {pad,gap,cell} = metrics();
+    const r = Math.floor(idx/N), c = idx%N;
+    return {x: pad + c*(cell+gap), y: pad + r*(cell+gap), cell};
+  }
+  const rc = i => [Math.floor(i/N), i%N];
+  const emptyIndex = () => state.indexOf(EMPTY);
+  // a tile can move if it shares the blank's row or column (line-slide)
+  function inLineWithEmpty(idx){
+    const e=emptyIndex(); if(idx===e) return false;
+    const [r1,c1]=rc(idx), [r2,c2]=rc(e);
+    return r1===r2 || c1===c2;
+  }
+
+  /* ---------- build / layout ---------- */
+  function buildBoard(){
+    board.innerHTML=''; tiles={};
+    for(let i=0;i<SIZE;i++){ const s=document.createElement('div'); s.className='slot'; board.appendChild(s); }
+    for(let n=1;n<SIZE;n++){
+      const t=document.createElement('div'); t.className='tile'; t.dataset.num=n;
+      const span=document.createElement('span'); span.className='num'; span.textContent=n; t.appendChild(span);
+      t.addEventListener('click',()=>onTileClick(n));
+      attachSwipe(t,n);
+      board.appendChild(t); tiles[n]=t;
+    }
+    layout();
+  }
+  function layout(){
+    const {cell} = metrics();
+    board.querySelectorAll('.slot').forEach((s,i)=>{
+      const p=cellPos(i);
+      s.style.width=cell+'px'; s.style.height=cell+'px'; s.style.left=p.x+'px'; s.style.top=p.y+'px';
+    });
+    const font=Math.round(cell*0.42);
+    for(let i=0;i<SIZE;i++){
+      const n=state[i]; if(n===EMPTY || !tiles[n]) continue;
+      const t=tiles[n], p=cellPos(i);
+      t.style.width=cell+'px'; t.style.height=cell+'px';
+      t.style.left=p.x+'px'; t.style.top=p.y+'px'; t.style.fontSize=font+'px';
+    }
+    refreshStatus();
+  }
+
+  function refreshStatus(){
+    for(let i=0;i<SIZE;i++){
+      const n=state[i]; if(n===EMPTY || !tiles[n]) continue;
+      const t=tiles[n];
+      t.classList.toggle('correct', n===i+1);
+      t.classList.toggle('movable', !won && inLineWithEmpty(i));
+    }
+  }
+
+  /* ---------- moves ---------- */
+  // Swap the tile at `cell` (which must be adjacent to the blank) into the blank.
+  // Returns the index that just became empty (i.e. where the blank was before).
+  function slideOne(cell){
+    const e = emptyIndex();
+    [state[cell], state[e]] = [state[e], state[cell]];
+    const n = state[e];
+    const p = cellPos(e);
+    tiles[n].style.left = p.x+'px';
+    tiles[n].style.top  = p.y+'px';
+    return e;
+  }
+
+  // Slide the whole run of tiles between cell `idx` and the blank, when they
+  // share the blank's row or column. dist==1 is the plain single-tile move.
+  function lineMove(idx, record){
+    if(won) return false;
+    const e0 = emptyIndex();
+    const [er,ec] = rc(e0), [ir,ic] = rc(idx);
+    if(idx===e0) return false;
+    if(er!==ir && ec!==ic) return false;        // tile isn't in line with the blank
+    const step = (er===ir) ? (ic>ec ? 1 : -1) : (ir>er ? N : -N);
+    const dist = (er===ir) ? Math.abs(ic-ec) : Math.abs(ir-er);
+    const group = [];
+    for(let k=0;k<dist;k++){
+      group.push(slideOne(emptyIndex() + step)); // pull the tile next to the blank in
+    }
+    if(record){
+      moves += dist; movesEl.textContent = moves;
+      history.push(group);                        // the gesture undoes as one
+      undoBtn.disabled = false;
+      if(!startTime) startTimer();
+      playSlideSound(dist);
+    }
+    refreshStatus();
+    if(record) checkWin();
+    return true;
+  }
+
+  function onTileClick(n){
+    if(won) return;
+    lineMove(state.indexOf(n), true);
+  }
+
+  // Arrow = direction the tile(s) move into the blank (single step).
+  function keyMove(dir){
+    if(won) return;
+    const [er,ec]=rc(emptyIndex());
+    let tr=er, tc=ec;
+    if(dir==='up')    tr=er+1;   // tile below moves up
+    if(dir==='down')  tr=er-1;   // tile above moves down
+    if(dir==='left')  tc=ec+1;   // tile on right moves left
+    if(dir==='right') tc=ec-1;   // tile on left moves right
+    if(tr<0||tr>=N||tc<0||tc>=N) return;
+    lineMove(tr*N+tc, true);
+  }
+
+  function undo(){
+    if(won || history.length===0) return;
+    const group = history.pop();           // emptyBefore cells of the gesture, in order
+    for(let k=group.length-1;k>=0;k--) slideOne(group[k]);   // reverse each sub-move
+    moves = Math.max(0, moves-group.length); movesEl.textContent = moves;
+    undoBtn.disabled = history.length===0;
+    if(history.length===0){ stopTimer(); startTime=null; timeEl.textContent='00:00'; }
+    playSlideSound(group.length, .8);
+    refreshStatus();
+  }
+
+  /* ---------- swipe on a tile ---------- */
+  function attachSwipe(el,n){
+    let sx=0, sy=0, active=false, swiped=false;
+    el.addEventListener('touchstart',e=>{
+      if(won) return; active=true; swiped=false;
+      sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    },{passive:true});
+    el.addEventListener('touchend',e=>{
+      if(!active) return; active=false;
+      const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+      if(Math.abs(dx)<14 && Math.abs(dy)<14) return;   // tap -> let click handler run
+      const idx=state.indexOf(n);
+      const [tr,tc]=rc(idx), [er,ec]=rc(emptyIndex());
+      let did=false;
+      if(Math.abs(dx)>Math.abs(dy)){
+        if(tr===er){                                  // same row as the blank
+          if(dx>0 && ec>tc) did=lineMove(idx,true);   // swipe right toward blank
+          if(dx<0 && ec<tc) did=lineMove(idx,true);   // swipe left toward blank
+        }
+      }else{
+        if(tc===ec){                                  // same column as the blank
+          if(dy>0 && er>tr) did=lineMove(idx,true);   // swipe down toward blank
+          if(dy<0 && er<tr) did=lineMove(idx,true);   // swipe up toward blank
+        }
+      }
+      if(did){ swiped=true; setTimeout(()=>swiped=false,350); }
+    },{passive:true});
+    // swallow the synthetic click that follows a successful swipe
+    el.addEventListener('click',e=>{ if(swiped){ e.stopImmediatePropagation(); swiped=false; } }, true);
+  }
+
+  /* ---------- shuffle: random walk from solved (always solvable) ---------- */
+  function isSolved(){
+    for(let i=0;i<SIZE-1;i++) if(state[i]!==i+1) return false;
+    return state[SIZE-1]===EMPTY;
+  }
+  function shuffle(){
+    state = [...Array(SIZE).keys()].slice(1).concat(0); // solved: 1..15,0
+    let e = SIZE-1, prev = -1;
+    const steps = 220;
+    for(let k=0;k<steps;k++){
+      const [er,ec]=rc(e);
+      const nb=[];
+      if(er>0)   nb.push(e-N);
+      if(er<N-1) nb.push(e+N);
+      if(ec>0)   nb.push(e-1);
+      if(ec<N-1) nb.push(e+1);
+      const choices = nb.filter(x=>x!==prev);
+      const pick = (choices.length?choices:nb)[Math.floor(Math.random()*(choices.length?choices.length:nb.length))];
+      [state[e],state[pick]]=[state[pick],state[e]];
+      prev=e; e=pick;
+    }
+    if(isSolved()){ shuffle(); return; }   // extremely unlikely, just redo
+    resetGame();
+    layout();
+  }
+
+  /* ---------- timer ---------- */
+  function startTimer(){ startTime=Date.now(); timerId=setInterval(updateTimer,250); }
+  function stopTimer(){ if(timerId){clearInterval(timerId); timerId=null;} }
+  function updateTimer(){
+    const s=Math.floor((Date.now()-startTime)/1000);
+    timeEl.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }
+
+  /* ---------- win ---------- */
+  function checkWin(){
+    if(!isSolved()) return;
+    won=true; stopTimer();
+    undoBtn.disabled=true;
+    refreshStatus();
+    const best=getBest();
+    let msg=`步数 <b>${moves}</b> · 用时 <b>${timeEl.textContent}</b>`;
+    if(best===null || moves<best){ setBest(moves); msg+='<br>🏆 新纪录！'; }
+    overlaySub.innerHTML=msg;
+    overlay.classList.add('show');
+    celebrate();
+  }
+
+  /* ---------- best score ---------- */
+  function getBest(){ try{ const v=localStorage.getItem(BEST_KEY); return v===null?null:parseInt(v,10);}catch(e){return null;} }
+  function setBest(v){ try{ localStorage.setItem(BEST_KEY,v);}catch(e){} bestEl.textContent=v; }
+  function loadBest(){ const b=getBest(); bestEl.textContent = b===null?'—':b; }
+
+  function resetGame(){
+    moves=0; movesEl.textContent='0';
+    history=[]; undoBtn.disabled=true;
+    stopTimer(); startTime=null; timeEl.textContent='00:00';
+    won=false; overlay.classList.remove('show');
+  }
+
+  /* ---------- confetti ---------- */
+  function celebrate(){
+    const colors=['#ffcd6b','#ff9d4d','#7bd88f','#6bd0ff','#ff7eb6','#c79bff'];
+    for(let i=0;i<70;i++){
+      const c=document.createElement('div'); c.className='confetti';
+      c.style.left=Math.random()*100+'vw'; c.style.background=colors[i%colors.length];
+      c.style.transform=`rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(c);
+      const dur=1600+Math.random()*1400;
+      c.animate([
+        {transform:'translateY(0) rotate(0deg)',opacity:1},
+        {transform:`translateY(105vh) rotate(${360+Math.random()*540}deg)`,opacity:1}
+      ],{duration:dur,easing:'cubic-bezier(.3,.6,.5,1)'});
+      setTimeout(()=>c.remove(),dur);
+    }
+  }
+
+  /* ---------- events ---------- */
+  shuffleBtn.addEventListener('click', shuffle);
+  undoBtn.addEventListener('click', undo);
+  document.getElementById('welcome-start').addEventListener('click',()=>{
+    ensureAudioContext();
+    startBgm();
+    const mask=document.getElementById('welcome-mask');
+    mask.classList.add('hide');
+    setTimeout(()=>mask.remove(),500);
+  });
+  window.addEventListener('keydown',e=>{
+    const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+    if(map[e.key]){ e.preventDefault(); keyMove(map[e.key]); }
+    else if((e.key==='z'||e.key==='Z') && (e.metaKey||e.ctrlKey)){ e.preventDefault(); undo(); }
+  });
+  let rT; window.addEventListener('resize',()=>{clearTimeout(rT); rT=setTimeout(layout,80);});
+
+  /* ---------- init ---------- */
+  buildBoard();
+  loadBest();
+  shuffle();
+})();
+</script>
+</body>
+</html>

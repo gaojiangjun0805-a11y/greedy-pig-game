@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>旋转数阵</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06111f;
+      --panel: rgba(8, 18, 33, .78);
+      --panel-strong: rgba(11, 25, 43, .94);
+      --line: rgba(98, 176, 218, .18);
+      --line-strong: rgba(123, 221, 255, .34);
+      --text: #eff8ff;
+      --muted: #9fb2c5;
+      --red: #ee283f;
+      --green: #20f19a;
+      --grey: #89919a;
+      --ink: #09101a;
+      --amber: #f7c869;
+      --blue: #4bb3ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    body {
+      min-height: 100%;
+      overflow: hidden;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(65, 150, 255, .24), transparent 31%),
+        radial-gradient(circle at 84% 82%, rgba(28, 232, 168, .16), transparent 28%),
+        linear-gradient(145deg, #040810 0%, #071a2c 52%, #0a111c 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image:
+        linear-gradient(rgba(113, 215, 255, .08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(113, 215, 255, .08) 1px, transparent 1px),
+        linear-gradient(90deg, transparent 0 48%, rgba(58, 177, 255, .15) 48% 49%, transparent 49% 100%);
+      background-size: 74px 74px, 74px 74px, 260px 100%;
+      mask-image: radial-gradient(circle at center, black 0 62%, transparent 88%);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr) minmax(260px, 330px);
+      gap: 20px;
+      height: 100vh;
+      height: 100dvh;
+      padding: 22px;
+      overflow: hidden;
+    }
+
+    .side,
+    .status {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+      padding-top: 8px;
+    }
+
+    .brand {
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 20px 55px rgba(0, 0, 0, .28);
+      backdrop-filter: blur(16px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(27px, 3.2vw, 42px);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .subline {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric,
+    .toolbox,
+    .legend,
+    .history,
+    .victory {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+      backdrop-filter: blur(16px);
+    }
+
+    .metric {
+      min-height: 82px;
+      padding: 13px 14px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 28px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toolbox,
+    .legend,
+    .history {
+      padding: 14px;
+    }
+
+    .toolbox {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    button {
+      appearance: none;
+      min-height: 42px;
+      border: 1px solid rgba(130, 207, 255, .28);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(20, 45, 72, .78);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(137, 234, 255, .65);
+      background: rgba(27, 70, 108, .9);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+      transform: none;
+    }
+
+    .primary {
+      border-color: rgba(45, 245, 173, .62);
+      background: linear-gradient(180deg, rgba(38, 184, 139, .96), rgba(12, 98, 88, .96));
+    }
+
+    .board-shell {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 0;
+      padding: 10px;
+    }
+
+    .board {
+      position: relative;
+      width: min(77vh, 76vw);
+      max-width: 900px;
+      min-width: 520px;
+      aspect-ratio: 1 / 1;
+      user-select: none;
+      touch-action: manipulation;
+      border-radius: 8px;
+      background:
+        linear-gradient(rgba(255, 255, 255, .02), rgba(255, 255, 255, 0)),
+        repeating-linear-gradient(0deg, transparent 0 82px, rgba(78, 194, 255, .08) 83px 84px),
+        repeating-linear-gradient(90deg, transparent 0 82px, rgba(78, 194, 255, .08) 83px 84px);
+      box-shadow:
+        inset 0 0 0 1px rgba(121, 215, 255, .14),
+        inset 0 0 70px rgba(24, 138, 255, .08),
+        0 30px 80px rgba(0, 0, 0, .26);
+    }
+
+    .board::before,
+    .board::after {
+      content: "";
+      position: absolute;
+      inset: 8% 13%;
+      pointer-events: none;
+      border: 1px solid rgba(66, 182, 246, .07);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    }
+
+    .board::after {
+      inset: 18% 24%;
+      opacity: .7;
+    }
+
+    .pad {
+      position: absolute;
+      width: 13.8%;
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -50%);
+      border: 0;
+      padding: 0;
+      background: transparent;
+      filter: drop-shadow(0 9px 16px rgba(0, 0, 0, .4));
+      z-index: 3;
+    }
+
+    .pad:hover {
+      transform: translate(-50%, calc(-50% - 2px));
+      background: transparent;
+    }
+
+    .pad:active {
+      transform: translate(-50%, -50%) scale(.98);
+    }
+
+    .diamond {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, .16);
+      background: rgba(115, 125, 135, .86);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    }
+
+    .diamond::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 2px;
+      transform: translateY(-1px);
+      background: rgba(5, 10, 16, .5);
+      box-shadow: 0 0 10px rgba(255, 255, 255, .18);
+      z-index: 2;
+    }
+
+    .live-half,
+    .goal-half {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 50%;
+    }
+
+    .live-half {
+      top: 0;
+      background: var(--red);
+      transition: background .2s ease, box-shadow .2s ease;
+    }
+
+    .goal-half {
+      bottom: 0;
+      background: var(--grey);
+    }
+
+    .pad.solved .live-half {
+      background: var(--green);
+      box-shadow: 0 0 28px rgba(32, 241, 154, .48);
+    }
+
+    .pad.flash .diamond {
+      animation: diamondFlash .28s ease;
+    }
+
+    @keyframes diamondFlash {
+      0% { filter: brightness(1.8); }
+      100% { filter: brightness(1); }
+    }
+
+    .pad-text {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      place-items: center;
+      color: #061018;
+      font-weight: 900;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 2;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .pad-text span {
+      display: grid;
+      place-items: center;
+      min-width: 100%;
+      min-height: 100%;
+      font-size: clamp(17px, 2.25vw, 28px);
+      text-shadow: 0 1px 0 rgba(255, 255, 255, .2);
+    }
+
+    .pad-text .target {
+      padding-top: 5%;
+      color: rgba(5, 10, 16, .78);
+    }
+
+    .ball {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: 8.25%;
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      z-index: 5;
+      color: #141922;
+      font-size: clamp(15px, 1.95vw, 25px);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      background:
+        radial-gradient(circle at 34% 26%, #fff 0 24%, #f8fafc 25% 50%, #dce2e9 100%);
+      box-shadow:
+        inset -7px -9px 14px rgba(92, 99, 112, .2),
+        inset 5px 7px 10px rgba(255, 255, 255, .92),
+        0 11px 22px rgba(0, 0, 0, .44);
+      transition: left .28s cubic-bezier(.2, .78, .2, 1), top .28s cubic-bezier(.2, .78, .2, 1), transform .2s ease;
+    }
+
+    .ball.moving {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow:
+        inset -7px -9px 14px rgba(92, 99, 112, .2),
+        inset 5px 7px 10px rgba(255, 255, 255, .92),
+        0 0 0 5px rgba(75, 179, 255, .2),
+        0 13px 25px rgba(0, 0, 0, .5);
+    }
+
+    .ring {
+      position: absolute;
+      width: 20.7%;
+      aspect-ratio: 1 / 1;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(92, 211, 255, .1);
+      clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .legend h2,
+    .history h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border-radius: 4px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+    }
+
+    .swatch.red { background: var(--red); }
+    .swatch.green { background: var(--green); }
+    .swatch.grey { background: var(--grey); }
+    .swatch.ball-dot {
+      border-radius: 999px;
+      background: #f7f9fc;
+    }
+
+    .history-list {
+      display: flex;
+      align-content: flex-start;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 110px;
+      max-height: 210px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .move-chip {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      color: #07121c;
+      font-size: 13px;
+      font-weight: 900;
+      background: var(--amber);
+      box-shadow: 0 6px 13px rgba(0, 0, 0, .24);
+    }
+
+    .empty-history {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .progress {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+      transition: width .25s ease;
+    }
+
+    .hint-line {
+      min-height: 42px;
+      padding: 12px 13px;
+      border: 1px solid rgba(247, 200, 105, .22);
+      border-radius: 8px;
+      color: #ffe5a7;
+      background: rgba(70, 48, 18, .32);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .victory {
+      display: none;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(390px, calc(100% - 34px));
+      transform: translate(-50%, -50%);
+      padding: 22px;
+      z-index: 20;
+      text-align: center;
+      background: rgba(7, 20, 31, .96);
+      border-color: rgba(32, 241, 154, .5);
+    }
+
+    .victory.show {
+      display: block;
+      animation: pop .25s ease;
+    }
+
+    @keyframes pop {
+      from { transform: translate(-50%, -50%) scale(.95); opacity: 0; }
+      to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    .victory h2 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    .victory p {
+      margin: 12px 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .pad-index {
+      position: absolute;
+      right: -8px;
+      top: -8px;
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(10, 22, 36, .92);
+      border: 1px solid rgba(132, 219, 255, .26);
+      font-size: 12px;
+      font-weight: 850;
+      z-index: 3;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: var(--text);
+      background: rgba(4, 12, 20, .88);
+      border: 1px solid rgba(137, 234, 255, .28);
+      box-shadow: 0 16px 38px rgba(0, 0, 0, .38);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 30;
+      font-size: 13px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    @media (max-width: 1050px) {
+      .app {
+        grid-template-areas:
+          "brand"
+          "metrics"
+          "board"
+          "progress"
+          "tools"
+          "hint";
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+        gap: 8px;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        padding: 10px;
+      }
+
+      .side {
+        display: contents;
+      }
+
+      .status {
+        display: none;
+      }
+
+      .brand {
+        grid-area: brand;
+        min-height: 0;
+        padding: 10px 12px;
+      }
+
+      h1 {
+        font-size: clamp(22px, 5.4vw, 34px);
+      }
+
+      .subline {
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.35;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .metrics {
+        grid-area: metrics;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .metric {
+        min-height: 48px;
+        padding: 7px 8px;
+      }
+
+      .metric span {
+        font-size: 10px;
+      }
+
+      .metric strong {
+        margin-top: 4px;
+        font-size: clamp(18px, 3.4vw, 24px);
+      }
+
+      .board-shell {
+        grid-area: board;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .board {
+        width: min(92vw, calc(100dvh - 250px), 760px);
+        min-width: 0;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      .progress {
+        grid-area: progress;
+        height: 7px;
+      }
+
+      .toolbox {
+        grid-area: tools;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+        padding: 8px;
+      }
+
+      button {
+        min-height: 36px;
+        font-size: 14px;
+      }
+
+      .hint-line {
+        grid-area: hint;
+        min-height: 0;
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        padding: 10px;
+        gap: 7px;
+      }
+
+      .brand {
+        padding: 9px 11px;
+      }
+
+      .subline {
+        display: none;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 43px;
+        padding: 6px 7px;
+      }
+
+      .metric strong {
+        font-size: clamp(17px, 5.1vw, 22px);
+      }
+
+      .board {
+        width: min(96vw, calc(100dvh - 264px));
+      }
+
+      .pad {
+        width: 16%;
+      }
+
+      .ball {
+        width: 9.8%;
+        font-size: clamp(12px, 4.1vw, 18px);
+      }
+
+      .pad-text span {
+        font-size: clamp(13px, 4.7vw, 20px);
+      }
+
+      .pad-index {
+        width: 19px;
+        height: 19px;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-height: 720px) and (max-width: 1050px) {
+      .brand {
+        display: none;
+      }
+
+      .hint-line {
+        display: none;
+      }
+
+      .app {
+        grid-template-areas:
+          "metrics"
+          "board"
+          "progress"
+          "tools";
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+      }
+
+      .board {
+        width: min(96vw, calc(100dvh - 166px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="side" aria-label="游戏信息">
+      <div class="brand">
+        <h1>旋转数阵</h1>
+        <p class="subline">点击菱形区域，四个相邻白球顺时针转动。上半数字等于下方目标时，区域变绿。</p>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <span>步数</span>
+          <strong id="moveCount">0</strong>
+        </div>
+        <div class="metric">
+          <span>用时</span>
+          <strong id="timer">00:00</strong>
+        </div>
+        <div class="metric">
+          <span>完成</span>
+          <strong id="solvedCount">0/9</strong>
+        </div>
+        <div class="metric">
+          <span>关卡</span>
+          <strong id="levelLabel">1</strong>
+        </div>
+        <div class="metric">
+          <span>和值上限</span>
+          <strong id="limitLabel">≤5</strong>
+        </div>
+        <div class="metric">
+          <span>参考步数</span>
+          <strong id="referenceMoves">0</strong>
+        </div>
+      </div>
+      <div class="progress" aria-label="完成进度">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="toolbox" aria-label="控制按钮">
+        <button class="primary" id="newGameBtn" type="button">下一关</button>
+        <button id="resetBtn" type="button">重置本关</button>
+        <button id="undoBtn" type="button">撤销</button>
+        <button id="hintBtn" type="button">提示</button>
+        <button id="autoBtn" type="button">演示</button>
+        <button id="soundBtn" type="button">音效开</button>
+      </div>
+      <div class="hint-line" id="hintLine">提示会根据当前棋盘寻找下一步，卡住时可以点一下。</div>
+    </section>
+
+    <section class="board-shell" aria-label="旋转棋盘">
+      <div class="board" id="board"></div>
+      <div class="victory" id="victory">
+        <h2>挑战成功</h2>
+        <p id="victoryText">所有区域都已变绿。</p>
+        <button class="primary" id="playAgainBtn" type="button">下一关</button>
+      </div>
+    </section>
+
+    <section class="status" aria-label="状态说明">
+      <div class="legend">
+        <h2>图例</h2>
+        <div class="legend-row"><span class="swatch red"></span><span>当前和值未达目标</span></div>
+        <div class="legend-row"><span class="swatch green"></span><span>当前和值等于目标</span></div>
+        <div class="legend-row"><span class="swatch grey"></span><span>灰色数字是目标值</span></div>
+        <div class="legend-row"><span class="swatch ball-dot"></span><span>白球数字会随旋转移动</span></div>
+      </div>
+      <div class="history">
+        <h2>操作记录</h2>
+        <div class="history-list" id="historyList">
+          <span class="empty-history">还没有旋转。</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const board = document.getElementById("board");
+    const moveCountEl = document.getElementById("moveCount");
+    const timerEl = document.getElementById("timer");
+    const solvedCountEl = document.getElementById("solvedCount");
+    const levelLabelEl = document.getElementById("levelLabel");
+    const limitLabelEl = document.getElementById("limitLabel");
+    const referenceMovesEl = document.getElementById("referenceMoves");
+    const progressFill = document.getElementById("progressFill");
+    const historyList = document.getElementById("historyList");
+    const victory = document.getElementById("victory");
+    const victoryText = document.getElementById("victoryText");
+    const hintLine = document.getElementById("hintLine");
+    const toast = document.getElementById("toast");
+
+    const LEVEL_STEP = 5;
+    const gridPoints = [
+      [3, 0], [2, 1], [4, 1],
+      [1, 2], [3, 2], [5, 2],
+      [0, 3], [2, 3], [4, 3], [6, 3],
+      [1, 4], [3, 4], [5, 4],
+      [2, 5], [4, 5],
+      [3, 6]
+    ];
+
+    const padPoints = [
+      [3, 1], [2, 2], [4, 2],
+      [1, 3], [3, 3], [5, 3],
+      [2, 4], [4, 4],
+      [3, 5]
+    ];
+
+    const cycles = [
+      [0, 2, 4, 1],
+      [1, 4, 7, 3],
+      [2, 5, 8, 4],
+      [3, 7, 10, 6],
+      [4, 8, 11, 7],
+      [5, 9, 12, 8],
+      [7, 11, 13, 10],
+      [8, 12, 14, 11],
+      [11, 14, 15, 13]
+    ];
+
+    let tokens = [];
+    let positionTokens = [];
+    let targets = [];
+    let solution = [];
+    let currentLevel = 1;
+    let currentPuzzle = null;
+    let history = [];
+    let startedAt = null;
+    let timerId = null;
+    let busy = false;
+    let soundOn = true;
+    let autoPlaying = false;
+    let toastId = null;
+
+    function levelLimit(level) {
+      return level * LEVEL_STEP;
+    }
+
+    function seededRandom(seed) {
+      let value = seed >>> 0;
+      return () => {
+        value += 0x6d2b79f5;
+        let result = value;
+        result = Math.imul(result ^ (result >>> 15), result | 1);
+        result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+        return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function randomInt(rng, max) {
+      return Math.floor(rng() * max);
+    }
+
+    function topFourSum(values) {
+      return values.slice().sort((a, b) => b - a).slice(0, 4).reduce((total, value) => total + value, 0);
+    }
+
+    function shuffle(values, rng) {
+      const result = values.slice();
+      for (let index = result.length - 1; index > 0; index -= 1) {
+        const swapIndex = randomInt(rng, index + 1);
+        [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+      }
+      return result;
+    }
+
+    function makeLevelValues(limit, rng) {
+      let values = Array.from({ length: 16 }, () => 0);
+      const nonZeroCount = Math.min(16, 7 + Math.ceil(limit / LEVEL_STEP) * 2);
+      const positions = shuffle(Array.from({ length: 16 }, (_, index) => index), rng);
+      const activePositions = positions.slice(0, nonZeroCount);
+      const maxBallValue = Math.max(2, Math.ceil(limit * .5));
+      const attempts = 150 + limit * 28;
+
+      activePositions.forEach((position) => {
+        values[position] = 1;
+      });
+
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        const index = activePositions[randomInt(rng, activePositions.length)];
+        const candidate = values.slice();
+        candidate[index] += 1;
+        if (candidate[index] <= maxBallValue && topFourSum(candidate) <= limit) {
+          values = candidate;
+        }
+      }
+
+      return shuffle(values, rng);
+    }
+
+    function makeSolution(level, rng) {
+      const length = Math.min(6 + level * 2, 30);
+      const moves = [];
+
+      while (moves.length < length) {
+        const move = randomInt(rng, cycles.length);
+        if (moves[moves.length - 1] === move) continue;
+        moves.push(move);
+      }
+
+      return moves;
+    }
+
+    function applyMoveToPositions(state, move) {
+      const next = state.slice();
+      const [north, east, south, west] = cycles[move];
+      next[east] = state[north];
+      next[south] = state[east];
+      next[west] = state[south];
+      next[north] = state[west];
+      return next;
+    }
+
+    function applyInverseMoveToPositions(state, move) {
+      const next = state.slice();
+      const [north, east, south, west] = cycles[move];
+      next[north] = state[east];
+      next[east] = state[south];
+      next[south] = state[west];
+      next[west] = state[north];
+      return next;
+    }
+
+    function sumsForState(values, state) {
+      return cycles.map((cycle) => cycle.reduce((total, position) => total + values[state[position]], 0));
+    }
+
+    function isSolvedLevelState(values, levelTargets, state) {
+      return sumsForState(values, state).every((sum, index) => sum === levelTargets[index]);
+    }
+
+    function createLevel(level) {
+      const limit = levelLimit(level);
+      const rng = seededRandom(0x51f15e + level * 0x9e3779b1);
+
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        const values = makeLevelValues(limit, rng);
+        const levelTargets = sumsForState(values, Array.from({ length: 16 }, (_, index) => index));
+        const levelSolution = makeSolution(level, rng);
+        let startPositions = Array.from({ length: 16 }, (_, index) => index);
+
+        for (let index = levelSolution.length - 1; index >= 0; index -= 1) {
+          startPositions = applyInverseMoveToPositions(startPositions, levelSolution[index]);
+        }
+
+        const startSums = sumsForState(values, startPositions);
+        const solvedAtStart = startSums.filter((sum, index) => sum === levelTargets[index]).length;
+
+        if (!isSolvedLevelState(values, levelTargets, startPositions) && solvedAtStart <= 3) {
+          return {
+            level,
+            limit,
+            values,
+            targets: levelTargets,
+            solution: levelSolution,
+            startPositions
+          };
+        }
+      }
+
+      throw new Error(`第 ${level} 关生成失败`);
+    }
+
+    function loadLevel(level) {
+      currentLevel = level;
+      currentPuzzle = createLevel(level);
+      resetGame();
+    }
+
+    function toPercent(point) {
+      const margin = 8;
+      const span = 84;
+      return {
+        left: `${margin + (point[0] / 6) * span}%`,
+        top: `${margin + (point[1] / 6) * span}%`
+      };
+    }
+
+    function padSum(index) {
+      return cycles[index].reduce((total, position) => {
+        const tokenId = positionTokens[position];
+        return total + tokens[tokenId].value;
+      }, 0);
+    }
+
+    function formatTime(totalSeconds) {
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
+
+    function startTimer() {
+      if (startedAt) return;
+      startedAt = Date.now();
+      timerId = window.setInterval(() => {
+        timerEl.textContent = formatTime(Math.floor((Date.now() - startedAt) / 1000));
+      }, 250);
+    }
+
+    function stopTimer() {
+      if (timerId) {
+        window.clearInterval(timerId);
+        timerId = null;
+      }
+    }
+
+    function playTone(type = "move") {
+      if (!soundOn) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = type === "win" ? "triangle" : "sine";
+      oscillator.frequency.value = type === "win" ? 720 : 260 + Math.random() * 90;
+      gain.gain.setValueAtTime(.001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(type === "win" ? .08 : .035, context.currentTime + .015);
+      gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + (type === "win" ? .28 : .11));
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + (type === "win" ? .3 : .13));
+    }
+
+    function renderStaticBoard() {
+      board.innerHTML = "";
+
+      padPoints.forEach((point) => {
+        const ring = document.createElement("div");
+        ring.className = "ring";
+        const percent = toPercent(point);
+        ring.style.left = percent.left;
+        ring.style.top = percent.top;
+        board.appendChild(ring);
+      });
+
+      padPoints.forEach((point, index) => {
+        const pad = document.createElement("button");
+        pad.className = "pad";
+        pad.type = "button";
+        pad.setAttribute("aria-label", `旋转第 ${index + 1} 区`);
+        pad.dataset.index = String(index);
+        const percent = toPercent(point);
+        pad.style.left = percent.left;
+        pad.style.top = percent.top;
+        pad.innerHTML = `
+          <span class="diamond" aria-hidden="true">
+            <span class="live-half"></span>
+            <span class="goal-half"></span>
+          </span>
+          <span class="pad-text" aria-hidden="true">
+            <span class="current">0</span>
+            <span class="target">0</span>
+          </span>
+          <span class="pad-index">${index + 1}</span>
+        `;
+        pad.addEventListener("click", () => rotate(index));
+        board.appendChild(pad);
+      });
+
+      Array.from({ length: 16 }).forEach((_, tokenId) => {
+        const ball = document.createElement("div");
+        ball.className = "ball";
+        ball.dataset.token = String(tokenId);
+        ball.textContent = "0";
+        board.appendChild(ball);
+      });
+    }
+
+    function renderBoard() {
+      positionTokens.forEach((tokenId, position) => {
+        const ball = board.querySelector(`.ball[data-token="${tokenId}"]`);
+        const percent = toPercent(gridPoints[position]);
+        ball.textContent = tokens[tokenId].value;
+        ball.style.left = percent.left;
+        ball.style.top = percent.top;
+      });
+
+      let solved = 0;
+      cycles.forEach((_, index) => {
+        const sum = padSum(index);
+        const pad = board.querySelector(`.pad[data-index="${index}"]`);
+        pad.querySelector(".current").textContent = sum;
+        pad.querySelector(".target").textContent = targets[index];
+        const isSolved = sum === targets[index];
+        pad.classList.toggle("solved", isSolved);
+        if (isSolved) solved += 1;
+      });
+
+      solvedCountEl.textContent = `${solved}/9`;
+      levelLabelEl.textContent = String(currentLevel);
+      limitLabelEl.textContent = `≤${currentPuzzle.limit}`;
+      referenceMovesEl.textContent = String(solution.length);
+      progressFill.style.width = `${(solved / 9) * 100}%`;
+      moveCountEl.textContent = String(history.length);
+      renderHistory();
+      document.getElementById("undoBtn").disabled = busy || history.length === 0;
+
+      if (solved === 9) {
+        win();
+      }
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+      if (!history.length) {
+        const empty = document.createElement("span");
+        empty.className = "empty-history";
+        empty.textContent = "还没有旋转。";
+        historyList.appendChild(empty);
+        return;
+      }
+      history.forEach((move) => {
+        const chip = document.createElement("span");
+        chip.className = "move-chip";
+        chip.textContent = move + 1;
+        historyList.appendChild(chip);
+      });
+      historyList.scrollTop = historyList.scrollHeight;
+    }
+
+    function rotate(index, options = {}) {
+      if (busy || victory.classList.contains("show")) return;
+      if (!options.silentStart) startTimer();
+      busy = true;
+      const movingPositions = cycles[index];
+      const before = positionTokens.slice();
+      const [north, east, south, west] = movingPositions;
+      positionTokens[east] = before[north];
+      positionTokens[south] = before[east];
+      positionTokens[west] = before[south];
+      positionTokens[north] = before[west];
+      history.push(index);
+      markMoving(movingPositions);
+      flashPad(index);
+      playTone();
+      renderBoard();
+      window.setTimeout(() => {
+        markMoving([]);
+        busy = false;
+        renderBoard();
+      }, 285);
+    }
+
+    function inverseRotate(index) {
+      if (busy || !history.length) return;
+      busy = true;
+      const movingPositions = cycles[index];
+      const before = positionTokens.slice();
+      const [north, east, south, west] = movingPositions;
+      positionTokens[north] = before[east];
+      positionTokens[east] = before[south];
+      positionTokens[south] = before[west];
+      positionTokens[west] = before[north];
+      history.pop();
+      markMoving(movingPositions);
+      flashPad(index);
+      playTone();
+      renderBoard();
+      window.setTimeout(() => {
+        markMoving([]);
+        busy = false;
+        renderBoard();
+      }, 285);
+    }
+
+    function markMoving(positions) {
+      const movingTokens = new Set(positions.map((position) => positionTokens[position]));
+      board.querySelectorAll(".ball").forEach((ball) => {
+        ball.classList.toggle("moving", movingTokens.has(Number(ball.dataset.token)));
+      });
+    }
+
+    function flashPad(index) {
+      const pad = board.querySelector(`.pad[data-index="${index}"]`);
+      pad.classList.remove("flash");
+      void pad.offsetWidth;
+      pad.classList.add("flash");
+    }
+
+    function win() {
+      stopTimer();
+      busy = true;
+      playTone("win");
+      const seconds = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0;
+      victoryText.textContent = `第 ${currentLevel} 关完成，用时 ${formatTime(seconds)}，共 ${history.length} 步。下一关和值上限 ≤${levelLimit(currentLevel + 1)}。`;
+      victory.classList.add("show");
+    }
+
+    function resetGame() {
+      if (!currentPuzzle) {
+        currentPuzzle = createLevel(currentLevel);
+      }
+      stopTimer();
+      targets = currentPuzzle.targets.slice();
+      solution = currentPuzzle.solution.slice();
+      tokens = currentPuzzle.values.map((value, id) => ({ id, value }));
+      positionTokens = currentPuzzle.startPositions.slice();
+      history = [];
+      startedAt = null;
+      busy = false;
+      autoPlaying = false;
+      timerEl.textContent = "00:00";
+      victory.classList.remove("show");
+      hintLine.textContent = `第 ${currentLevel} 关：所有区域和值都在 ${currentPuzzle.limit} 以内。`;
+      renderBoard();
+    }
+
+    function stateKey() {
+      return positionTokens.join(",");
+    }
+
+    function applyMoveToState(state, move) {
+      return applyMoveToPositions(state, move);
+    }
+
+    function isSolvedState(state) {
+      return cycles.every((cycle, index) => {
+        const sum = cycle.reduce((total, position) => total + tokens[state[position]].value, 0);
+        return sum === targets[index];
+      });
+    }
+
+    function findHint() {
+      const current = positionTokens.slice();
+      if (isSolvedState(current)) return null;
+
+      const queue = [{ state: current, path: [] }];
+      const seen = new Set([stateKey()]);
+      const maxDepth = 6;
+      let cursor = 0;
+
+      while (cursor < queue.length) {
+        const node = queue[cursor++];
+        if (node.path.length >= maxDepth) continue;
+
+        for (let move = 0; move < cycles.length; move += 1) {
+          if (node.path.length >= 3 && node.path.slice(-3).every((item) => item === move)) {
+            continue;
+          }
+          const next = applyMoveToState(node.state, move);
+          const key = next.join(",");
+          if (seen.has(key)) continue;
+          const path = node.path.concat(move);
+          if (isSolvedState(next)) return path[0];
+          seen.add(key);
+          queue.push({ state: next, path });
+        }
+      }
+
+      const matchedPrefix = history.every((move, index) => solution[index] === move);
+      if (matchedPrefix && history.length < solution.length) {
+        return solution[history.length];
+      }
+
+      return bestGreedyMove();
+    }
+
+    function bestGreedyMove() {
+      const score = (state) => cycles.reduce((total, cycle, index) => {
+        const sum = cycle.reduce((value, position) => value + tokens[state[position]].value, 0);
+        return total + Math.abs(sum - targets[index]);
+      }, 0);
+
+      let bestMove = 0;
+      let bestScore = Infinity;
+      for (let move = 0; move < cycles.length; move += 1) {
+        const next = applyMoveToState(positionTokens, move);
+        const value = score(next);
+        if (value < bestScore) {
+          bestScore = value;
+          bestMove = move;
+        }
+      }
+      return bestMove;
+    }
+
+    async function autoPlay() {
+      if (autoPlaying || busy || victory.classList.contains("show")) return;
+      autoPlaying = true;
+      startTimer();
+
+      const matchedPrefix = history.every((move, index) => solution[index] === move);
+      if (!matchedPrefix) {
+        showToast("演示从本关初始局面开始。");
+        resetGame();
+        await wait(180);
+        startTimer();
+      }
+
+      for (let index = history.length; index < solution.length; index += 1) {
+        if (!autoPlaying || victory.classList.contains("show")) break;
+        rotate(solution[index], { silentStart: true });
+        await wait(380);
+      }
+      autoPlaying = false;
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => window.setTimeout(resolve, ms));
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(toastId);
+      toastId = window.setTimeout(() => toast.classList.remove("show"), 1700);
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", () => resetGame());
+    document.getElementById("newGameBtn").addEventListener("click", () => {
+      loadLevel(currentLevel + 1);
+      showToast(`进入第 ${currentLevel} 关，和值上限 ≤${currentPuzzle.limit}。`);
+    });
+    document.getElementById("playAgainBtn").addEventListener("click", () => {
+      loadLevel(currentLevel + 1);
+    });
+    document.getElementById("undoBtn").addEventListener("click", () => {
+      if (!history.length) return;
+      inverseRotate(history[history.length - 1]);
+    });
+    document.getElementById("hintBtn").addEventListener("click", () => {
+      if (busy) return;
+      const move = findHint();
+      if (move === null) {
+        hintLine.textContent = "已经全部达成目标。";
+        return;
+      }
+      hintLine.textContent = `建议下一步旋转 ${move + 1} 号区域。`;
+      flashPad(move);
+    });
+    document.getElementById("autoBtn").addEventListener("click", () => autoPlay());
+    document.getElementById("soundBtn").addEventListener("click", (event) => {
+      soundOn = !soundOn;
+      event.currentTarget.textContent = soundOn ? "音效开" : "音效关";
+    });
+
+    window.addEventListener("keydown", (event) => {
+      const key = Number(event.key);
+      if (key >= 1 && key <= 9) {
+        rotate(key - 1);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        if (history.length) inverseRotate(history[history.length - 1]);
+      }
+    });
+
+    renderStaticBoard();
+    resetGame();
+  </script>
+</body>
+</html>

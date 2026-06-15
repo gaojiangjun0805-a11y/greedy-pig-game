@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>缤纷叠影</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none; }
+body{
+  min-height:100dvh;
+  background:
+    radial-gradient(circle at 72% 16%, rgba(73,214,255,.2), transparent 34%),
+    radial-gradient(circle at 18% 24%, rgba(180,98,255,.22), transparent 38%),
+    radial-gradient(ellipse at 50% 120%, #10285f 0%, transparent 56%),
+    linear-gradient(180deg,#050715 0%,#0b1230 48%,#150826 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  font-family:'Nunito','Microsoft YaHei',sans-serif; color:#f0eaff;
+  position:relative;
+  padding:env(safe-area-inset-top,12px) 0 env(safe-area-inset-bottom,8px);
+}
+body::before{
+  content:""; position:fixed; left:50%; top:48%; width:min(120vw,760px); height:min(120vw,760px);
+  transform:translate(-50%,-50%) rotate(-14deg); pointer-events:none; z-index:0;
+  border:1px solid rgba(125,247,255,.14); border-radius:50%;
+  box-shadow:
+    0 0 0 42px rgba(125,247,255,.025),
+    0 0 0 88px rgba(255,107,214,.035),
+    0 0 90px rgba(77,233,255,.16);
+  animation:orbitBreath 4.8s ease-in-out infinite alternate;
+}
+@keyframes orbitBreath{ from{opacity:.42;transform:translate(-50%,-50%) rotate(-18deg) scale(.96);} to{opacity:.82;transform:translate(-50%,-50%) rotate(-8deg) scale(1.03);} }
+
+#bg-canvas{ position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+#app{
+  position:relative; z-index:1; width:100%; max-width:480px;
+  display:flex; flex-direction:column; align-items:center;
+  padding:6px 12px 8px; gap:8px; min-height:100dvh; justify-content:flex-start;
+}
+
+#title-wrap{ text-align:center; }
+h1{
+  font-size:clamp(1.3rem,6vw,1.9rem); font-weight:900; letter-spacing:6px;
+  background:linear-gradient(105deg,#7df7ff,#b59cff,#ff6bd6,#ffe27a);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 18px #4de9ff88);
+  animation:titlePop 3s ease-in-out infinite alternate;
+}
+@keyframes titlePop{ from{letter-spacing:6px;} to{letter-spacing:9px;filter:drop-shadow(0 0 22px #ff9de099);} }
+#subtitle{ font-size:clamp(0.58rem,2.2vw,0.72rem); color:#a9dfff; letter-spacing:1.5px; margin-top:2px; text-shadow:0 0 12px rgba(77,233,255,.45); }
+
+#diff-bar{ display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
+.diff-btn{
+  padding:6px 10px; border-radius:999px; border:2px solid transparent;
+  font-size:clamp(0.64rem,2.6vw,0.76rem); font-weight:700; cursor:pointer;
+  font-family:inherit; letter-spacing:0.3px; transition:all 0.2s;
+  background:rgba(255,255,255,0.07); color:#c8bde8; touch-action:manipulation;
+}
+.diff-btn.active{ color:#06111f; border-color:var(--dc); background:linear-gradient(135deg,var(--dc),#ffffff); box-shadow:0 0 18px var(--dc),0 0 44px rgba(126,238,255,.22); transform:translateY(-1px); }
+#d1{--dc:#6fffe9;} #d2{--dc:#7dd3fc;} #d3{--dc:#c4b5fd;} #d4{--dc:#f0abfc;} #d5{--dc:#facc15;}
+
+#hud{
+  display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center;
+  font-size:clamp(0.7rem,2.8vw,0.84rem); color:#c8bde8;
+  background:rgba(255,255,255,0.06); padding:6px 14px; border-radius:999px;
+  border:1px solid rgba(255,255,255,0.1);
+}
+#hud b{ color:#ffe08a; font-family:'Nunito'; }
+#timer.low{ color:#f87171; animation:tblink 1s steps(2) infinite; }
+@keyframes tblink{ 50%{opacity:0.4;} }
+
+#play{ display:flex; gap:14px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.panel{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.panel-label{ font-size:clamp(0.6rem,2.3vw,0.72rem); color:#b69ad6; letter-spacing:1px; font-weight:700; }
+
+.board-wrap, .target-wrap{
+  padding:10px; background:linear-gradient(145deg,rgba(13,30,72,.72),rgba(38,12,66,.56)); border-radius:18px;
+  border:2px solid rgba(126,238,255,0.22);
+  box-shadow:0 0 42px rgba(77,233,255,.18),0 0 76px rgba(255,107,214,.1),0 16px 50px #00000066,inset 0 1px 0 rgba(255,255,255,0.14);
+  line-height:0;
+}
+canvas#board{ touch-action:none; cursor:grab; border-radius:8px; }
+canvas#board:active{ cursor:grabbing; }
+canvas#target{ border-radius:6px; }
+
+#hintline{ font-size:clamp(0.56rem,2.2vw,0.68rem); color:#9a8fd0; letter-spacing:0.5px; text-align:center; max-width:320px; }
+
+#buttons{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+button{
+  padding:9px 14px; border:none; border-radius:999px; font-size:clamp(0.72rem,2.8vw,0.82rem);
+  cursor:pointer; font-family:inherit; font-weight:700; letter-spacing:0.5px;
+  transition:all 0.14s cubic-bezier(.34,1.56,.64,1); box-shadow:0 3px 12px #0004; touch-action:manipulation;
+}
+button:active{ transform:scale(0.93); }
+button:disabled{ opacity:0.3; pointer-events:none; }
+#btn-new{ background:linear-gradient(135deg,#6fffe9,#3b82f6); color:#06111f; }
+#btn-reset{ background:linear-gradient(135deg,#334155,#111827); color:#d7efff; }
+#btn-undo{ background:linear-gradient(135deg,#7dd3fc,#6366f1); color:#06111f; }
+#btn-hint{ background:linear-gradient(135deg,#ffe27a,#ff7ac8); color:#14091b; }
+#btn-demo{ background:linear-gradient(135deg,#f0abfc,#8b5cf6); color:#fff; }
+#btn-music{ background:linear-gradient(135deg,#48e7ff,#b26cff); color:#06111f; }
+
+#msg{ min-height:1.2rem; font-size:clamp(0.75rem,3vw,0.88rem); font-weight:700; color:#ffe08a; letter-spacing:1px; text-align:center; text-shadow:0 0 10px #ffe08a88; }
+
+.spark{ position:fixed; pointer-events:none; z-index:500; border-radius:50%; animation:sparkFly var(--dur,0.7s) ease-out forwards; }
+@keyframes sparkFly{ 0%{transform:translate(0,0) scale(1);opacity:1;} 100%{transform:translate(var(--tx,20px),var(--ty,-40px)) scale(0);opacity:0;} }
+
+#settle-mask{ position:fixed; inset:0; background:rgba(8,4,20,0.85); display:none; align-items:center; justify-content:center; z-index:1000; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+#settle-mask.show{ display:flex; animation:fadeIn 0.35s ease; }
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+#settle-card{
+  width:92%; max-width:440px;
+  background:linear-gradient(160deg,#2a1556,#160d30);
+  border:2px solid #b07aff; border-radius:30px; padding:32px 26px 24px;
+  text-align:center; box-shadow:0 0 70px #8b3bed77,0 24px 70px #000b;
+  animation:cardPop 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes cardPop{ from{transform:scale(0.6) translateY(30px);opacity:0;} to{transform:scale(1);opacity:1;} }
+#settle-title{ font-size:1.9rem; font-weight:900; letter-spacing:3px; margin-bottom:3px;
+  background:linear-gradient(135deg,#ffe08a,#fb923c,#c9b8ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#settle-sub{ font-size:0.8rem; color:#b69ad6; margin-bottom:14px; letter-spacing:1px; }
+#settle-rank{ font-size:5.5rem; font-weight:900; line-height:1; margin:6px 0 2px; filter:drop-shadow(0 0 24px currentColor); opacity:0; }
+#settle-rank.reveal{ animation:rankPop 0.65s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes rankPop{ 0%{transform:scale(0) rotate(-40deg);opacity:0;} 60%{transform:scale(1.45) rotate(8deg);opacity:1;} 100%{transform:scale(1) rotate(0);opacity:1;} }
+#settle-rank.counting{ opacity:1; font-size:1.7rem; color:#b69ad6 !important; animation:countPulse 0.6s ease-in-out infinite alternate; }
+@keyframes countPulse{ from{opacity:0.5;} to{opacity:1;} }
+#settle-stars{ font-size:1.1rem; letter-spacing:3px; margin-bottom:12px; min-height:1.4rem; opacity:0; }
+#settle-stars.reveal{ animation:starsPop 0.5s ease 0.18s both; }
+@keyframes starsPop{ 0%{transform:scale(0.3);opacity:0;} 70%{transform:scale(1.25);} 100%{transform:scale(1);opacity:1;} }
+.settle-row{ display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:#c8bde8; padding:5px 4px; border-bottom:1px dashed rgba(176,122,255,0.18); }
+.settle-row span:last-child{ color:#ffe08a; font-weight:900; font-family:'Nunito'; }
+.settle-total{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px 6px; background:rgba(255,224,138,0.1); border-radius:14px; border:1px solid #ffe08a44; }
+.settle-total span:first-child{ font-size:0.9rem; font-weight:900; color:#fff; }
+.settle-total span:last-child{ font-size:1.8rem; font-weight:900; color:#ffe08a; font-family:'Nunito'; text-shadow:0 0 14px #ffe08a88; }
+#settle-best{ font-size:0.68rem; color:#7dd3fc; margin-top:8px; min-height:0.9rem; }
+#settle-btns{ display:flex; gap:8px; margin-top:16px; }
+#settle-btns button{ flex:1; padding:11px 0; }
+#sb-again{ background:linear-gradient(135deg,#4ade80,#16a34a); color:#04210f; }
+#sb-next{ background:linear-gradient(135deg,#ffe08a,#f59e0b); color:#1a1a2e; }
+#sb-close{ background:rgba(255,255,255,0.1); color:#94a3b8; }
+
+#welcome-mask{ position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 32%,rgba(80,230,255,.28),transparent 28%),radial-gradient(ellipse at 50% 30%,#17265a,#070817 70%); transition:opacity .5s ease; }
+#welcome-mask.hide{ opacity:0; pointer-events:none; }
+#welcome-card{ text-align:center; padding:0 24px; animation:wcIn .6s ease both; }
+@keyframes wcIn{ from{opacity:0;transform:translateY(24px) scale(.96);} to{opacity:1;transform:none;} }
+#welcome-logo{ font-size:clamp(46px,13vw,88px); font-weight:900; letter-spacing:2px;
+  background:linear-gradient(120deg,#7df7ff,#b59cff,#ff6bd6,#ffe27a); -webkit-background-clip:text; background-clip:text;
+  color:transparent; filter:drop-shadow(0 4px 28px rgba(77,233,255,.48)); margin-bottom:6px; }
+#welcome-title{ font-size:clamp(20px,5vw,30px); font-weight:700; color:#f0eaff; margin-bottom:14px; }
+#welcome-sub{ font-size:clamp(13px,3.4vw,16px); color:#b6a6d6; line-height:1.7; max-width:440px; margin:0 auto 26px; }
+#welcome-demo{ margin:0 auto 28px; line-height:0; }
+#welcome-start{ font-size:clamp(18px,4.6vw,22px); font-weight:800; color:#06111f; cursor:pointer; border:none;
+  padding:16px 56px; border-radius:999px; background:linear-gradient(135deg,#7df7ff,#ff6bd6,#ffe27a);
+  box-shadow:0 8px 34px rgba(77,233,255,.42); transition:transform .15s ease,box-shadow .15s ease;
+  animation:wcPulse 1.8s ease-in-out infinite; }
+#welcome-start:hover{ transform:translateY(-2px) scale(1.04); box-shadow:0 12px 40px rgba(192,132,252,.65); }
+#welcome-start:active{ transform:scale(.97); }
+@keyframes wcPulse{ 0%,100%{box-shadow:0 8px 32px rgba(192,132,252,.5);} 50%{box-shadow:0 8px 44px rgba(192,132,252,.85);} }
+</style>
+</head>
+<body>
+
+<div id="welcome-mask">
+  <div id="welcome-card">
+    <div id="welcome-logo">G-Game</div>
+    <div id="welcome-title">缤 纷 叠 影</div>
+    <div id="welcome-sub">沿折痕把一侧「翻折」到另一侧，上层颜色盖住下层。<br>多次折叠，把左边盘面拼成右边的目标图 ✨<br><span style="color:#9affd8">拖动盘面即可折叠</span></div>
+    <canvas id="welcome-demo" width="180" height="90"></canvas>
+    <br>
+    <button id="welcome-start">开始游戏</button>
+  </div>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <div id="title-wrap">
+    <h1>缤 纷 叠 影</h1>
+    <div id="subtitle">沿折痕翻折 · 上层覆盖下层 · 拼出目标图 ✨</div>
+  </div>
+
+  <div id="diff-bar">
+    <button class="diff-btn active" id="d1" onclick="setDiff(1)">🌱 3×3·1折</button>
+    <button class="diff-btn"        id="d2" onclick="setDiff(2)">🌿 3×3·2折</button>
+    <button class="diff-btn"        id="d3" onclick="setDiff(3)">🌙 4×4·2折</button>
+    <button class="diff-btn"        id="d4" onclick="setDiff(4)">⭐ 4×4·3折斜</button>
+    <button class="diff-btn"        id="d5" onclick="setDiff(5)">🔥 5×5·4折斜</button>
+  </div>
+
+  <div id="hud">
+    🪭 <b id="moves">0</b> 折 &nbsp;·&nbsp;
+    🎯 <b id="par">—</b> &nbsp;·&nbsp;
+    ⏱ <b id="timer">0</b>s &nbsp;·&nbsp;
+    ✅ <b id="progress">0</b>
+  </div>
+
+  <div id="play">
+    <div class="panel">
+      <div class="panel-label">当前盘面</div>
+      <div class="board-wrap"><canvas id="board"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">目标图形</div>
+      <div class="target-wrap"><canvas id="target"></canvas></div>
+    </div>
+  </div>
+
+  <div id="hintline">👆 抓住一角往折痕方向拖动 · 起点那侧被翻折覆盖到对面 · 卡住就点 💡提示</div>
+
+  <div id="buttons">
+    <button id="btn-new">🎮 新关卡</button>
+    <button id="btn-undo">↶ 撤销</button>
+    <button id="btn-reset">↺ 重置</button>
+    <button id="btn-hint">💡 提示</button>
+    <button id="btn-demo">🎬 演示</button>
+    <button id="btn-music">🔇 关音乐</button>
+  </div>
+
+  <div id="msg"></div>
+</div>
+
+<!-- 结算弹窗 -->
+<div id="settle-mask">
+  <div id="settle-card">
+    <div id="settle-title">关卡完成</div>
+    <div id="settle-sub"></div>
+    <div id="settle-rank">S</div>
+    <div id="settle-stars">★★★</div>
+    <div id="settle-rows"></div>
+    <div class="settle-total"><span>⭐ 总分</span><span id="settle-total-val">0</span></div>
+    <div id="settle-best"></div>
+    <div id="settle-btns">
+      <button id="sb-again">🔄 再来</button>
+      <button id="sb-next">⬆ 更难</button>
+      <button id="sb-close">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ── audio (synth piano music + sfx)  ── 复用同系列音频引擎 ──
+// ══════════════════════════════════════════════════════════
+let audioCtx=null,masterGain=null,masterFilter=null;
+let musicPlaying=false,musicNodes=new Set(),schedulerTimer=null;
+let _autoStartDone=false;
+const GAME_MUSIC_URL='https://cdn1.suno.ai/2e6b75d5-9314-4747-9ee7-4df64510ffc9.mp3';
+const EMBEDDED_IN_HUB=window.self!==window.top;
+let recordedMusic=null;
+function track(node){ musicNodes.add(node); node.onended=()=>musicNodes.delete(node); }
+function getAC(){
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain(); masterGain.gain.value=0.32;
+    masterFilter=audioCtx.createBiquadFilter();
+    masterFilter.type='lowpass'; masterFilter.frequency.value=6500; masterFilter.Q.value=0.2;
+    masterGain.connect(masterFilter); masterFilter.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+const N5={ C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:784,A5:880,B5:987.77,C6:1046.5,E6:1318.5 };
+function ntof(n){
+  const m=/^([A-G])(#|b)?(\d)$/.exec(n);
+  const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]];
+  const acc=m[2]==='#'?1:m[2]==='b'?-1:0;
+  const midi=base+acc+(+m[3]+1)*12;
+  return 440*Math.pow(2,(midi-69)/12);
+}
+function playNote(freq,when,dur,vol=0.08,type='sine'){
+  const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.type=type; o.frequency.setValueAtTime(freq,when);
+  g.gain.setValueAtTime(0,when);
+  g.gain.linearRampToValueAtTime(vol,when+0.015);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0001,vol*0.6),when+dur*0.4);
+  g.gain.linearRampToValueAtTime(0,when+dur);
+  o.start(when); o.stop(when+dur+0.01); track(o);
+}
+let _noiseBuf=null;
+function getNoise(ac){
+  if(!_noiseBuf){
+    const len=Math.floor(ac.sampleRate*0.05);
+    _noiseBuf=ac.createBuffer(1,len,ac.sampleRate);
+    const d=_noiseBuf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  }
+  return _noiseBuf;
+}
+function playPiano(freq,when,dur,vel){
+  const ac=getAC();
+  const isMel=vel>0.6, nP=isMel?7:5, B=0.0005;
+  const baseDecay=(isMel?3.6:2.2)+Math.max(0,(340-freq)/340)*2.2;
+  const voices=isMel?[-4,4]:[0];
+  const out=ac.createGain(); out.gain.value=Math.max(0.04,vel)*0.5; out.connect(masterGain);
+  voices.forEach(cents=>{
+    const det=Math.pow(2,cents/1200);
+    for(let n=1;n<=nP;n++){
+      const pf=freq*n*Math.sqrt(1+B*n*n)*det;
+      if(pf>ac.sampleRate*0.45)break;
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(pf,when);
+      o.connect(g); g.connect(out);
+      const amp=(1/Math.pow(n,1.25))/voices.length;
+      const dk=baseDecay/(1+(n-1)*0.7);
+      g.gain.setValueAtTime(0.0001,when);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002,amp),when+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001,when+dk);
+      o.start(when); o.stop(when+dk+0.05); track(o);
+    }
+  });
+  const src=ac.createBufferSource(); src.buffer=getNoise(ac);
+  const bp=ac.createBiquadFilter(); bp.type='bandpass';
+  bp.frequency.value=Math.min(6000,freq*4); bp.Q.value=0.7;
+  const ng=ac.createGain();
+  ng.gain.setValueAtTime(vel*0.05,when);
+  ng.gain.exponentialRampToValueAtTime(0.0001,when+0.04);
+  src.connect(bp); bp.connect(ng); ng.connect(masterGain);
+  src.start(when); src.stop(when+0.06); track(src);
+}
+const SONG_BPM=90,SBEAT=60/SONG_BPM;
+const PROG=[
+  {bass:'C3',t:['C4','E4','G4'],mel:[['E5',2],['D5',1],['C5',1]]},
+  {bass:'G2',t:['G3','B3','D4'],mel:[['D5',2],['C5',1],['B4',1]]},
+  {bass:'A2',t:['A3','C4','E4'],mel:[['C5',2],['B4',1],['A4',1]]},
+  {bass:'E2',t:['E3','G3','B3'],mel:[['B4',2],['A4',1],['G4',1]]},
+  {bass:'F2',t:['F3','A3','C4'],mel:[['A4',2],['G4',1],['F4',1]]},
+  {bass:'C3',t:['C4','E4','G4'],mel:[['G4',2],['A4',1],['B4',1]]},
+  {bass:'F2',t:['F3','A3','C4'],mel:[['A4',1],['C5',1],['F5',2]]},
+  {bass:'G2',t:['G3','B3','D4'],mel:[['D5',2],['B4',1],['G4',1]]},
+];
+let song=null,loopStart=0,evIdx=0;
+function buildSong(){
+  const ev=[];
+  PROG.forEach((p,bar)=>{
+    const t0=bar*4,bass=ntof(p.bass),tn=p.t.map(ntof);
+    const lh=[bass,tn[1],tn[2],tn[1],tn[0],tn[1],tn[2],tn[1]];
+    for(let e=0;e<8;e++)ev.push({beat:t0+e*0.5,f:lh[e],dur:0.55,vel:0.42});
+    let mt=t0;
+    p.mel.forEach(([nn,d])=>{ev.push({beat:mt,f:ntof(nn),dur:d*0.96,vel:0.85});mt+=d;});
+  });
+  ev.sort((a,b)=>a.beat-b.beat);
+  return{ev,loop:PROG.length*4};
+}
+function scheduleMusic(){
+  if(!musicPlaying)return;
+  const ac=getAC(),look=ac.currentTime+0.3;
+  while(true){
+    const e=song.ev[evIdx],when=loopStart+e.beat*SBEAT;
+    if(when<look){
+      playPiano(e.f,when,e.dur*SBEAT,e.vel);
+      evIdx++;
+      if(evIdx>=song.ev.length){evIdx=0;loopStart+=song.loop*SBEAT;}
+    }else break;
+  }
+  schedulerTimer=setTimeout(scheduleMusic,60);
+}
+function startMusic(){
+  const btn=document.getElementById('btn-music');
+  if(EMBEDDED_IN_HUB){
+    musicPlaying=false;
+    if(btn){btn.textContent='🎵 大厅播放';btn.style.opacity='0.55';btn.disabled=true;}
+    return;
+  }
+  if(!recordedMusic){
+    recordedMusic=new Audio(GAME_MUSIC_URL);
+    recordedMusic.loop=true;
+    recordedMusic.preload='auto';
+    recordedMusic.crossOrigin='anonymous';
+    recordedMusic.volume=.42;
+  }
+  musicPlaying=true;
+  recordedMusic.play().catch(()=>{});
+  if(btn){btn.textContent='🔇 关音乐';btn.style.opacity='0.75';}
+}
+function stopMusic(){
+  musicPlaying=false; clearTimeout(schedulerTimer);
+  musicNodes.forEach(n=>{try{n.stop();}catch(e){}}); musicNodes.clear();
+  if(recordedMusic) recordedMusic.pause();
+  const btn=document.getElementById('btn-music'); if(btn){btn.textContent='🎵 开音乐'; btn.style.opacity='1';}
+}
+function toggleMusic(){ musicPlaying?stopMusic():startMusic(); }
+function sfxFold(){
+  const ac=getAC(),t=ac.currentTime;
+  playNote(N5.A4,t,0.09,0.05,'triangle'); playNote(N5.E5,t+0.04,0.12,0.05,'sine');
+  const src=ac.createBufferSource(); src.buffer=getNoise(ac);
+  const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800; bp.Q.value=0.6;
+  const g=ac.createGain(); g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.08);
+  src.connect(bp); bp.connect(g); g.connect(masterGain); src.start(t); src.stop(t+0.09); track(src);
+}
+function sfxProgress(){ const ac=getAC(),t=ac.currentTime; playNote(N5.D5,t,0.08,0.045,'sine'); playNote(N5.F5,t+0.06,0.08,0.04,'sine'); }
+function sfxWin(){
+  const ac=getAC(),t=ac.currentTime;
+  [N5.C5,N5.E5,N5.G5,N5.C6,N5.E6].forEach((f,i)=>playNote(f,t+i*0.11,0.35,0.09,'sine'));
+  setTimeout(()=>{ [N5.G5,N5.C6,N5.E6].forEach((f,i)=>playNote(f,getAC().currentTime+i*0.09,0.5,0.07,'triangle')); },600);
+}
+function playTick(){ const ac=getAC(),t=ac.currentTime; playNote(N5.A5,t,.04,.02,'sine'); }
+function sfxRankReveal(g){
+  const ac=getAC(),t=ac.currentTime;
+  const chords={S:[N5.C5,N5.E5,N5.G5,N5.C6,N5.E6],A:[N5.C5,N5.E5,N5.G5,N5.C6],B:[N5.A4,N5.C5,N5.E5],C:[N5.G4,N5.B4]};
+  (chords[g]||chords.C).forEach((f,i)=>playNote(f,t+i*.09,.45,.09,'sine'));
+}
+function spawnSparks(cx,cy,colors){
+  for(let i=0;i<9;i++){
+    const el=document.createElement('div'); el.className='spark';
+    const angle=(Math.PI*2*i)/9+Math.random()*.5,dist=28+Math.random()*44;
+    el.style.setProperty('--tx',Math.cos(angle)*dist+'px');
+    el.style.setProperty('--ty',(Math.sin(angle)*dist-18)+'px');
+    el.style.setProperty('--dur',(0.5+Math.random()*.38)+'s');
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.left=(cx-4)+'px'; el.style.top=(cy-4)+'px';
+    el.style.width=el.style.height=(4+Math.random()*5)+'px';
+    document.body.appendChild(el); setTimeout(()=>el.remove(),950);
+  }
+}
+function _tryAutoMusic(){ if(!_autoStartDone){_autoStartDone=true;startMusic();} }
+document.addEventListener('click',_tryAutoMusic,{once:true});
+document.addEventListener('touchstart',_tryAutoMusic,{once:true});
+
+// ══════════════════════════════════════════════════════════
+// ── bg canvas ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const bgCanvas=document.getElementById('bg-canvas'),bgCtx=bgCanvas.getContext('2d');
+const FLOATERS=[],ICONS=['◆','◇','▲','△','✦','✧','💠','✨','🔷','🔺','⬢','💫'];
+function initBg(){
+  bgCanvas.width=window.innerWidth; bgCanvas.height=window.innerHeight; FLOATERS.length=0;
+  for(let i=0;i<30;i++)FLOATERS.push({x:Math.random()*bgCanvas.width,y:Math.random()*bgCanvas.height,icon:ICONS[Math.floor(Math.random()*ICONS.length)],size:9+Math.random()*16,vx:(Math.random()-.5)*.35,vy:-.18-Math.random()*.4,alpha:.1+Math.random()*.24,rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.018});
+}
+function animateBg(){
+  const W=bgCanvas.width,H=bgCanvas.height; bgCtx.clearRect(0,0,W,H);
+  FLOATERS.forEach(f=>{
+    f.x+=f.vx; f.y+=f.vy; f.rot+=f.rotV;
+    if(f.y+f.size<0){f.y=H+f.size;f.x=Math.random()*W;}
+    if(f.x<-f.size)f.x=W+f.size; if(f.x>W+f.size)f.x=-f.size;
+    bgCtx.save(); bgCtx.globalAlpha=f.alpha; bgCtx.translate(f.x,f.y); bgCtx.rotate(f.rot);
+    bgCtx.font=f.size+'px serif'; bgCtx.textAlign='center'; bgCtx.textBaseline='middle';
+    bgCtx.fillText(f.icon,0,0); bgCtx.restore();
+  });
+  requestAnimationFrame(animateBg);
+}
+window.addEventListener('resize',()=>{initBg();if(N_)render();});
+initBg(); animateBg();
+
+// ══════════════════════════════════════════════════════════
+// ── 游戏配置 ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const PALETTE=['#5cf6ff','#b36bff','#ff68ce','#fff05a','#6dff99']; // 星环跳跃霓虹色
+const DIFF_CONFIG={
+  1:{N:3, colors:3, K:1, allowDiag:false, timeLimit:120, base:1000, timeRate:10},
+  2:{N:3, colors:3, K:2, allowDiag:false, timeLimit:150, base:1500, timeRate:9},
+  3:{N:4, colors:3, K:2, allowDiag:false, timeLimit:190, base:2200, timeRate:8},
+  4:{N:4, colors:4, K:3, allowDiag:true,  timeLimit:230, base:3000, timeRate:8},
+  5:{N:5, colors:4, K:4, allowDiag:true,  timeLimit:290, base:4000, timeRate:7},
+};
+const MAX_DIFF=5;
+let cfg=DIFF_CONFIG[1], curDiff=1;
+let N_=0, K_=0;
+let board=null, target=null, initial=null;   // Uint8Array, 长度 N*N*4
+let boardStack=[];                            // 撤销栈
+let genFolds=[];                              // 生成关卡用的折叠序列（演示用）
+let moves=0, par=0;
+let timeLeft=0, timerID=null, won=false, started=false;
+let demoUsed=false, hintCount=0, solStates=[], demoPlaying=false, animating=false;
+
+const boardEl=document.getElementById('board');
+const targetEl=document.getElementById('target');
+const bctx=boardEl.getContext('2d');
+const tctx=targetEl.getContext('2d');
+const movesEl=document.getElementById('moves'), parEl=document.getElementById('par');
+const timerEl=document.getElementById('timer'), progressEl=document.getElementById('progress');
+const msgEl=document.getElementById('msg');
+
+// 三角形索引: 0=N(上) 1=E(右) 2=S(下) 3=W(左)
+const tIdx=(r,c,t)=>(r*N_+c)*4+t;
+
+// ── 折叠数学 ──────────────────────────────────────────────
+// 三角形质心（格单位, x 向右 y 向下）
+function triCentroid(r,c,t){
+  if(t===0) return [c+0.5, r+0.25]; // N
+  if(t===1) return [c+0.75,r+0.5 ]; // E
+  if(t===2) return [c+0.5, r+0.75]; // S
+  return       [c+0.25,r+0.5 ];     // W
+}
+// 折痕 f={k,pos,dir}; k: 'V'竖线 'H'横线 'D1'(\ , y-x=pos) 'D2'(/ , x+y=pos)
+function foldValue(k,pos,cx,cy){
+  if(k==='V') return cx-pos;
+  if(k==='H') return cy-pos;
+  if(k==='D1')return (cy-cx)-pos;
+  return (cx+cy)-pos;
+}
+// 三角形朝向在各镜像下的置换
+const TP_V =[0,3,2,1]; // 竖线镜像: E<->W
+const TP_H =[2,1,0,3]; // 横线镜像: N<->S
+const TP_D1=[3,2,1,0]; // \ 镜像: N<->W, E<->S
+const TP_D2=[1,0,3,2]; // / 镜像: N<->E, S<->W
+function reflectTri(k,pos,r,c,t){
+  if(k==='V')  return [r, 2*pos-1-c, TP_V[t]];
+  if(k==='H')  return [2*pos-1-r, c, TP_H[t]];
+  if(k==='D1') return [c+pos, r-pos, TP_D1[t]];
+  return [pos-1-c, pos-1-r, TP_D2[t]]; // D2
+}
+// 应用一次折叠: 主动侧(value*dir>0)镜像盖到对面, 主动侧自身不变
+function applyFold(grid,f){
+  const ng=grid.slice();
+  for(let r=0;r<N_;r++)for(let c=0;c<N_;c++)for(let t=0;t<4;t++){
+    const ct=triCentroid(r,c,t);
+    const v=foldValue(f.k,f.pos,ct[0],ct[1]);
+    if(v*f.dir>0){
+      const d=reflectTri(f.k,f.pos,r,c,t);
+      if(d[0]>=0&&d[0]<N_&&d[1]>=0&&d[1]<N_)
+        ng[tIdx(d[0],d[1],d[2])]=grid[tIdx(r,c,t)];
+    }
+  }
+  return ng;
+}
+function eqGrid(a,b){ for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false; return true; }
+
+// 随机一条折痕
+function randFold(){
+  const kinds=cfg.allowDiag?['V','H','D1','D2']:['V','H'];
+  const k=kinds[Math.random()*kinds.length|0];
+  let pos,dir=Math.random()<0.5?1:-1;
+  if(k==='V'||k==='H') pos=1+(Math.random()*(N_-1)|0);
+  else if(k==='D1')    pos=-(N_-1)+(Math.random()*(2*N_-1)|0);
+  else                 pos=1+(Math.random()*(2*N_-1)|0);
+  return {k,pos,dir};
+}
+function randGrid(){
+  const nc=cfg.colors||PALETTE.length;
+  const g=new Uint8Array(N_*N_*4);
+  for(let i=0;i<g.length;i++)g[i]=Math.random()*nc|0;
+  return g;
+}
+
+// ── 生成关卡 ──────────────────────────────────────────────
+function genLevel(){
+  for(let attempt=0;attempt<40;attempt++){
+    const start=randGrid();
+    let tgt=start.slice(); const folds=[]; let tries=0;
+    while(folds.length<K_ && tries<K_*10){
+      const f=randFold(); const ng=applyFold(tgt,f);
+      if(!eqGrid(ng,tgt)){ tgt=ng; folds.push(f); }
+      tries++;
+    }
+    if(folds.length>=Math.max(1,K_-1) && !eqGrid(tgt,start)){
+      initial=start; target=tgt; genFolds=folds; par=folds.length;
+      board=start.slice(); boardStack=[board.slice()];
+      buildSolStates();
+      return;
+    }
+  }
+  // 兜底
+  initial=randGrid(); board=initial.slice(); boardStack=[board.slice()];
+  const ff={k:'V',pos:(N_/2|0)||1,dir:-1};
+  target=applyFold(initial,ff); genFolds=[ff]; par=1; buildSolStates();
+}
+// 参考解的每一步中间盘面: solStates[0]=初始 ... solStates[K]=目标
+function buildSolStates(){
+  solStates=[initial.slice()]; let s=initial.slice();
+  genFolds.forEach(f=>{ s=applyFold(s,f); solStates.push(s.slice()); });
+}
+
+function progressCount(){ let n=0; for(let i=0;i<board.length;i++)if(board[i]===target[i])n++; return n; }
+
+// ══════════════════════════════════════════════════════════
+// ── 渲染 ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const DPR=Math.min(2,window.devicePixelRatio||1);
+function cellPxFor(){
+  const vw=Math.min(window.innerWidth,480);
+  const avail=vw-40;
+  // 盘面占大头, 目标占约 0.5, 两者并排在 wrap+gap 内
+  let s=Math.floor((avail-90)/N_);     // 给目标和间距留空间
+  s=Math.max(34,Math.min(64,s));
+  return s;
+}
+let CELL=48, TCELL=22;
+function setupCanvas(cv,ctx,px){
+  cv.width=N_*px*DPR; cv.height=N_*px*DPR;
+  cv.style.width=(N_*px)+'px'; cv.style.height=(N_*px)+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+// 把单格四个三角的顶点
+function triPath(ctx,r,c,t,S){
+  const x=c*S,y=r*S, m=S/2;
+  ctx.beginPath();
+  if(t===0){ ctx.moveTo(x,y); ctx.lineTo(x+S,y); ctx.lineTo(x+m,y+m); }
+  else if(t===1){ ctx.moveTo(x+S,y); ctx.lineTo(x+S,y+S); ctx.lineTo(x+m,y+m); }
+  else if(t===2){ ctx.moveTo(x+S,y+S); ctx.lineTo(x,y+S); ctx.lineTo(x+m,y+m); }
+  else { ctx.moveTo(x,y+S); ctx.lineTo(x,y); ctx.lineTo(x+m,y+m); }
+  ctx.closePath();
+}
+function drawGrid(ctx,g,S,opts){
+  opts=opts||{};
+  ctx.clearRect(0,0,N_*S,N_*S);
+  for(let r=0;r<N_;r++)for(let c=0;c<N_;c++)for(let t=0;t<4;t++){
+    triPath(ctx,r,c,t,S);
+    ctx.fillStyle=PALETTE[g[tIdx(r,c,t)]];
+    ctx.fill();
+  }
+  if(opts.lines!==false){
+    ctx.strokeStyle='rgba(10,10,20,0.92)';
+    ctx.lineWidth=Math.max(1,S*0.045);
+    ctx.lineJoin='round';
+    for(let r=0;r<N_;r++)for(let c=0;c<N_;c++){
+      const x=c*S,y=r*S;
+      ctx.strokeRect(x,y,S,S);
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+S,y+S);
+      ctx.moveTo(x+S,y); ctx.lineTo(x,y+S); ctx.stroke();
+    }
+  }
+}
+function render(){
+  CELL=cellPxFor(); TCELL=Math.max(16,Math.round(CELL*0.46));
+  setupCanvas(boardEl,bctx,CELL);
+  setupCanvas(targetEl,tctx,TCELL);
+  drawGrid(bctx,board,CELL);
+  drawGrid(tctx,target,TCELL);
+  updateHud();
+}
+function updateHud(){
+  movesEl.textContent=moves;
+  parEl.textContent=par;
+  progressEl.textContent=progressCount()+'/'+(N_*N_*4);
+}
+
+// ── 折叠预览（拖动时把结果叠在当前盘面上 + 高亮折痕）──
+function drawPreview(f){
+  drawGrid(bctx,board,CELL);
+  if(!f)return;
+  const res=applyFold(board,f);
+  bctx.save(); bctx.globalAlpha=0.45;
+  for(let r=0;r<N_;r++)for(let c=0;c<N_;c++)for(let t=0;t<4;t++){
+    if(res[tIdx(r,c,t)]!==board[tIdx(r,c,t)]){
+      triPath(bctx,r,c,t,CELL); bctx.fillStyle=PALETTE[res[tIdx(r,c,t)]]; bctx.fill();
+    }
+  }
+  bctx.restore();
+  drawFoldLine(bctx,f,CELL,'#ffffff');
+}
+function drawFoldLine(ctx,f,S,col){
+  const L=N_*S;
+  ctx.save();
+  ctx.strokeStyle=col; ctx.lineWidth=Math.max(2.5,S*0.07);
+  ctx.setLineDash([S*0.28,S*0.18]); ctx.lineCap='round';
+  ctx.shadowColor=col; ctx.shadowBlur=10;
+  ctx.beginPath();
+  if(f.k==='V'){ ctx.moveTo(f.pos*S,0); ctx.lineTo(f.pos*S,L); }
+  else if(f.k==='H'){ ctx.moveTo(0,f.pos*S); ctx.lineTo(L,f.pos*S); }
+  else if(f.k==='D1'){ // y-x=pos  => y=x+pos
+    let p1=clipLineD1(f.pos); ctx.moveTo(p1[0]*S,p1[1]*S); ctx.lineTo(p1[2]*S,p1[3]*S);
+  } else { // D2 x+y=pos
+    let p1=clipLineD2(f.pos); ctx.moveTo(p1[0]*S,p1[1]*S); ctx.lineTo(p1[2]*S,p1[3]*S);
+  }
+  ctx.stroke(); ctx.restore();
+}
+// 把对角线裁剪到 [0,N]×[0,N] 方框内, 返回两端点 [x1,y1,x2,y2]
+function clipLineD1(d){ // y=x+d
+  const pts=[];
+  // 与 x=0,x=N,y=0,y=N 交点
+  [[0,0+d],[N_,N_+d]].forEach(p=>{ if(p[1]>=0&&p[1]<=N_)pts.push(p); });
+  [[0-d,0],[N_-d,N_]].forEach(p=>{ if(p[0]>=0&&p[0]<=N_)pts.push(p); });
+  return dedupe(pts);
+}
+function clipLineD2(s){ // x+y=s
+  const pts=[];
+  [[0,s],[N_,s-N_]].forEach(p=>{ if(p[1]>=0&&p[1]<=N_)pts.push(p); });
+  [[s,0],[s-N_,N_]].forEach(p=>{ if(p[0]>=0&&p[0]<=N_)pts.push(p); });
+  return dedupe(pts);
+}
+function dedupe(pts){
+  const u=[];
+  pts.forEach(p=>{ if(!u.some(q=>Math.abs(q[0]-p[0])<1e-6&&Math.abs(q[1]-p[1])<1e-6))u.push(p); });
+  if(u.length<2)return [0,0,0,0];
+  return [u[0][0],u[0][1],u[1][0],u[1][1]];
+}
+
+// ── 折叠提交动画（翻折）──
+function animateFold(oldGrid,newGrid,f,cb){
+  animating=true;
+  // 主动侧快照（只画主动三角, 其余透明）
+  const off=document.createElement('canvas'); off.width=N_*CELL*DPR; off.height=N_*CELL*DPR;
+  const octx=off.getContext('2d'); octx.setTransform(DPR,0,0,DPR,0,0);
+  for(let r=0;r<N_;r++)for(let c=0;c<N_;c++)for(let t=0;t<4;t++){
+    const ct=triCentroid(r,c,t), v=foldValue(f.k,f.pos,ct[0],ct[1]);
+    if(v*f.dir>0){ triPath(octx,r,c,t,CELL); octx.fillStyle=PALETTE[oldGrid[tIdx(r,c,t)]]; octx.fill(); }
+  }
+  // 反射矩阵 R (格单位仿射) : x'=a x+c y+e ; y'=b x+d y+f2
+  let R;
+  if(f.k==='V')  R={a:-1,b:0,c:0,d:1,e:2*f.pos,f2:0};
+  else if(f.k==='H') R={a:1,b:0,c:0,d:-1,e:0,f2:2*f.pos};
+  else if(f.k==='D1')R={a:0,b:1,c:1,d:0,e:-f.pos,f2:f.pos};
+  else R={a:0,b:-1,c:-1,d:0,e:f.pos,f2:f.pos};
+  const I={a:1,b:0,c:0,d:1,e:0,f2:0};
+  const t0=performance.now(), DUR=240;
+  function frame(now){
+    let p=Math.min(1,(now-t0)/DUR);
+    const e=1-Math.pow(1-p,2);
+    drawGrid(bctx,newGrid,CELL);            // 底层 = 折叠后结果
+    const M={a:I.a+(R.a-I.a)*e,b:I.b+(R.b-I.b)*e,c:I.c+(R.c-I.c)*e,
+             d:I.d+(R.d-I.d)*e,e:I.e+(R.e-I.e)*e,f2:I.f2+(R.f2-I.f2)*e};
+    bctx.save();
+    bctx.setTransform(DPR*M.a,DPR*M.b,DPR*M.c,DPR*M.d,DPR*M.e*CELL,DPR*M.f2*CELL);
+    bctx.globalAlpha=0.55+0.45*(1-Math.abs(0.5-e)*2);
+    bctx.drawImage(off,0,0,N_*CELL,N_*CELL);
+    bctx.restore();
+    if(p<1) requestAnimationFrame(frame);
+    else { drawGrid(bctx,newGrid,CELL); animating=false; cb&&cb(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── 拖动 → 折痕解析 ───────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+let dragP0=null;
+function evtToCell(e){
+  const rect=boardEl.getBoundingClientRect();
+  const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+  const cy=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;
+  return {x:cx/CELL, y:cy/CELL};
+}
+function resolveFold(p0,p1){
+  const dx=p1.x-p0.x, dy=p1.y-p0.y, len=Math.hypot(dx,dy);
+  if(len<0.5) return null;
+  let a=Math.atan2(dy,dx); a=((a%Math.PI)+Math.PI)%Math.PI; // 0..pi
+  // 拖动方向 ⟂ 折痕。 0->V, pi/4->D2, pi/2->H, 3pi/4->D1
+  const cands=[['V',0],['D2',Math.PI/4],['H',Math.PI/2],['D1',3*Math.PI/4]];
+  let best='V',bd=9;
+  cands.forEach(([k,ctr])=>{ let dd=Math.abs(a-ctr); dd=Math.min(dd,Math.PI-dd); if(dd<bd){bd=dd;best=k;} });
+  const mx=(p0.x+p1.x)/2, my=(p0.y+p1.y)/2;
+  let pos,dir;
+  if(best==='V'){ pos=clamp(Math.round(mx),1,N_-1); dir=(p0.x<pos)?-1:1; }
+  else if(best==='H'){ pos=clamp(Math.round(my),1,N_-1); dir=(p0.y<pos)?-1:1; }
+  else if(best==='D1'){ pos=clamp(Math.round(my-mx),-(N_-1),N_-1); dir=((p0.y-p0.x)<pos)?-1:1; }
+  else { pos=clamp(Math.round(mx+my),1,2*N_-1); dir=((p0.x+p0.y)<pos)?-1:1; }
+  if((best==='D1'||best==='D2') && !cfg.allowDiag) return {k:'BLOCK'};
+  return {k:best,pos,dir};
+}
+function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+
+function onDown(e){
+  if(won||animating||demoPlaying||!timerID)return;
+  e.preventDefault(); dragP0=evtToCell(e);
+}
+function onMove(e){
+  if(!dragP0)return; e.preventDefault();
+  const f=resolveFold(dragP0,evtToCell(e));
+  if(f&&f.k==='BLOCK'){ drawGrid(bctx,board,CELL); return; }
+  drawPreview(f);
+}
+function onUp(e){
+  if(!dragP0)return; e.preventDefault();
+  const p1=evtToCell(e.changedTouches?{clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY}:e);
+  const f=resolveFold(dragP0,p1);
+  dragP0=null;
+  if(!f){ drawGrid(bctx,board,CELL); return; }
+  if(f.k==='BLOCK'){ drawGrid(bctx,board,CELL); flash('这一关只能横/竖折哦 ✋（对角折在高难度才出现）'); return; }
+  const ng=applyFold(board,f);
+  if(eqGrid(ng,board)){ drawGrid(bctx,board,CELL); flash('这一折没有覆盖到任何颜色'); return; }
+  commitFold(ng,f);
+}
+function commitFold(ng,f){
+  const old=board;
+  board=ng; boardStack.push(board.slice());
+  moves++; updateHud(); refreshUndo();
+  sfxFold();
+  const before=progressCount();
+  animateFold(old,board,f,()=>{
+    updateHud();
+    if(progressCount()===N_*N_*4) winGame();
+    else if(progressCount()>before && Math.random()>0.5) sfxProgress();
+  });
+}
+boardEl.addEventListener('mousedown',onDown);
+window.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp);
+boardEl.addEventListener('touchstart',onDown,{passive:false});
+boardEl.addEventListener('touchmove',onMove,{passive:false});
+boardEl.addEventListener('touchend',onUp,{passive:false});
+
+// ══════════════════════════════════════════════════════════
+// ── 流程 ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function setDiff(d){
+  cfg=DIFF_CONFIG[d]; curDiff=d;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('d'+d).classList.add('active');
+  if(started) newGame();
+}
+function newGame(){
+  clearInterval(timerID); timerID=null;
+  N_=cfg.N; K_=cfg.K;
+  moves=0; won=false; timeLeft=cfg.timeLimit;
+  demoUsed=false; hintCount=0; demoPlaying=false; animating=false; dragP0=null;
+  msgEl.textContent='';
+  document.getElementById('settle-mask').classList.remove('show');
+  genLevel();
+  render(); refreshUndo();
+  startTimer();
+}
+function resetBoard(){
+  if(won||demoPlaying)return;
+  board=initial.slice(); boardStack=[board.slice()]; moves=0;
+  render(); refreshUndo();
+  flash('↺ 已回到初始盘面');
+}
+function undo(){
+  if(won||demoPlaying||animating)return;
+  if(boardStack.length<=1)return;
+  boardStack.pop(); board=boardStack[boardStack.length-1].slice();
+  moves=Math.max(0,moves-1);
+  render(); refreshUndo();
+}
+function refreshUndo(){ document.getElementById('btn-undo').disabled=(boardStack.length<=1); }
+function flash(t){ msgEl.textContent=t; setTimeout(()=>{ if(!won&&msgEl.textContent===t)msgEl.textContent=''; },1400); }
+
+// 轻提示: 高亮"下一步"该折的折痕 + 预览结果, 不替你折(封顶 A 级)
+function nextHint(){
+  if(won||demoPlaying||animating||!timerID)return;
+  let i=-1; for(let k=0;k<solStates.length;k++){ if(eqGrid(board,solStates[k])){ i=k; break; } }
+  if(i===solStates.length-1){ flash('✨ 已经拼成目标图啦'); return; }
+  if(i<0){ flash('🔁 这步之后我跟丢了 · 点 ↶撤销 回到提示路线，或 ↺重置 从头跟提示走'); return; }
+  hintCount++;
+  drawPreview(genFolds[i]);
+  msgEl.textContent='💡 沿高亮折痕折（还剩 '+(K_-i)+' 步）· 轻提示·本局封顶 A 级';
+  clearTimeout(nextHint._t);
+  nextHint._t=setTimeout(()=>{ if(!animating&&!dragP0&&!won){ drawGrid(bctx,board,CELL); if(msgEl.textContent.indexOf('💡')===0)msgEl.textContent=''; } },2800);
+}
+// 演示解法: 回到初始, 逐步重放生成折叠(整局算练习)
+function demoSolve(){
+  if(won||demoPlaying||animating||!timerID)return;
+  demoUsed=true; demoPlaying=true;
+  board=initial.slice(); boardStack=[board.slice()]; moves=0;
+  render();
+  flash('💡 看好折法（本局算练习，不计最高分）');
+  let i=0;
+  function step(){
+    if(i>=genFolds.length){
+      demoPlaying=false; refreshUndo();
+      msgEl.textContent='✨ 演示完毕 · 点「重置」自己来试试';
+      return;
+    }
+    const f=genFolds[i++];
+    const ng=applyFold(board,f);
+    // 高亮折痕一下再翻
+    drawGrid(bctx,board,CELL); drawFoldLine(bctx,f,CELL,'#fff36b');
+    setTimeout(()=>{
+      board=ng; boardStack.push(board.slice());
+      animateFold(boardStack[boardStack.length-2],board,f,()=>{ updateHud(); setTimeout(step,420); });
+    },480);
+  }
+  setTimeout(step,500);
+}
+
+function startTimer(){
+  timerEl.textContent=timeLeft; timerEl.classList.remove('low');
+  timerID=setInterval(()=>{
+    timeLeft--; timerEl.textContent=timeLeft;
+    timerEl.classList.toggle('low',timeLeft<=15);
+    if(timeLeft<=0){ clearInterval(timerID); timerID=null; loseGame(); }
+  },1000);
+}
+function winGame(){
+  if(won)return;
+  won=true; clearInterval(timerID); timerID=null;
+  sfxWin();
+  msgEl.textContent='🎉 拼出目标图形！结算中…';
+  for(let i=0;i<6;i++)setTimeout(()=>spawnSparks(window.innerWidth/2+(Math.random()-.5)*200,window.innerHeight/2+(Math.random()-.5)*120,['#ff9de2','#c084fc','#4ade80','#ffe08a','#7affd8']),i*120);
+  setTimeout(()=>showSettle(true),420);
+}
+function loseGame(){ won=true; msgEl.textContent='⏰ 时间到！'; showSettle(false); }
+
+// ══════════════════════════════════════════════════════════
+// ── 结算 ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function rankOf(cleared){
+  if(!cleared) return {g:'C',stars:1,color:'#94a3b8'};
+  if(demoUsed) return {g:'P',stars:1,color:'#7dd3fc'};
+  const ratio=moves/Math.max(1,par);
+  let g = ratio<=1.001?'S' : ratio<=1.5?'A' : ratio<=2.2?'B' : 'C';
+  if(hintCount>0 && g==='S') g='A'; // 用过轻提示封顶 A
+  const M={S:{stars:3,color:'#ffe08a'},A:{stars:3,color:'#67e8f9'},B:{stars:2,color:'#a78bfa'},C:{stars:1,color:'#94a3b8'}};
+  return {g, stars:M[g].stars, color:M[g].color};
+}
+function showSettle(cleared){
+  clearInterval(timerID); timerID=null;
+  const clearBonus=cleared?cfg.base:0;
+  const timeBonus=cleared?Math.round(timeLeft*cfg.timeRate):0;
+  let eff=(cleared&&!demoUsed)?Math.max(0,Math.round((par/Math.max(1,moves))*cfg.base)):0;
+  if(eff>0 && hintCount>0) eff=Math.round(eff*Math.max(0.3,1-0.12*hintCount));
+  const finalScore=clearBonus+timeBonus+eff;
+  let rk=rankOf(cleared);
+  const diffName={1:'3×3·1折 🌱',2:'3×3·2折 🌿',3:'4×4·2折 🌙',4:'4×4·3折+斜 ⭐',5:'5×5·4折+斜 🔥'}[curDiff];
+  document.getElementById('settle-title').textContent=cleared?(demoUsed?'✅ 已完成（练习）':'🎉 图形完成！'):'⏰ 时间到';
+  document.getElementById('settle-sub').textContent=diffName+' · 用了 '+moves+' 折（参考 '+par+'）';
+  const rankEl=document.getElementById('settle-rank');
+  const starsEl=document.getElementById('settle-stars');
+  rankEl.className='counting'; rankEl.textContent='计算中…'; rankEl.style.color='';
+  starsEl.className=''; starsEl.textContent='';
+  const rows=[
+    ['🏁 通关奖励',clearBonus],
+    [demoUsed?'🎯 效率加成 (用演示，作废)':(hintCount>0?('🎯 效率加成 ('+moves+'/'+par+'折·提示×'+hintCount+')'):('🎯 效率加成 ('+moves+'/'+par+'折)')),eff],
+    ['⏱ 时间奖励 (剩'+(cleared?timeLeft:0)+'s)',timeBonus],
+  ];
+  document.getElementById('settle-rows').innerHTML=rows.map(([k,v])=>`<div class="settle-row"><span>${k}</span><span>${v>0?'+':''}${v}</span></div>`).join('');
+  const key='cfdy_best_'+curDiff;
+  const lsGet=k=>{try{return +(localStorage.getItem(k)||0);}catch(e){return 0;}};
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+  const prev=lsGet(key);
+  const isNewBest=finalScore>prev && !demoUsed;
+  if(isNewBest&&cleared)lsSet(key,finalScore);
+  document.getElementById('settle-best').textContent='';
+  document.getElementById('sb-next').style.display=(cleared&&curDiff<MAX_DIFF)?'block':'none';
+  document.getElementById('settle-mask').classList.add('show');
+  const totalEl=document.getElementById('settle-total-val');
+  let cur=0; const stepv=Math.max(1,Math.ceil(finalScore/45)); totalEl.textContent='0';
+  const anim=setInterval(()=>{
+    cur+=stepv;
+    if(cur>=finalScore){ cur=finalScore; clearInterval(anim); totalEl.textContent=finalScore; revealRank(rk,finalScore,prev,isNewBest,cleared); }
+    else { totalEl.textContent=cur; if(Math.random()>0.6)playTick(); }
+  },24);
+}
+function revealRank(rk,finalScore,prev,isNewBest,cleared){
+  const rankEl=document.getElementById('settle-rank');
+  const starsEl=document.getElementById('settle-stars');
+  const bestEl=document.getElementById('settle-best');
+  rankEl.className=''; rankEl.textContent=rk.g; rankEl.style.color=rk.color;
+  starsEl.textContent='★★★'.slice(0,rk.stars)+'☆☆☆'.slice(0,3-rk.stars); starsEl.style.color=rk.color;
+  void rankEl.offsetWidth;
+  rankEl.classList.add('reveal'); starsEl.classList.add('reveal');
+  sfxRankReveal(rk.g);
+  if(rk.g==='S'){ for(let i=0;i<8;i++)setTimeout(()=>spawnSparks(window.innerWidth/2+(Math.random()-.5)*160,window.innerHeight*0.42+(Math.random()-.5)*60,['#ffe08a','#fbbf24','#ff9de2']),i*90); }
+  bestEl.textContent = !cleared ? '⏰ 未在限时内完成'
+    : demoUsed ? '🔍 本局用过演示，不计入最高分　本难度最高分：'+prev
+    : isNewBest ? ('🏅 新纪录！'+(hintCount>0?'（用过'+hintCount+'次提示）':'')+' 上次最佳 '+prev)
+    : ('本难度最高分：'+Math.max(prev,finalScore));
+}
+
+// ══════════════════════════════════════════════════════════
+// ── 绑定 ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+document.getElementById('btn-new').addEventListener('click',()=>{if(started)newGame();});
+document.getElementById('btn-undo').addEventListener('click',undo);
+document.getElementById('btn-reset').addEventListener('click',resetBoard);
+document.getElementById('btn-hint').addEventListener('click',nextHint);
+document.getElementById('btn-demo').addEventListener('click',demoSolve);
+document.getElementById('btn-music').addEventListener('click',toggleMusic);
+document.getElementById('sb-again').addEventListener('click',()=>{document.getElementById('settle-mask').classList.remove('show');newGame();});
+document.getElementById('sb-next').addEventListener('click',()=>{document.getElementById('settle-mask').classList.remove('show');if(curDiff<MAX_DIFF)setDiff(curDiff+1);});
+document.getElementById('sb-close').addEventListener('click',()=>document.getElementById('settle-mask').classList.remove('show'));
+
+// ── 欢迎页迷你演示动画 ──
+(function(){
+  const cv=document.getElementById('welcome-demo'); if(!cv)return;
+  const ctx=cv.getContext('2d'); const dn=2,S=cv.width/(dn*2)/dn; // 2x2 演示
+  let dN=2;
+  function center(){ return cv.width/2; }
+  let g=new Uint8Array(dN*dN*4);
+  function reseed(){ for(let i=0;i<g.length;i++)g[i]=Math.random()*PALETTE.length|0; }
+  reseed();
+  const PS=Math.floor(cv.width/(dN+0.5))/1; const px=36; const ox=(cv.width-dN*px)/2, oy=(cv.height-dN*px)/2;
+  function tp(r,c,t){ const x=ox+c*px,y=oy+r*px,m=px/2; ctx.beginPath();
+    if(t===0){ctx.moveTo(x,y);ctx.lineTo(x+px,y);ctx.lineTo(x+m,y+m);}
+    else if(t===1){ctx.moveTo(x+px,y);ctx.lineTo(x+px,y+px);ctx.lineTo(x+m,y+m);}
+    else if(t===2){ctx.moveTo(x+px,y+px);ctx.lineTo(x,y+px);ctx.lineTo(x+m,y+m);}
+    else{ctx.moveTo(x,y+px);ctx.lineTo(x,y);ctx.lineTo(x+m,y+m);} ctx.closePath(); }
+  function draw(){ ctx.clearRect(0,0,cv.width,cv.height);
+    for(let r=0;r<dN;r++)for(let c=0;c<dN;c++)for(let t=0;t<4;t++){ tp(r,c,t); ctx.fillStyle=PALETTE[g[(r*dN+c)*4+t]]; ctx.fill(); }
+    ctx.strokeStyle='rgba(10,10,20,0.9)'; ctx.lineWidth=2;
+    for(let r=0;r<dN;r++)for(let c=0;c<dN;c++){ const x=ox+c*px,y=oy+r*px; ctx.strokeRect(x,y,px,px);
+      ctx.beginPath(); ctx.moveTo(x,y);ctx.lineTo(x+px,y+px); ctx.moveTo(x+px,y);ctx.lineTo(x,y+px); ctx.stroke(); }
+  }
+  draw();
+  let phase=0;
+  setInterval(()=>{ // 反复: 竖折 → 横折 → 重新随机
+    phase++;
+    const TPv=[0,3,2,1],TPh=[2,1,0,3];
+    if(phase%3===1){ const ng=g.slice(); for(let r=0;r<dN;r++)for(let c=0;c<dN;c++)for(let t=0;t<4;t++){ const cx=c+ (t===1?0.75:t===3?0.25:0.5); if(cx<1){ const nc=1-c, nt=TPv[t]; ng[(r*dN+nc)*4+nt]=g[(r*dN+c)*4+t]; } } g=ng; }
+    else if(phase%3===2){ const ng=g.slice(); for(let r=0;r<dN;r++)for(let c=0;c<dN;c++)for(let t=0;t<4;t++){ const cy=r+ (t===0?0.25:t===2?0.75:0.5); if(cy<1){ const nr=1-r, nt=TPh[t]; ng[(nr*dN+c)*4+nt]=g[(r*dN+c)*4+t]; } } g=ng; }
+    else reseed();
+    draw();
+  },1100);
+})();
+
+// ── 开始游戏 ──
+var _launched=false;
+function launchGame(e){
+  if(e){try{e.preventDefault();e.stopPropagation();}catch(_){}}
+  if(_launched)return; _launched=true; started=true;
+  var mask=document.getElementById('welcome-mask');
+  if(mask){mask.classList.add('hide');setTimeout(()=>mask.style.display='none',500);}
+  try{newGame();}catch(err){alert('出错了:'+err.message);}
+  try{if(!_autoStartDone){_autoStartDone=true;startMusic();}}catch(err){}
+}
+(function(){
+  var b=document.getElementById('welcome-start');
+  if(b){b.addEventListener('click',launchGame);b.addEventListener('touchend',launchGame);}
+})();
+</script>
+</body>
+</html>

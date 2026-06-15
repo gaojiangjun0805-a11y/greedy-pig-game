@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2260" viewBox="0 0 1600 2260">
+  <defs>
+    <linearGradient id="pageBg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eefcff"/>
+      <stop offset="0.45" stop-color="#d7f6ef"/>
+      <stop offset="1" stop-color="#fff3d8"/>
+    </linearGradient>
+    <radialGradient id="bubble2" cx="32%" cy="24%" r="72%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.22" stop-color="#dffcf7"/>
+      <stop offset="0.58" stop-color="#8be1d4"/>
+      <stop offset="1" stop-color="#3e9ba9"/>
+    </radialGradient>
+    <filter id="cardShadow2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#1b6b73" flood-opacity="0.16"/>
+    </filter>
+    <filter id="markShadow2" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#0b3140" flood-opacity="0.22"/>
+    </filter>
+    <style>
+      .title{font-family:Arial,'Microsoft YaHei',sans-serif;font-size:44px;font-weight:900;fill:#14353d}
+      .sub{font-family:Arial,'Microsoft YaHei',sans-serif;font-size:24px;font-weight:600;fill:#4b747b}
+      .name{font-family:Arial,'Microsoft YaHei',sans-serif;font-size:31px;font-weight:900;fill:#14353d}
+      .desc{font-family:Arial,'Microsoft YaHei',sans-serif;font-size:20px;fill:#55777d}
+      .tag{font-family:Arial,'Microsoft YaHei',sans-serif;font-size:18px;font-weight:700;fill:#739095}
+      .card{fill:#ffffff;opacity:.78;filter:url(#cardShadow2)}
+      .bubble{fill:url(#bubble2);stroke:#fff;stroke-width:9}
+      .shine{fill:#fff;opacity:.72}
+      .tiny{fill:#fff;opacity:.52}
+    </style>
+  </defs>
+
+  <rect width="1600" height="2260" fill="url(#pageBg2)"/>
+  <text x="80" y="78" class="title">箭头风格备选 · 第二组</text>
+  <text x="80" y="118" class="sub">这 10 个都避开红色，整体更宽更大。你挑编号，我再真正改进游戏。</text>
+
+  <!-- E -->
+  <g transform="translate(80 170)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-78 0H38" stroke="#ffffff" stroke-width="46" stroke-linecap="round"/>
+      <path d="M-78 0H38" stroke="#2e7cc8" stroke-width="31" stroke-linecap="round"/>
+      <path d="M95 0L26 -48L40 0L26 48Z" fill="#2e7cc8" stroke="#ffffff" stroke-width="13" stroke-linejoin="round"/>
+      <path d="M-46 0H22" stroke="#95ddff" stroke-width="9" stroke-linecap="round" opacity=".8"/>
+    </g>
+    <text x="290" y="126" class="name">E. 蓝白胖箭</text>
+    <text x="290" y="166" class="desc">最像游戏 UI 图标，粗、干净、方向感强。</text>
+    <text x="290" y="202" class="tag">建议指数：高 · 适合小格子</text>
+  </g>
+
+  <!-- F -->
+  <g transform="translate(830 170)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-75 -25H24Q41 -25 41 -8V-4H80L34 44L-12 -4H18V-2Q18 2 14 2H-75Z" fill="#ffd35f" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+      <path d="M-62 -12H16Q25 -12 25 -4V8" fill="none" stroke="#9d7a24" stroke-width="9" stroke-linecap="round"/>
+    </g>
+    <text x="290" y="126" class="name">F. 糖块转角箭</text>
+    <text x="290" y="166" class="desc">像软糖块，形状可爱，但比普通箭头更有个性。</text>
+    <text x="290" y="202" class="tag">建议指数：中高 · 偏可爱</text>
+  </g>
+
+  <!-- G -->
+  <g transform="translate(80 550)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-82 0Q-18 -42 62 0Q-18 42 -82 0Z" fill="#ffffff" opacity=".92"/>
+      <path d="M-70 0Q-14 -30 43 0Q-14 30 -70 0Z" fill="#56d0c6"/>
+      <path d="M92 0L44 -34L55 0L44 34Z" fill="#56d0c6" stroke="#ffffff" stroke-width="12" stroke-linejoin="round"/>
+      <path d="M-44 0H45" stroke="#237e8a" stroke-width="10" stroke-linecap="round"/>
+    </g>
+    <text x="290" y="126" class="name">G. 水滴流线箭</text>
+    <text x="290" y="166" class="desc">更轻盈，不像武器，像泡泡里的一道水流。</text>
+    <text x="290" y="202" class="tag">建议指数：高 · 和泡泡最搭</text>
+  </g>
+
+  <!-- H -->
+  <g transform="translate(830 550)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-76 -24H22V-48L92 0L22 48V24H-76Z" fill="#ffffff" stroke="#2b5664" stroke-width="14" stroke-linejoin="round"/>
+      <path d="M-58 -10H25V-25L63 0L25 25V10H-58Z" fill="#c5f6ff"/>
+    </g>
+    <text x="290" y="126" class="name">H. 白芯粗描边</text>
+    <text x="290" y="166" class="desc">最稳妥，任何颜色泡泡上都清楚，不花。</text>
+    <text x="290" y="202" class="tag">建议指数：很高 · 关卡多时最耐看</text>
+  </g>
+
+  <!-- I -->
+  <g transform="translate(80 930)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-80 0H28" stroke="#fff" stroke-width="42" stroke-linecap="round"/>
+      <path d="M-80 0H28" stroke="#6b5fd6" stroke-width="28" stroke-linecap="round"/>
+      <path d="M93 0L20 -45L35 0L20 45Z" fill="#6b5fd6" stroke="#fff" stroke-width="13" stroke-linejoin="round"/>
+      <path d="M-62 -11H14" stroke="#d8d3ff" stroke-width="8" stroke-linecap="round"/>
+      <path d="M-63 12H1" stroke="#443e98" stroke-width="6" stroke-linecap="round" opacity=".5"/>
+    </g>
+    <text x="290" y="126" class="name">I. 紫蓝按钮箭</text>
+    <text x="290" y="166" class="desc">像按钮图标，偏现代，不会像弓箭武器。</text>
+    <text x="290" y="202" class="tag">建议指数：中高 · 比较精致</text>
+  </g>
+
+  <!-- J -->
+  <g transform="translate(830 930)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-73 -21H23V-41L88 0L23 41V21H-73Z" fill="#eafcff" stroke="#ffffff" stroke-width="14" stroke-linejoin="round"/>
+      <path d="M-73 -21H23V-41L88 0L23 41V21H-73Z" fill="none" stroke="#00a9b7" stroke-width="8" stroke-linejoin="round"/>
+      <circle cx="-45" cy="0" r="7" fill="#00a9b7"/>
+      <circle cx="-18" cy="0" r="7" fill="#00a9b7"/>
+    </g>
+    <text x="290" y="126" class="name">J. 空心贴纸箭</text>
+    <text x="290" y="166" class="desc">像贴纸，轻盈、儿童感强，但不如实心醒目。</text>
+    <text x="290" y="202" class="tag">建议指数：中 · 可爱优先</text>
+  </g>
+
+  <!-- K -->
+  <g transform="translate(80 1310)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-82 -23H16L16 -46L92 0L16 46V23H-82Z" fill="#f9f1d8" stroke="#315f6b" stroke-width="13" stroke-linejoin="round"/>
+      <path d="M-58 -7H30" stroke="#315f6b" stroke-width="11" stroke-linecap="round"/>
+      <path d="M44 0L18 -17L23 0L18 17Z" fill="#315f6b"/>
+    </g>
+    <text x="290" y="126" class="name">K. 奶油路标箭</text>
+    <text x="290" y="166" class="desc">像小路牌，比较亲和，颜色很稳。</text>
+    <text x="290" y="202" class="tag">建议指数：中高 · 温和清楚</text>
+  </g>
+
+  <!-- L -->
+  <g transform="translate(830 1310)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-84 0H18" stroke="#fff" stroke-width="49" stroke-linecap="round"/>
+      <path d="M-84 0H18" stroke="#0f8b8d" stroke-width="33" stroke-linecap="round"/>
+      <path d="M97 0L20 -52L36 0L20 52Z" fill="#0f8b8d" stroke="#fff" stroke-width="15" stroke-linejoin="round"/>
+      <path d="M-75 0H18" stroke="#baf7ec" stroke-width="9" stroke-linecap="round"/>
+    </g>
+    <text x="290" y="126" class="name">L. 超粗青绿箭</text>
+    <text x="290" y="166" class="desc">最宽最大，方向绝对清楚，图标感最强。</text>
+    <text x="290" y="202" class="tag">建议指数：很高 · 解决“太细太小”</text>
+  </g>
+
+  <!-- M -->
+  <g transform="translate(80 1690)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-84 -20H16V-45L93 0L16 45V20H-84Z" fill="#fff6be" stroke="#ffffff" stroke-width="14" stroke-linejoin="round"/>
+      <path d="M-64 -4H28" stroke="#a87919" stroke-width="10" stroke-linecap="round"/>
+      <path d="M44 0L20 -16L25 0L20 16Z" fill="#a87919"/>
+      <path d="M-74 -20H-30L-43 20H-84Z" fill="#91e4d7" opacity=".9"/>
+    </g>
+    <text x="290" y="126" class="name">M. 彩带纸片箭</text>
+    <text x="290" y="166" class="desc">比较有手工感，软萌，但盘面多箭时略花。</text>
+    <text x="290" y="202" class="tag">建议指数：中 · 个性优先</text>
+  </g>
+
+  <!-- N -->
+  <g transform="translate(830 1690)">
+    <rect class="card" width="690" height="340" rx="34"/>
+    <circle class="bubble" cx="150" cy="170" r="98"/>
+    <ellipse class="shine" cx="112" cy="118" rx="34" ry="16" transform="rotate(-25 112 118)"/>
+    <circle class="tiny" cx="187" cy="104" r="8"/>
+    <g transform="translate(150 170)" filter="url(#markShadow2)">
+      <path d="M-76 0H34" stroke="#ffffff" stroke-width="43" stroke-linecap="round"/>
+      <path d="M-76 0H34" stroke="#3aa7a3" stroke-width="26" stroke-linecap="round"/>
+      <path d="M94 0L33 -38L45 0L33 38Z" fill="#ffd166" stroke="#ffffff" stroke-width="13" stroke-linejoin="round"/>
+      <path d="M-72 -19L-103 0L-72 19Z" fill="#ffd166" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
+    </g>
+    <text x="290" y="126" class="name">N. 双头尾巴箭</text>
+    <text x="290" y="166" class="desc">尾巴也有造型，像游戏道具，不像普通箭头。</text>
+    <text x="290" y="202" class="tag">建议指数：中高 · 辨识度强</text>
+  </g>
+
+  <text x="80" y="2182" class="sub">我自己的排序：L 最清楚，H 最耐看，G 最像泡泡游戏，E 最像通用游戏箭头。</text>
+</svg>

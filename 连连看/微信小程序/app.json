@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/game/game"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#11072f",
+    "navigationBarTitleText": "公约数列",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#11072f"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

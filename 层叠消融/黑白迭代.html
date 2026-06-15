@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>黑白迭代</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root{
+  --cols:5; --csize:62px; --gap:7px; --pad:12px; --tsize:20px;
+}
+
+html, body { width:100%; height:100%; overflow:hidden; overscroll-behavior:none; }
+body{
+  min-height:100dvh;
+  background:radial-gradient(ellipse at 20% 20%, #1b2f5e 0%, #0d1430 45%, #07091a 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  font-family:'Nunito','Microsoft YaHei',sans-serif; color:#eaf0ff;
+  position:relative;
+  padding:env(safe-area-inset-top,12px) 0 env(safe-area-inset-bottom,8px);
+}
+
+#bg-canvas{ position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+#app{
+  position:relative; z-index:1; width:100%; max-width:480px;
+  display:flex; flex-direction:column; align-items:center;
+  padding:6px 12px 8px; gap:8px; min-height:100dvh; justify-content:flex-start;
+}
+
+/* ── title ── */
+#title-wrap{ text-align:center; }
+h1{
+  font-size:clamp(1.3rem,6vw,1.9rem); font-weight:900; letter-spacing:6px;
+  background:linear-gradient(135deg,#9de2ff,#7aa2ff,#c9b8ff);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px #7aa2ff66);
+  animation:titlePop 3s ease-in-out infinite alternate;
+}
+@keyframes titlePop{ from{letter-spacing:6px;} to{letter-spacing:9px;filter:drop-shadow(0 0 22px #9db8ff99);} }
+#subtitle{ font-size:clamp(0.58rem,2.2vw,0.72rem); color:#8ea2d6; letter-spacing:1.5px; margin-top:2px; }
+
+/* ── difficulty ── */
+#diff-bar{ display:flex; gap:6px; }
+.diff-btn{
+  padding:6px 15px; border-radius:999px; border:2px solid transparent;
+  font-size:clamp(0.72rem,3vw,0.82rem); font-weight:700; cursor:pointer;
+  font-family:inherit; letter-spacing:0.5px; transition:all 0.2s;
+  background:rgba(255,255,255,0.07); color:#aebde8; touch-action:manipulation;
+}
+.diff-btn{ padding:6px 12px; }
+.diff-btn.active{ color:#fff; border-color:var(--dc); background:var(--dc); box-shadow:0 0 14px var(--dc); transform:translateY(-1px); }
+#d1{--dc:#4ade80;} #d2{--dc:#a3e635;} #d3{--dc:#facc15;} #d4{--dc:#fb923c;} #d5{--dc:#f87171;}
+
+/* ── hud ── */
+#hud{
+  display:flex; gap:12px; align-items:center;
+  font-size:clamp(0.72rem,2.8vw,0.86rem); color:#aebde8;
+  background:rgba(255,255,255,0.06); padding:6px 16px; border-radius:999px;
+  border:1px solid rgba(255,255,255,0.1);
+}
+#hud b{ color:#ffe08a; font-family:'Nunito'; }
+#timer.low{ color:#f87171; animation:tblink 1s steps(2) infinite; }
+@keyframes tblink{ 50%{opacity:0.4;} }
+
+/* ── play area ── */
+#play{ display:flex; gap:16px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+.panel{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.panel-label{ font-size:clamp(0.6rem,2.3vw,0.72rem); color:#8ea2d6; letter-spacing:1px; font-weight:700; }
+
+#board, #target{
+  display:grid; padding:var(--pad);
+  background:rgba(255,255,255,0.04); border-radius:18px;
+  border:2px solid rgba(255,255,255,0.08);
+  box-shadow:0 0 50px #3b6aed22,0 16px 50px #00000055,inset 0 1px 0 rgba(255,255,255,0.1);
+}
+#board{ grid-template-columns:repeat(var(--cols),var(--csize)); gap:var(--gap); }
+#target{ grid-template-columns:repeat(var(--cols),var(--tsize)); gap:calc(var(--gap)*0.5); padding:8px; }
+
+/* ── cells ── */
+.cell{
+  width:var(--csize); height:var(--csize); border-radius:12px;
+  cursor:pointer; touch-action:manipulation; position:relative; overflow:hidden;
+  border:2px solid rgba(255,255,255,0.14);
+  transition:transform 0.13s cubic-bezier(.34,1.56,.64,1),filter 0.15s,box-shadow 0.18s,background 0.18s;
+  box-shadow:0 3px 8px #00000044,inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.cell::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:44%;
+  background:linear-gradient(180deg,rgba(255,255,255,0.28) 0%,transparent 100%);
+  border-radius:10px 10px 50% 50%; pointer-events:none;
+}
+.cell.off{ background:linear-gradient(135deg,#f4f7ff,#d6def0); border-color:rgba(255,255,255,0.5); }
+.cell.on{ background:linear-gradient(135deg,#1a2138,#0c1024); border-color:rgba(120,140,200,0.4); box-shadow:0 3px 10px #00000066,inset 0 1px 0 rgba(255,255,255,0.06),0 0 14px #2440804d; }
+.cell.on::before{ opacity:0.25; }
+.cell:active{ transform:scale(1.12); filter:brightness(1.2); }
+.cell.flip{ animation:flipPop 0.34s cubic-bezier(.34,1.56,.64,1); }
+@keyframes flipPop{ 40%{ transform:scale(1.22); filter:brightness(1.5); } }
+.cell .dot{
+  position:absolute; top:50%; left:50%; width:34%; height:34%;
+  transform:translate(-50%,-50%) scale(0); border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#9bdcff,#3b82f6);
+  box-shadow:0 0 12px #60a5facc; opacity:0; transition:0.2s;
+}
+.cell.hint .dot{ transform:translate(-50%,-50%) scale(1); opacity:1; animation:dotPulse 0.8s ease-in-out infinite alternate; }
+@keyframes dotPulse{ from{box-shadow:0 0 8px #60a5fa88;} to{box-shadow:0 0 20px #60a5fa,0 0 30px #3b82f688;} }
+.cell.done-blink{ animation:doneBlink 0.5s ease; }
+@keyframes doneBlink{ 50%{ box-shadow:0 0 0 3px #4ade80,0 0 22px #4ade8088; } }
+
+/* target cells (read-only) */
+.tcell{ width:var(--tsize); height:var(--tsize); border-radius:5px; border:1px solid rgba(255,255,255,0.1); }
+.tcell.off{ background:#e7edfa; }
+.tcell.on{ background:#10162b; box-shadow:inset 0 0 4px #2440806b; }
+
+/* ── buttons ── */
+#buttons{ display:flex; gap:7px; flex-wrap:wrap; justify-content:center; }
+button{
+  padding:9px 16px; border:none; border-radius:999px; font-size:clamp(0.75rem,3vw,0.84rem);
+  cursor:pointer; font-family:inherit; font-weight:700; letter-spacing:0.5px;
+  transition:all 0.14s cubic-bezier(.34,1.56,.64,1); box-shadow:0 3px 12px #0004; touch-action:manipulation;
+}
+button:active{ transform:scale(0.93); }
+button:disabled{ opacity:0.3; pointer-events:none; }
+#btn-new{ background:linear-gradient(135deg,#60a5fa,#3b6aed); color:#fff; }
+#btn-reset{ background:linear-gradient(135deg,#64748b,#4b5563); color:#fff; }
+#btn-hint{ background:linear-gradient(135deg,#ffe08a,#f59e0b); color:#1a1a2e; }
+#btn-music{ background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
+
+#msg{ min-height:1.2rem; font-size:clamp(0.75rem,3vw,0.88rem); font-weight:700; color:#ffe08a; letter-spacing:1px; text-align:center; text-shadow:0 0 10px #ffe08a88; }
+
+/* ── sparks ── */
+.spark{ position:fixed; pointer-events:none; z-index:500; border-radius:50%; animation:sparkFly var(--dur,0.7s) ease-out forwards; }
+@keyframes sparkFly{ 0%{transform:translate(0,0) scale(1);opacity:1;} 100%{transform:translate(var(--tx,20px),var(--ty,-40px)) scale(0);opacity:0;} }
+
+/* ── settlement ── */
+#settle-mask{ position:fixed; inset:0; background:rgba(4,6,20,0.85); display:none; align-items:center; justify-content:center; z-index:1000; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+#settle-mask.show{ display:flex; animation:fadeIn 0.35s ease; }
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+#settle-card{
+  width:92%; max-width:440px;
+  background:linear-gradient(160deg,#15224a,#0d1430);
+  border:2px solid #7aa2ff; border-radius:30px; padding:32px 26px 24px;
+  text-align:center; box-shadow:0 0 70px #3b6aed77,0 24px 70px #000b;
+  animation:cardPop 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes cardPop{ from{transform:scale(0.6) translateY(30px);opacity:0;} to{transform:scale(1);opacity:1;} }
+#settle-title{ font-size:1.9rem; font-weight:900; letter-spacing:3px; margin-bottom:3px;
+  background:linear-gradient(135deg,#ffe08a,#fb923c,#c9b8ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#settle-sub{ font-size:0.8rem; color:#8ea2d6; margin-bottom:14px; letter-spacing:1px; }
+#settle-rank{ font-size:5.5rem; font-weight:900; line-height:1; margin:6px 0 2px; filter:drop-shadow(0 0 24px currentColor); opacity:0; }
+#settle-rank.reveal{ animation:rankPop 0.65s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes rankPop{ 0%{transform:scale(0) rotate(-40deg);opacity:0;} 60%{transform:scale(1.45) rotate(8deg);opacity:1;} 100%{transform:scale(1) rotate(0);opacity:1;} }
+#settle-rank.counting{ opacity:1; font-size:1.7rem; color:#8ea2d6 !important; animation:countPulse 0.6s ease-in-out infinite alternate; }
+@keyframes countPulse{ from{opacity:0.5;} to{opacity:1;} }
+#settle-stars{ font-size:1.1rem; letter-spacing:3px; margin-bottom:12px; min-height:1.4rem; opacity:0; }
+#settle-stars.reveal{ animation:starsPop 0.5s ease 0.18s both; }
+@keyframes starsPop{ 0%{transform:scale(0.3);opacity:0;} 70%{transform:scale(1.25);} 100%{transform:scale(1);opacity:1;} }
+.settle-row{ display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:#aebde8; padding:5px 4px; border-bottom:1px dashed rgba(122,162,255,0.18); }
+.settle-row span:last-child{ color:#ffe08a; font-weight:900; font-family:'Nunito'; }
+.settle-total{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding:10px 6px; background:rgba(255,224,138,0.1); border-radius:14px; border:1px solid #ffe08a44; }
+.settle-total span:first-child{ font-size:0.9rem; font-weight:900; color:#fff; }
+.settle-total span:last-child{ font-size:1.8rem; font-weight:900; color:#ffe08a; font-family:'Nunito'; text-shadow:0 0 14px #ffe08a88; }
+#settle-best{ font-size:0.68rem; color:#7dd3fc; margin-top:8px; min-height:0.9rem; }
+#settle-btns{ display:flex; gap:8px; margin-top:16px; }
+#settle-btns button{ flex:1; padding:11px 0; }
+#sb-again{ background:linear-gradient(135deg,#4ade80,#16a34a); color:#04210f; }
+#sb-next{ background:linear-gradient(135deg,#ffe08a,#f59e0b); color:#1a1a2e; }
+#sb-close{ background:rgba(255,255,255,0.1); color:#94a3b8; }
+
+/* ── welcome ── */
+#welcome-mask{ position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 30%,#16224d,#080c1d 70%); transition:opacity .5s ease; }
+#welcome-mask.hide{ opacity:0; pointer-events:none; }
+#welcome-card{ text-align:center; padding:0 24px; animation:wcIn .6s ease both; }
+@keyframes wcIn{ from{opacity:0;transform:translateY(24px) scale(.96);} to{opacity:1;transform:none;} }
+#welcome-logo{ font-size:clamp(46px,13vw,88px); font-weight:900; letter-spacing:2px;
+  background:linear-gradient(135deg,#9de2ff,#60a5fa,#c9b8ff); -webkit-background-clip:text; background-clip:text;
+  color:transparent; filter:drop-shadow(0 4px 24px rgba(96,165,250,.4)); margin-bottom:6px; }
+#welcome-title{ font-size:clamp(20px,5vw,30px); font-weight:700; color:#e8ecff; margin-bottom:14px; }
+#welcome-sub{ font-size:clamp(13px,3.4vw,16px); color:#9aa6d6; line-height:1.7; max-width:430px; margin:0 auto 22px; }
+/* mini demo */
+#welcome-demo{ display:grid; grid-template-columns:repeat(3,26px); gap:5px; justify-content:center; margin:0 auto 30px; }
+#welcome-demo .dcell{ width:26px; height:26px; border-radius:7px; border:1px solid rgba(255,255,255,0.15); transition:.3s; }
+#welcome-demo .dcell.off{ background:linear-gradient(135deg,#f4f7ff,#d6def0); }
+#welcome-demo .dcell.on{ background:linear-gradient(135deg,#1a2138,#0c1024); }
+#welcome-start{ font-size:clamp(18px,4.6vw,22px); font-weight:800; color:#08142a; cursor:pointer; border:none;
+  padding:16px 56px; border-radius:999px; background:linear-gradient(135deg,#9de2ff,#3b82f6);
+  box-shadow:0 8px 32px rgba(59,130,246,.5); transition:transform .15s ease,box-shadow .15s ease;
+  animation:wcPulse 1.8s ease-in-out infinite; }
+#welcome-start:hover{ transform:translateY(-2px) scale(1.04); box-shadow:0 12px 40px rgba(59,130,246,.65); }
+#welcome-start:active{ transform:scale(.97); }
+@keyframes wcPulse{ 0%,100%{box-shadow:0 8px 32px rgba(59,130,246,.5);} 50%{box-shadow:0 8px 44px rgba(59,130,246,.85);} }
+</style>
+</head>
+<body>
+
+<div id="welcome-mask">
+  <div id="welcome-card">
+    <div id="welcome-logo">G-Game</div>
+    <div id="welcome-title">黑白迭代</div>
+    <div id="welcome-sub">点一个格子，它和上下左右一起翻转黑白。把盘面拼成右边的目标图形 ✨</div>
+    <div id="welcome-demo"></div>
+    <button id="welcome-start">开始游戏</button>
+  </div>
+</div>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <div id="title-wrap">
+    <h1>黑 白 迭 代</h1>
+    <div id="subtitle">点击翻转十字 · 拼出目标图形 ✨</div>
+  </div>
+
+  <div id="diff-bar">
+    <button class="diff-btn active" id="d1" onclick="setDiff(1)">🌱 3×3</button>
+    <button class="diff-btn"        id="d2" onclick="setDiff(2)">🌿 4×4</button>
+    <button class="diff-btn"        id="d3" onclick="setDiff(3)">🌙 5×5</button>
+    <button class="diff-btn"        id="d4" onclick="setDiff(4)">⭐ 6×6</button>
+    <button class="diff-btn"        id="d5" onclick="setDiff(5)">🔥 7×7</button>
+  </div>
+
+  <div id="hud">
+    👆 <b id="moves">0</b> 步 &nbsp;·&nbsp;
+    🎯 <b id="par">—</b> &nbsp;·&nbsp;
+    ⏱ <b id="timer">0</b>s &nbsp;·&nbsp;
+    ✅ <b id="progress">0</b>
+  </div>
+
+  <div id="play">
+    <div class="panel">
+      <div class="panel-label">当前盘面</div>
+      <div id="board"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">目标图形</div>
+      <div id="target"></div>
+    </div>
+  </div>
+
+  <div id="buttons">
+    <button id="btn-new">🎮 新关卡</button>
+    <button id="btn-reset">↺ 重置</button>
+    <button id="btn-hint">💡 提示</button>
+    <button id="btn-music">🔇 关音乐</button>
+  </div>
+
+  <div id="msg"></div>
+</div>
+
+<!-- 结算弹窗 -->
+<div id="settle-mask">
+  <div id="settle-card">
+    <div id="settle-title">关卡完成</div>
+    <div id="settle-sub"></div>
+    <div id="settle-rank">S</div>
+    <div id="settle-stars">★★★</div>
+    <div id="settle-rows"></div>
+    <div class="settle-total"><span>⭐ 总分</span><span id="settle-total-val">0</span></div>
+    <div id="settle-best"></div>
+    <div id="settle-btns">
+      <button id="sb-again">🔄 再来</button>
+      <button id="sb-next">⬆ 更大盘面</button>
+      <button id="sb-close">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ── helpers ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function calcCellSize(cols,gap,pad,extra){
+  const vw=Math.min(window.innerWidth,480);
+  const avail=vw-(extra||0);
+  return Math.max(26,Math.floor((avail-pad*2-gap*(cols-1)-4)/cols));
+}
+
+// ══════════════════════════════════════════════════════════
+// ── audio (synth piano music + sfx) ───────────────────────
+// ══════════════════════════════════════════════════════════
+let audioCtx=null,masterGain=null,masterFilter=null;
+let musicPlaying=false,musicNodes=new Set(),schedulerTimer=null;
+let _autoStartDone=false;
+function track(node){ musicNodes.add(node); node.onended=()=>musicNodes.delete(node); }
+function getAC(){
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain(); masterGain.gain.value=0.32;
+    masterFilter=audioCtx.createBiquadFilter();
+    masterFilter.type='lowpass'; masterFilter.frequency.value=6500; masterFilter.Q.value=0.2;
+    masterGain.connect(masterFilter); masterFilter.connect(audioCtx.destination);
+  }
+  return audioCtx;
+}
+const N={
+  C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,
+  C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:784,A5:880,B5:987.77,
+  C6:1046.5,E6:1318.5
+};
+function ntof(n){
+  const m=/^([A-G])(#|b)?(\d)$/.exec(n);
+  const base={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]];
+  const acc=m[2]==='#'?1:m[2]==='b'?-1:0;
+  const midi=base+acc+(+m[3]+1)*12;
+  return 440*Math.pow(2,(midi-69)/12);
+}
+function playNote(freq,when,dur,vol=0.08,type='sine'){
+  const ac=getAC(),o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g); g.connect(masterGain);
+  o.type=type; o.frequency.setValueAtTime(freq,when);
+  g.gain.setValueAtTime(0,when);
+  g.gain.linearRampToValueAtTime(vol,when+0.015);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0001,vol*0.6),when+dur*0.4);
+  g.gain.linearRampToValueAtTime(0,when+dur);
+  o.start(when); o.stop(when+dur+0.01); track(o);
+}
+// ── 钢琴音色（加性合成）──
+let _noiseBuf=null;
+function getNoise(ac){
+  if(!_noiseBuf){
+    const len=Math.floor(ac.sampleRate*0.05);
+    _noiseBuf=ac.createBuffer(1,len,ac.sampleRate);
+    const d=_noiseBuf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  }
+  return _noiseBuf;
+}
+function playPiano(freq,when,dur,vel){
+  const ac=getAC();
+  const isMel=vel>0.6, nP=isMel?7:5, B=0.0005;
+  const baseDecay=(isMel?3.6:2.2)+Math.max(0,(340-freq)/340)*2.2;
+  const voices=isMel?[-4,4]:[0];
+  const out=ac.createGain(); out.gain.value=Math.max(0.04,vel)*0.5; out.connect(masterGain);
+  voices.forEach(cents=>{
+    const det=Math.pow(2,cents/1200);
+    for(let n=1;n<=nP;n++){
+      const pf=freq*n*Math.sqrt(1+B*n*n)*det;
+      if(pf>ac.sampleRate*0.45)break;
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(pf,when);
+      o.connect(g); g.connect(out);
+      const amp=(1/Math.pow(n,1.25))/voices.length;
+      const dk=baseDecay/(1+(n-1)*0.7);
+      g.gain.setValueAtTime(0.0001,when);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002,amp),when+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001,when+dk);
+      o.start(when); o.stop(when+dk+0.05); track(o);
+    }
+  });
+  const src=ac.createBufferSource(); src.buffer=getNoise(ac);
+  const bp=ac.createBiquadFilter(); bp.type='bandpass';
+  bp.frequency.value=Math.min(6000,freq*4); bp.Q.value=0.7;
+  const ng=ac.createGain();
+  ng.gain.setValueAtTime(vel*0.05,when);
+  ng.gain.exponentialRampToValueAtTime(0.0001,when+0.04);
+  src.connect(bp); bp.connect(ng); ng.connect(masterGain);
+  src.start(when); src.stop(when+0.06); track(src);
+}
+// ── 卡农和声钢琴曲 ──
+const SONG_BPM=90,SBEAT=60/SONG_BPM;
+const PROG=[
+  {bass:'C3',t:['C4','E4','G4'],mel:[['E5',2],['D5',1],['C5',1]]},
+  {bass:'G2',t:['G3','B3','D4'],mel:[['D5',2],['C5',1],['B4',1]]},
+  {bass:'A2',t:['A3','C4','E4'],mel:[['C5',2],['B4',1],['A4',1]]},
+  {bass:'E2',t:['E3','G3','B3'],mel:[['B4',2],['A4',1],['G4',1]]},
+  {bass:'F2',t:['F3','A3','C4'],mel:[['A4',2],['G4',1],['F4',1]]},
+  {bass:'C3',t:['C4','E4','G4'],mel:[['G4',2],['A4',1],['B4',1]]},
+  {bass:'F2',t:['F3','A3','C4'],mel:[['A4',1],['C5',1],['F5',2]]},
+  {bass:'G2',t:['G3','B3','D4'],mel:[['D5',2],['B4',1],['G4',1]]},
+];
+let song=null,loopStart=0,evIdx=0;
+function buildSong(){
+  const ev=[];
+  PROG.forEach((p,bar)=>{
+    const t0=bar*4,bass=ntof(p.bass),tn=p.t.map(ntof);
+    const lh=[bass,tn[1],tn[2],tn[1],tn[0],tn[1],tn[2],tn[1]];
+    for(let e=0;e<8;e++)ev.push({beat:t0+e*0.5,f:lh[e],dur:0.55,vel:0.42});
+    let mt=t0;
+    p.mel.forEach(([nn,d])=>{ev.push({beat:mt,f:ntof(nn),dur:d*0.96,vel:0.85});mt+=d;});
+  });
+  ev.sort((a,b)=>a.beat-b.beat);
+  return{ev,loop:PROG.length*4};
+}
+function scheduleMusic(){
+  if(!musicPlaying)return;
+  const ac=getAC(),look=ac.currentTime+0.3;
+  while(true){
+    const e=song.ev[evIdx],when=loopStart+e.beat*SBEAT;
+    if(when<look){
+      playPiano(e.f,when,e.dur*SBEAT,e.vel);
+      evIdx++;
+      if(evIdx>=song.ev.length){evIdx=0;loopStart+=song.loop*SBEAT;}
+    }else break;
+  }
+  schedulerTimer=setTimeout(scheduleMusic,60);
+}
+function startMusic(){
+  const ac=getAC(); if(ac.state==='suspended')ac.resume();
+  if(!song)song=buildSong();
+  musicPlaying=true; evIdx=0; loopStart=ac.currentTime+0.15; scheduleMusic();
+  const btn=document.getElementById('btn-music'); btn.textContent='🔇 关音乐'; btn.style.opacity='0.75';
+}
+function stopMusic(){
+  musicPlaying=false; clearTimeout(schedulerTimer);
+  musicNodes.forEach(n=>{try{n.stop();}catch(e){}}); musicNodes.clear();
+  const btn=document.getElementById('btn-music'); btn.textContent='🎵 开音乐'; btn.style.opacity='1';
+}
+function toggleMusic(){ musicPlaying?stopMusic():startMusic(); }
+
+// ── sfx ──
+// 点击翻转：根据该格新状态选音高（点亮上行/熄灭下行），加水滴感
+function sfxFlip(on,x,y){
+  const ac=getAC(),t=ac.currentTime;
+  if(on){ playNote(N.E5,t,0.1,0.07,'sine'); playNote(N.A5,t+0.05,0.12,0.06,'sine'); }
+  else  { playNote(N.A4,t,0.1,0.06,'sine'); playNote(N.E4,t+0.05,0.12,0.05,'sine'); }
+}
+// 进度提升提示
+function sfxProgress(){ const ac=getAC(),t=ac.currentTime; playNote(N.D5,t,0.08,0.045,'sine'); playNote(N.F5,t+0.06,0.08,0.04,'sine'); }
+function sfxWin(){
+  const ac=getAC(),t=ac.currentTime;
+  [N.C5,N.E5,N.G5,N.C6,N.E6].forEach((f,i)=>playNote(f,t+i*0.11,0.35,0.09,'sine'));
+  setTimeout(()=>{ [N.G5,N.C6,N.E6].forEach((f,i)=>playNote(f,getAC().currentTime+i*0.09,0.5,0.07,'triangle')); },600);
+}
+function playTick(){ const ac=getAC(),t=ac.currentTime; playNote(N.A5,t,.04,.02,'sine'); }
+function sfxRankReveal(g){
+  const ac=getAC(),t=ac.currentTime;
+  const chords={S:[N.C5,N.E5,N.G5,N.C6,N.E6],A:[N.C5,N.E5,N.G5,N.C6],B:[N.A4,N.C5,N.E5],C:[N.G4,N.B4]};
+  (chords[g]||chords.C).forEach((f,i)=>playNote(f,t+i*.09,.45,.09,'sine'));
+}
+function spawnSparks(cx,cy,colors){
+  for(let i=0;i<9;i++){
+    const el=document.createElement('div'); el.className='spark';
+    const angle=(Math.PI*2*i)/9+Math.random()*.5,dist=28+Math.random()*44;
+    el.style.setProperty('--tx',Math.cos(angle)*dist+'px');
+    el.style.setProperty('--ty',(Math.sin(angle)*dist-18)+'px');
+    el.style.setProperty('--dur',(0.5+Math.random()*.38)+'s');
+    el.style.background=colors[Math.floor(Math.random()*colors.length)];
+    el.style.left=(cx-4)+'px'; el.style.top=(cy-4)+'px';
+    el.style.width=el.style.height=(4+Math.random()*5)+'px';
+    document.body.appendChild(el); setTimeout(()=>el.remove(),950);
+  }
+}
+function _tryAutoMusic(){ if(!_autoStartDone){_autoStartDone=true;startMusic();} }
+document.addEventListener('click',_tryAutoMusic,{once:true});
+document.addEventListener('touchstart',_tryAutoMusic,{once:true});
+
+// ══════════════════════════════════════════════════════════
+// ── bg canvas ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const bgCanvas=document.getElementById('bg-canvas'),bgCtx=bgCanvas.getContext('2d');
+const FLOATERS=[],ICONS=['⬜','⬛','✦','✧','◆','◇','💠','✨','🔷','🔹','⭐','💫','🌙','🫧'];
+function initBg(){
+  bgCanvas.width=window.innerWidth; bgCanvas.height=window.innerHeight; FLOATERS.length=0;
+  for(let i=0;i<30;i++)FLOATERS.push({x:Math.random()*bgCanvas.width,y:Math.random()*bgCanvas.height,icon:ICONS[Math.floor(Math.random()*ICONS.length)],size:9+Math.random()*16,vx:(Math.random()-.5)*.35,vy:-.18-Math.random()*.4,alpha:.1+Math.random()*.24,rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*.018});
+}
+function animateBg(){
+  const W=bgCanvas.width,H=bgCanvas.height; bgCtx.clearRect(0,0,W,H);
+  FLOATERS.forEach(f=>{
+    f.x+=f.vx; f.y+=f.vy; f.rot+=f.rotV;
+    if(f.y+f.size<0){f.y=H+f.size;f.x=Math.random()*W;}
+    if(f.x<-f.size)f.x=W+f.size; if(f.x>W+f.size)f.x=-f.size;
+    bgCtx.save(); bgCtx.globalAlpha=f.alpha; bgCtx.translate(f.x,f.y); bgCtx.rotate(f.rot);
+    bgCtx.font=f.size+'px serif'; bgCtx.textAlign='center'; bgCtx.textBaseline='middle';
+    bgCtx.fillText(f.icon,0,0); bgCtx.restore();
+  });
+  requestAnimationFrame(animateBg);
+}
+window.addEventListener('resize',()=>{initBg();if(board.length)render();});
+initBg(); animateBg();
+
+// ══════════════════════════════════════════════════════════
+// ── game config ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+const DIFF_CONFIG={
+  1:{N:3, gap:9, pad:14, timeLimit:90,  scrambles:3,  base:1000, timeRate:12},
+  2:{N:4, gap:8, pad:13, timeLimit:130, scrambles:5,  base:1600, timeRate:11},
+  3:{N:5, gap:7, pad:12, timeLimit:180, scrambles:8,  base:2400, timeRate:9},
+  4:{N:6, gap:6, pad:11, timeLimit:240, scrambles:11, base:3400, timeRate:8},
+  5:{N:7, gap:5, pad:11, timeLimit:300, scrambles:14, base:4800, timeRate:7},
+};
+const MAX_DIFF=5;
+let cfg=DIFF_CONFIG[1],curDiff=1;
+let N_=3, board=[], target=[], moves=0, par=0, optimalSet=[];
+let timeLeft=0, timerID=null, won=false, started=false;
+let hintUsed=false, hintCell=-1, hintIndex=0;
+
+const boardEl=document.getElementById('board'), targetEl=document.getElementById('target');
+const movesEl=document.getElementById('moves'), parEl=document.getElementById('par');
+const timerEl=document.getElementById('timer'), progressEl=document.getElementById('progress');
+const msgEl=document.getElementById('msg');
+
+const idx=(r,c)=>r*N_+c;
+function emptyGrid(){ return new Array(N_*N_).fill(0); }
+
+// 点击 (r,c)：自身 + 上下左右翻转
+function applyClick(grid,r,c){
+  const flip=(rr,cc)=>{ if(rr>=0&&rr<N_&&cc>=0&&cc<N_) grid[idx(rr,cc)]^=1; };
+  flip(r,c); flip(r-1,c); flip(r+1,c); flip(r,c-1); flip(r,c+1);
+}
+// 生成保证可解的目标：全白随机点击若干次
+function genTarget(){
+  const g=emptyGrid();
+  for(let i=0;i<cfg.scrambles;i++){ applyClick(g, Math.random()*N_|0, Math.random()*N_|0); }
+  if(!g.some(v=>v)) applyClick(g,(N_/2)|0,(N_/2)|0);
+  return g;
+}
+
+// ── GF(2) 求解：哪些格子需要点击，使 board → target ──
+function solveSystem(){
+  const n=N_*N_;
+  const rows=[]; for(let i=0;i<n;i++) rows.push(new Uint8Array(n+1));
+  for(let r=0;r<N_;r++) for(let c=0;c<N_;c++){
+    const eq=idx(r,c);
+    const mark=(rr,cc)=>{ if(rr>=0&&rr<N_&&cc>=0&&cc<N_) rows[eq][idx(rr,cc)]^=1; };
+    mark(r,c); mark(r-1,c); mark(r+1,c); mark(r,c-1); mark(r,c+1);
+    rows[eq][n]=board[eq]^target[eq];
+  }
+  const where=new Array(n).fill(-1);
+  let row=0;
+  for(let col=0; col<n && row<n; col++){
+    let sel=-1; for(let i=row;i<n;i++){ if(rows[i][col]){sel=i;break;} }
+    if(sel<0)continue;
+    [rows[sel],rows[row]]=[rows[row],rows[sel]]; where[col]=row;
+    for(let i=0;i<n;i++) if(i!==row && rows[i][col]) for(let k=col;k<=n;k++) rows[i][k]^=rows[row][k];
+    row++;
+  }
+  for(let i=row;i<n;i++) if(rows[i][n]) return null; // 无解（理论不会发生）
+  const particular=new Array(n).fill(0);
+  for(let col=0;col<n;col++) if(where[col]>=0) particular[col]=rows[where[col]][n];
+  // 零空间基：自由列
+  const free=[]; for(let col=0;col<n;col++) if(where[col]<0) free.push(col);
+  const basis=free.map(f=>{
+    const v=new Array(n).fill(0); v[f]=1;
+    for(let col=0;col<n;col++) if(where[col]>=0) v[col]=rows[where[col]][f];
+    return v;
+  });
+  return {particular,basis};
+}
+// 最小点击集合（枚举零空间）
+function minSolution(){
+  const sol=solveSystem(); if(!sol)return [];
+  const {particular,basis}=sol;
+  const dim=basis.length, n=N_*N_;
+  const popcount=v=>v.reduce((a,b)=>a+b,0);
+  if(dim===0 || dim>16) return particular;
+  let best=particular, bestW=popcount(particular);
+  for(let m=1;m<(1<<dim);m++){
+    const v=particular.slice();
+    for(let b=0;b<dim;b++) if(m&(1<<b)) for(let k=0;k<n;k++) v[k]^=basis[b][k];
+    const w=popcount(v);
+    if(w<bestW){bestW=w;best=v;}
+  }
+  return best;
+}
+function recomputeOptimal(){ optimalSet=minSolution(); }
+function progressCount(){ let c=0; for(let i=0;i<board.length;i++) if(board[i]===target[i])c++; return c; }
+
+// ══════════════════════════════════════════════════════════
+// ── render ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function getCellPx(){ return calcCellSize(cfg.N,cfg.gap,cfg.pad, cfg.N*22+60); }
+function setVars(cpx){
+  const root=document.documentElement.style;
+  root.setProperty('--cols',cfg.N);
+  root.setProperty('--csize',cpx+'px');
+  root.setProperty('--gap',cfg.gap+'px');
+  root.setProperty('--pad',cfg.pad+'px');
+  root.setProperty('--tsize',Math.max(12,Math.round(cpx*0.36))+'px');
+}
+function render(){
+  const cpx=getCellPx(); setVars(cpx);
+  boardEl.innerHTML='';
+  for(let i=0;i<N_*N_;i++){
+    const d=document.createElement('div');
+    d.className='cell '+(board[i]?'on':'off');
+    if(i===hintCell) d.classList.add('hint');
+    d.dataset.i=i;
+    const dot=document.createElement('div'); dot.className='dot'; d.appendChild(dot);
+    d.addEventListener('click',onCellClick);
+    boardEl.appendChild(d);
+  }
+  renderTarget();
+  updateHud();
+}
+function renderTarget(){
+  targetEl.innerHTML='';
+  for(let i=0;i<N_*N_;i++){
+    const d=document.createElement('div');
+    d.className='tcell '+(target[i]?'on':'off');
+    targetEl.appendChild(d);
+  }
+}
+function cellEl(i){ return boardEl.querySelector('[data-i="'+i+'"]'); }
+function updateHud(){
+  movesEl.textContent=moves;
+  parEl.textContent=par;
+  progressEl.textContent=progressCount()+'/'+(N_*N_);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── interaction ───────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function onCellClick(e){
+  if(won || !timerID) return;
+  const i=+e.currentTarget.dataset.i;
+  const r=(i/N_)|0, c=i%N_;
+  const before=progressCount();
+  applyClick(board,r,c);
+  moves++;
+  hintCell=-1; hintIndex=0;   // 走了一步，提示点收起，下次再按提示给新的一个
+  recomputeOptimal();
+  // 局部更新受影响格子
+  const affected=[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+  affected.forEach(([rr,cc])=>{
+    if(rr<0||rr>=N_||cc<0||cc>=N_)return;
+    const j=idx(rr,cc), el=cellEl(j); if(!el)return;
+    el.className='cell '+(board[j]?'on':'off');
+    const dot=document.createElement('div'); dot.className='dot'; el.appendChild(dot);
+    void el.offsetWidth; el.classList.add('flip');
+  });
+  const rect=e.currentTarget.getBoundingClientRect();
+  sfxFlip(board[i], rect.left+rect.width/2, rect.top+rect.height/2);
+  const after=progressCount();
+  if(after>before && after<N_*N_){ if(Math.random()>0.4) sfxProgress(); }
+  updateHud();
+  if(after===N_*N_) winGame();
+}
+function refreshHints(){
+  for(let i=0;i<N_*N_;i++){
+    const el=cellEl(i); if(!el)continue;
+    el.classList.toggle('hint', i===hintCell);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ── flow ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function setDiff(d){
+  cfg=DIFF_CONFIG[d]; curDiff=d; N_=cfg.N;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('d'+d).classList.add('active');
+  if(started) newGame();
+}
+function newGame(){
+  clearInterval(timerID); timerID=null;
+  N_=cfg.N;
+  board=emptyGrid();
+  target=genTarget();
+  moves=0; won=false; timeLeft=cfg.timeLimit;
+  hintUsed=false; hintCell=-1; hintIndex=0;
+  msgEl.textContent='';
+  document.getElementById('settle-mask').classList.remove('show');
+  recomputeOptimal();
+  par=optimalSet.reduce((a,b)=>a+b,0);
+  render();
+  startTimer();
+}
+function resetBoard(){
+  if(won)return;
+  board=emptyGrid(); moves=0; hintCell=-1; hintIndex=0;  // hintUsed 保留，防止靠重置洗掉提示惩罚
+  recomputeOptimal();
+  render();
+  msgEl.textContent='↺ 已重置盘面'; setTimeout(()=>{if(!won)msgEl.textContent='';},1200);
+}
+function showHint(){
+  if(won||!timerID)return;
+  const cells=[]; for(let i=0;i<optimalSet.length;i++) if(optimalSet[i]) cells.push(i);
+  if(!cells.length){ msgEl.textContent='✨ 已经就是目标图形啦'; return; }
+  hintUsed=true;
+  hintCell=cells[hintIndex % cells.length];
+  hintIndex++;
+  refreshHints();
+  const left=cells.length;
+  msgEl.textContent='💡 点这个蓝点格（还剩 '+left+' 步）· 用提示本局不计最高分';
+}
+function startTimer(){
+  timerEl.textContent=timeLeft; timerEl.classList.remove('low');
+  timerID=setInterval(()=>{
+    timeLeft--; timerEl.textContent=timeLeft;
+    timerEl.classList.toggle('low',timeLeft<=15);
+    if(timeLeft<=0){ clearInterval(timerID); timerID=null; loseGame(); }
+  },1000);
+}
+function winGame(){
+  won=true; clearInterval(timerID); timerID=null;
+  sfxWin();
+  msgEl.textContent='🎉 拼出目标图形！结算中…';
+  // 全盘闪烁庆祝
+  for(let i=0;i<N_*N_;i++){ const el=cellEl(i); if(el)setTimeout(()=>el.classList.add('done-blink'),(i%N_+((i/N_)|0))*40); }
+  for(let i=0;i<6;i++)setTimeout(()=>spawnSparks(window.innerWidth/2+(Math.random()-.5)*200,window.innerHeight/2+(Math.random()-.5)*120,['#9de2ff','#7aa2ff','#4ade80','#ffe08a','#c9b8ff']),i*120);
+  setTimeout(()=>showSettle(true),420);
+}
+function loseGame(){
+  won=true;
+  msgEl.textContent='⏰ 时间到！';
+  showSettle(false);
+}
+
+// ══════════════════════════════════════════════════════════
+// ── settlement ────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+function rankOf(cleared){
+  if(!cleared) return {g:'C',stars:1,color:'#94a3b8'};
+  // 用过提示：本局封顶为 P（练习），不参与正常评级
+  if(hintUsed) return {g:'P',stars:1,color:'#7dd3fc'};
+  const ratio=moves/Math.max(1,par);
+  if(ratio<=1.001) return {g:'S',stars:3,color:'#ffe08a'};
+  if(ratio<=1.4)   return {g:'A',stars:3,color:'#67e8f9'};
+  if(ratio<=2.0)   return {g:'B',stars:2,color:'#a78bfa'};
+  return {g:'C',stars:1,color:'#94a3b8'};
+}
+function showSettle(cleared){
+  clearInterval(timerID); timerID=null;
+  // 计分
+  const clearBonus=cleared?cfg.base:0;
+  const timeBonus=cleared?Math.round(timeLeft*cfg.timeRate):0;
+  // 效率奖励：步数越接近最少越高；用过提示则不给效率分（算作弊）
+  const eff=(cleared&&!hintUsed)?Math.max(0,Math.round((par/Math.max(1,moves))*cfg.base)):0;
+  const finalScore=clearBonus+timeBonus+eff;
+
+  let rk=rankOf(cleared);
+  const diffName={1:'3×3 🌱',2:'4×4 🌿',3:'5×5 🌙',4:'6×6 ⭐',5:'7×7 🔥'}[curDiff];
+  document.getElementById('settle-title').textContent=cleared?(hintUsed?'✅ 已完成（练习）':'🎉 图形完成！'):'⏰ 时间到';
+  document.getElementById('settle-sub').textContent=diffName+' · 用了 '+moves+' 步（最少 '+par+'）';
+
+  const rankEl=document.getElementById('settle-rank');
+  const starsEl=document.getElementById('settle-stars');
+  rankEl.className='counting'; rankEl.textContent='计算中…'; rankEl.style.color='';
+  starsEl.className=''; starsEl.textContent='';
+
+  const rows=[
+    ['🏁 通关奖励',clearBonus],
+    [hintUsed?'🎯 效率加成 (用提示，作废)':('🎯 效率加成 ('+moves+'/'+par+'步)'),eff],
+    ['⏱ 时间奖励 (剩'+(cleared?timeLeft:0)+'s)',timeBonus],
+  ];
+  document.getElementById('settle-rows').innerHTML=rows.map(([k,v])=>`<div class="settle-row"><span>${k}</span><span>${v>0?'+':''}${v}</span></div>`).join('');
+
+  const key='ldis_best_'+curDiff;
+  // localStorage 在 file:// 下（尤其 Safari）可能抛 SecurityError，包一层防止结算崩溃
+  const lsGet=k=>{try{return +(localStorage.getItem(k)||0);}catch(e){return 0;}};
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}};
+  const prev=lsGet(key);
+  // 用过提示的一局不进最高分榜
+  const isNewBest=finalScore>prev && !hintUsed;
+  if(isNewBest&&cleared)lsSet(key,finalScore);
+  document.getElementById('settle-best').textContent='';
+
+  document.getElementById('sb-next').style.display=(cleared&&curDiff<MAX_DIFF)?'block':'none';
+  document.getElementById('settle-mask').classList.add('show');
+
+  const totalEl=document.getElementById('settle-total-val');
+  let cur=0; const step=Math.max(1,Math.ceil(finalScore/45)); totalEl.textContent='0';
+  const anim=setInterval(()=>{
+    cur+=step;
+    if(cur>=finalScore){ cur=finalScore; clearInterval(anim); totalEl.textContent=finalScore; revealRank(rk,finalScore,prev,isNewBest,cleared); }
+    else { totalEl.textContent=cur; if(Math.random()>0.6)playTick(); }
+  },24);
+}
+function revealRank(rk,finalScore,prev,isNewBest,cleared){
+  const rankEl=document.getElementById('settle-rank');
+  const starsEl=document.getElementById('settle-stars');
+  const bestEl=document.getElementById('settle-best');
+  rankEl.className=''; rankEl.textContent=rk.g; rankEl.style.color=rk.color;
+  starsEl.textContent='★★★'.slice(0,rk.stars)+'☆☆☆'.slice(0,3-rk.stars); starsEl.style.color=rk.color;
+  void rankEl.offsetWidth;
+  rankEl.classList.add('reveal'); starsEl.classList.add('reveal');
+  sfxRankReveal(rk.g);
+  if(rk.g==='S'){ for(let i=0;i<8;i++)setTimeout(()=>spawnSparks(window.innerWidth/2+(Math.random()-.5)*160,window.innerHeight*0.42+(Math.random()-.5)*60,['#ffe08a','#fbbf24','#9de2ff']),i*90); }
+  bestEl.textContent = !cleared ? '⏰ 未在限时内完成'
+    : hintUsed ? '🔍 本局用过提示，不计入最高分　本难度最高分：'+prev
+    : isNewBest ? ('🏅 新纪录！上次最佳 '+prev)
+    : ('本难度最高分：'+Math.max(prev,finalScore));
+}
+
+// ══════════════════════════════════════════════════════════
+// ── bindings ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+document.getElementById('btn-new').addEventListener('click',()=>{if(started)newGame();});
+document.getElementById('btn-reset').addEventListener('click',resetBoard);
+document.getElementById('btn-hint').addEventListener('click',showHint);
+document.getElementById('btn-music').addEventListener('click',toggleMusic);
+document.getElementById('sb-again').addEventListener('click',()=>{document.getElementById('settle-mask').classList.remove('show');newGame();});
+document.getElementById('sb-next').addEventListener('click',()=>{document.getElementById('settle-mask').classList.remove('show');if(curDiff<MAX_DIFF)setDiff(curDiff+1);});
+document.getElementById('sb-close').addEventListener('click',()=>document.getElementById('settle-mask').classList.remove('show'));
+
+// ── 欢迎页 mini demo 动画 ──
+(function(){
+  const demo=document.getElementById('welcome-demo');
+  let dg=[0,0,0,0,0,0,0,0,0];
+  const di=(r,c)=>r*3+c;
+  function dflip(r,c){[[r,c],[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc])=>{if(rr>=0&&rr<3&&cc>=0&&cc<3)dg[di(rr,cc)]^=1;});}
+  function drawDemo(){ demo.innerHTML=''; for(let i=0;i<9;i++){const d=document.createElement('div');d.className='dcell '+(dg[i]?'on':'off');demo.appendChild(d);} }
+  drawDemo();
+  let step=0; const seq=[[1,1],[0,0],[2,2],[1,1]];
+  setInterval(()=>{ dflip(...seq[step%seq.length]); drawDemo(); step++; },1100);
+})();
+
+// ── 开始游戏 ──
+var _launched=false;
+function launchGame(e){
+  if(e){try{e.preventDefault();e.stopPropagation();}catch(_){}}
+  if(_launched)return; _launched=true; started=true;
+  var mask=document.getElementById('welcome-mask');
+  if(mask){mask.classList.add('hide');setTimeout(()=>mask.style.display='none',500);}
+  try{newGame();}catch(err){alert('出错了:'+err.message);}
+  try{if(!_autoStartDone){_autoStartDone=true;startMusic();}}catch(err){}
+}
+(function(){
+  var b=document.getElementById('welcome-start');
+  if(b){b.addEventListener('click',launchGame);b.addEventListener('touchend',launchGame);}
+})();
+</script>
+</body>
+</html>

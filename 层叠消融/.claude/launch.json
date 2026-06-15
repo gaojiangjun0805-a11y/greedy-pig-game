@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "xingyun",
+      "runtimeExecutable": "/usr/bin/ruby",
+      "runtimeArgs": ["-run", "-e", "httpd", "--", "/tmp/xy_preview", "--port", "8124"],
+      "port": 8124
+    }
+  ]
+}

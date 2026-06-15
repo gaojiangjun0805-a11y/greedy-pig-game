@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>唐诗华容道 · 三百首</title>
+<style>
+  :root{
+    --bg1:#1b2440; --bg2:#0e1424;
+    --board:#cbb89a; --board-edge:#a8946f;
+    --tile1:#f7e9c8; --tile2:#efd8a6; --tile-text:#5a4326;
+    --accent:#ffcd6b; --accent2:#ff9d4d; --good:#7bd88f;
+    --panel:rgba(255,255,255,.08); --panel-line:rgba(255,255,255,.14);
+    --text:#f4eee2; --muted:#a9b0c5;
+    --serif:"Songti SC","STSong","SimSun","Source Han Serif SC","Noto Serif SC",serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 18% -10%, #2c3a66 0%, transparent 55%),
+      radial-gradient(1000px 800px at 110% 120%, #3a2a55 0%, transparent 50%),
+      linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100%;
+  }
+  .wrap{width:100%;max-width:620px;margin:0 auto;padding:22px 16px 40px;}
+
+  header.top{text-align:center;margin-bottom:14px;}
+  h1{
+    margin:0;font-size:30px;letter-spacing:6px;font-weight:800;font-family:var(--serif);
+    background:linear-gradient(90deg,var(--accent),#ffe6a8,var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 2px 14px rgba(255,180,80,.18);
+  }
+  .subtitle{margin-top:6px;font-size:13px;color:var(--muted);letter-spacing:1px;}
+
+  /* ---- overall progress ---- */
+  .overall{
+    display:flex;align-items:center;gap:14px;margin:16px 0 6px;
+    background:var(--panel);border:1px solid var(--panel-line);border-radius:16px;padding:14px 16px;
+  }
+  .overall .ring{position:relative;width:56px;height:56px;flex:0 0 auto;}
+  .overall .ring svg{transform:rotate(-90deg);}
+  .overall .ring .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;}
+  .overall .info{flex:1;}
+  .overall .info .t{font-size:14px;color:var(--muted);}
+  .overall .info .n{font-size:20px;font-weight:800;margin-top:2px;}
+  .overall .info .n b{color:var(--accent);}
+  .overall .info .bar{height:7px;border-radius:6px;background:rgba(0,0,0,.28);margin-top:8px;overflow:hidden;}
+  .overall .info .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s ease;}
+
+  .toolbar{display:flex;gap:10px;margin:12px 0 4px;}
+  #search{
+    flex:1;font:inherit;font-size:14px;padding:11px 14px;border-radius:12px;color:var(--text);
+    background:var(--panel);border:1px solid var(--panel-line);outline:none;
+  }
+  #search::placeholder{color:var(--muted);}
+  .resetBtn{
+    font:inherit;font-size:13px;padding:0 14px;border-radius:12px;cursor:pointer;color:var(--text);
+    background:var(--panel);border:1px solid var(--panel-line);white-space:nowrap;
+  }
+
+  /* ---- catalog ---- */
+  .section{margin-top:16px;}
+  .sec-head{
+    display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+    padding:10px 4px;border-bottom:1px solid var(--panel-line);
+  }
+  .sec-head .caret{transition:transform .2s ease;color:var(--muted);font-size:12px;}
+  .sec-head.open .caret{transform:rotate(90deg);}
+  .sec-head .name{font-family:var(--serif);font-size:17px;letter-spacing:2px;font-weight:700;}
+  .sec-head .frac{margin-left:auto;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .sec-head .mini{width:64px;height:6px;border-radius:5px;background:rgba(0,0,0,.28);overflow:hidden;flex:0 0 auto;}
+  .sec-head .mini i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--good),#a8e6a0);transition:width .35s ease;}
+  .sec-body{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:10px;
+    overflow:hidden;max-height:0;opacity:0;transition:opacity .25s ease;padding-top:0;
+  }
+  .sec-body.open{max-height:none;opacity:1;padding-top:12px;}
+
+  .lvl{
+    position:relative;text-align:left;cursor:pointer;border-radius:13px;padding:11px 12px;
+    background:linear-gradient(150deg,var(--panel),rgba(255,255,255,.04));
+    border:1px solid var(--panel-line);transition:transform .08s ease, border-color .15s, background .15s;
+    overflow:hidden;
+  }
+  .lvl:active{transform:scale(.97);}
+  .lvl .no{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .lvl .ti{font-family:var(--serif);font-size:16px;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lvl .au{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lvl.bibei{border-color:rgba(255,205,107,.4);background:linear-gradient(150deg,rgba(255,205,107,.14),rgba(255,205,107,.03));}
+  .lvl.bibei .no{color:var(--accent2);}
+  .section.pinned .sec-head{border-bottom-color:rgba(255,205,107,.35);}
+  .section.pinned .sec-head .name{color:var(--accent);}
+  .section.pinned .sec-head .mini i{background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .lvl.done{border-color:rgba(123,216,143,.5);background:linear-gradient(150deg,rgba(123,216,143,.16),rgba(123,216,143,.05));}
+  .lvl .stamp{
+    position:absolute;top:8px;right:8px;width:22px;height:22px;border-radius:50%;display:none;
+    align-items:center;justify-content:center;font-size:13px;color:#0e1a10;font-weight:900;
+    background:linear-gradient(150deg,var(--good),#a8e6a0);box-shadow:0 2px 6px rgba(0,0,0,.3);
+  }
+  .lvl.done .stamp{display:flex;}
+  .empty-note{color:var(--muted);font-size:13px;padding:16px 4px;grid-column:1/-1;text-align:center;}
+
+  /* ---- play view ---- */
+  #play{display:none;}
+  .play-head{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .back{
+    font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border-radius:12px;cursor:pointer;color:var(--text);
+    background:var(--panel);border:1px solid var(--panel-line);white-space:nowrap;
+  }
+  .play-title{flex:1;text-align:right;line-height:1.4;}
+  .play-title .lv{font-size:12px;color:var(--muted);}
+  .play-title b{font-family:var(--serif);font-size:19px;letter-spacing:1px;color:var(--accent);margin-left:6px;}
+  .play-title .au{font-size:13px;color:var(--muted);margin-left:6px;}
+  .play-title .fm{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--panel-line);border-radius:999px;padding:1px 8px;margin-left:6px;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0 14px;}
+  .stat{background:var(--panel);border:1px solid var(--panel-line);border-radius:14px;padding:10px 8px;text-align:center;}
+  .stat .label{font-size:11px;color:var(--muted);letter-spacing:1px;}
+  .stat .value{font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums;}
+
+  .board-wrap{position:relative;max-width:480px;margin:0 auto;}
+  #board{
+    --pad:12px;position:relative;width:100%;aspect-ratio:5/4;
+    background:linear-gradient(145deg,var(--board),var(--board-edge));
+    border-radius:18px;padding:var(--pad);
+    box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.35), inset 0 -3px 8px rgba(0,0,0,.22);
+    touch-action:none;
+  }
+  .slot{position:absolute;border-radius:12px;background:linear-gradient(145deg, rgba(0,0,0,.14), rgba(0,0,0,.05));box-shadow:inset 0 2px 6px rgba(0,0,0,.28);}
+  .ghost{
+    position:absolute;display:flex;align-items:center;justify-content:center;font-family:var(--serif);
+    color:rgba(90,67,38,.20);pointer-events:none;z-index:1;transition:left .16s, top .16s, color .3s ease, text-shadow .3s ease;
+  }
+  .ghost.lit{color:rgba(90,67,38,.5);text-shadow:0 1px 0 rgba(255,255,255,.4);}
+  .tile{
+    position:absolute;display:flex;align-items:center;justify-content:center;border-radius:12px;
+    font-weight:700;color:var(--tile-text);font-family:var(--serif);
+    background:linear-gradient(150deg,var(--tile1),var(--tile2));
+    box-shadow:0 4px 0 rgba(150,120,70,.55), 0 8px 14px rgba(0,0,0,.30), inset 0 2px 2px rgba(255,255,255,.8), inset 0 -3px 4px rgba(160,120,60,.35);
+    cursor:default;user-select:none;z-index:2;
+    transition:left .16s cubic-bezier(.34,1.3,.5,1), top .16s cubic-bezier(.34,1.3,.5,1), transform .08s ease, box-shadow .14s ease, background .14s ease, color .14s ease;
+    will-change:left,top;
+  }
+  .tile.movable{cursor:pointer;}
+  .tile.movable:active{transform:scale(.95);}
+  .tile.correct{background:linear-gradient(150deg,#dff3d6,#bfe7b2);color:#33692f;
+    box-shadow:0 4px 0 rgba(90,150,80,.55), 0 8px 14px rgba(0,0,0,.28), inset 0 2px 2px rgba(255,255,255,.85), inset 0 -3px 4px rgba(90,150,70,.30);}
+  .tile .zi{pointer-events:none;}
+
+  .board-overlay{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background:rgba(10,14,26,.80);border-radius:18px;backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .35s ease;z-index:30;text-align:center;padding:18px;
+  }
+  .board-overlay.show{opacity:1;pointer-events:auto;}
+  .board-overlay .big{font-size:28px;font-weight:900;color:var(--accent);letter-spacing:3px;font-family:var(--serif);}
+  .board-overlay .poemfull{margin-top:12px;font-family:var(--serif);font-size:17px;line-height:1.9;letter-spacing:2px;color:#f6ecd2;max-height:34vh;overflow:auto;}
+  .board-overlay .sub{margin-top:10px;color:var(--text);font-size:14px;line-height:1.6;}
+  .board-overlay .sub b{color:var(--good);}
+  .ov-btns{display:flex;gap:10px;margin-top:16px;}
+
+  .full-poem{
+    text-align:center;font-family:var(--serif);font-size:17px;line-height:1.95;letter-spacing:2px;color:#eadfc4;
+    margin:16px auto 0;max-width:480px;
+  }
+  .full-poem .seg-line{color:var(--accent);}
+
+  .controls{display:flex;gap:12px;margin-top:16px;max-width:480px;margin-left:auto;margin-right:auto;}
+  button.act{
+    flex:1;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:1px;padding:13px 10px;border-radius:14px;border:none;cursor:pointer;color:#3a2a10;
+    background:linear-gradient(160deg,var(--accent),var(--accent2));box-shadow:0 6px 16px rgba(255,150,60,.35), inset 0 1px 0 rgba(255,255,255,.5);
+    transition:transform .08s ease, box-shadow .12s ease, opacity .2s;
+  }
+  button.ghost-btn{color:var(--text);background:var(--panel);border:1px solid var(--panel-line);box-shadow:none;}
+  button.act:active{transform:translateY(2px);}
+  button.act:disabled{opacity:.4;cursor:default;transform:none;}
+
+  .play-nav{display:flex;gap:12px;margin-top:12px;max-width:480px;margin-left:auto;margin-right:auto;}
+
+  .hint{margin-top:14px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7;}
+  .hint kbd{background:var(--panel);border:1px solid var(--panel-line);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--text);font-family:inherit;}
+
+  .confetti{position:fixed;top:-12px;width:9px;height:14px;z-index:50;border-radius:2px;pointer-events:none;}
+  #welcome-mask{
+    position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 28%,#352747,#0e1424 72%);
+    transition:opacity .45s ease;
+  }
+  #welcome-mask.hide{opacity:0;pointer-events:none;}
+  #welcome-card{text-align:center;padding:0 24px;animation:ggCoverIn .55s ease both;}
+  @keyframes ggCoverIn{from{opacity:0;transform:translateY(22px) scale(.96);}to{opacity:1;transform:none;}}
+  #welcome-logo{
+    font-size:clamp(46px,13vw,88px);font-weight:900;letter-spacing:2px;
+    background:linear-gradient(135deg,#fff1c8,#ffcd6b,#ff9d4d);-webkit-background-clip:text;background-clip:text;
+    color:transparent;filter:drop-shadow(0 4px 26px rgba(255,180,80,.38));margin-bottom:8px;
+  }
+  #welcome-title{font-family:var(--serif);font-size:clamp(22px,5.5vw,32px);font-weight:800;color:#f6ecd2;letter-spacing:4px;margin-bottom:12px;}
+  #welcome-sub{font-size:clamp(13px,3.4vw,16px);color:#c8bdab;line-height:1.7;max-width:430px;margin:0 auto 22px;}
+  .welcome-demo{display:flex;gap:8px;justify-content:center;margin:0 auto 30px;}
+  .welcome-demo span{width:22px;height:30px;border-radius:7px;background:linear-gradient(150deg,var(--tile1),var(--tile2));box-shadow:0 4px 0 rgba(150,120,70,.45),0 0 16px rgba(255,205,107,.18);}
+  .welcome-demo span::before{content:"诗";display:block;text-align:center;line-height:30px;font-family:var(--serif);font-size:16px;color:var(--tile-text);}
+  .welcome-demo span:nth-child(2)::before{content:"华";}.welcome-demo span:nth-child(3)::before{content:"容";}.welcome-demo span:nth-child(4)::before{content:"道";}
+  #welcome-start{
+    font-family:inherit;font-size:clamp(18px,4.6vw,22px);font-weight:800;color:#3a2a10;cursor:pointer;
+    padding:16px 56px;border:none;border-radius:999px;background:linear-gradient(135deg,#fff1c8,#ff9d4d);
+    box-shadow:0 8px 32px rgba(255,157,77,.44);animation:ggCoverPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes ggCoverPulse{0%,100%{box-shadow:0 8px 32px rgba(255,157,77,.44);}50%{box-shadow:0 8px 44px rgba(255,205,107,.72);}}
+
+  @media (max-width:380px){
+    h1{font-size:24px;letter-spacing:4px;}
+    .sec-body{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
+  }
+</style>
+</head>
+<body>
+<div id="welcome-mask">
+  <div id="welcome-card">
+    <div id="welcome-logo">G-Game</div>
+    <div id="welcome-title">唐诗华容道</div>
+    <div id="welcome-sub">唐诗三百首，一关一关拼回诗句。</div>
+    <div class="welcome-demo"><span></span><span></span><span></span><span></span></div>
+    <button id="welcome-start" type="button">开始游戏</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===================== CATALOG ===================== -->
+  <section id="catalog">
+    <header class="top">
+      <h1>唐诗华容道</h1>
+      <div class="subtitle">唐诗三百首 · 一关一关打卡</div>
+    </header>
+
+    <div class="overall">
+      <div class="ring">
+        <svg width="56" height="56" viewBox="0 0 56 56">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="6"/>
+          <circle id="ringFg" cx="28" cy="28" r="24" fill="none" stroke="url(#g)" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+          <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffcd6b"/><stop offset="1" stop-color="#ff9d4d"/></linearGradient></defs>
+        </svg>
+        <div class="pct" id="ringPct">0%</div>
+      </div>
+      <div class="info">
+        <div class="t">已通关</div>
+        <div class="n"><b id="doneCount">0</b> / <span id="totalCount">0</span> 关</div>
+        <div class="bar"><i id="overallBar"></i></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="搜索诗名 / 作者 / 诗句…" autocomplete="off">
+      <button class="resetBtn" id="resetProg" title="清空所有打卡记录">重置进度</button>
+    </div>
+
+    <div id="catalog-list"></div>
+  </section>
+
+  <!-- ===================== PLAY ===================== -->
+  <section id="play">
+    <div class="play-head">
+      <button class="back" id="back">← 目录</button>
+      <div class="play-title">
+        <div class="lv" id="p-level"></div>
+        <div><b id="p-title"></b><span class="au" id="p-author"></span><span class="fm" id="p-form"></span></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="label">步数</div><div class="value" id="moves">0</div></div>
+      <div class="stat"><div class="label">用时</div><div class="value" id="time">00:00</div></div>
+      <div class="stat"><div class="label">最佳步数</div><div class="value" id="best">—</div></div>
+    </div>
+
+    <div class="board-wrap">
+      <div id="board" aria-label="唐诗华容道盘面"></div>
+      <div class="board-overlay" id="overlay">
+        <div class="big">🎉 通关！</div>
+        <div class="poemfull" id="overlay-poem"></div>
+        <div class="sub" id="overlay-sub"></div>
+        <div class="ov-btns">
+          <button class="act ghost-btn" id="ov-back">返回目录</button>
+          <button class="act" id="ov-next">下一关 →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="full-poem" id="fullPoem"></div>
+
+    <div class="controls">
+      <button class="act" id="shuffle">打乱重开</button>
+      <button class="act ghost-btn" id="undo" disabled>撤销一步</button>
+    </div>
+    <div class="play-nav">
+      <button class="act ghost-btn" id="prevLv">← 上一关</button>
+      <button class="act ghost-btn" id="nextLv">下一关 →</button>
+    </div>
+
+    <div class="hint">
+      只需拼好高亮的诗句段落 · 点击与空格同行/同列的字块整排滑动<br>
+      也可用 <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 键 · 或在字块上朝空格方向滑动 · 角落淡字是空格归位处
+    </div>
+  </section>
+
+</div>
+
+<script src="tangshi.js"></script>
+<script>
+(function(){
+  "use strict";
+  if(!window.TANGSHI){ document.body.innerHTML='<p style="padding:40px;color:#fff;font-family:sans-serif">未能加载 tangshi.js（请与本网页放在同一目录）。</p>'; return; }
+
+  const FORMS = window.TANGSHI.forms;
+  const POEMS = window.TANGSHI.poems;            // catalog order
+  POEMS.forEach((p,i)=>{ p.level = i+1; });       // global level number
+  const byId = {}; POEMS.forEach(p=>byId[p.id]=p);
+
+  // 苏教版小学必背（仅含本游戏 319 首唐诗中的篇目），由浅入深排序，置顶展示
+  const BIBEI = ["b233","b236","b232","b224","b227","b244","b249","b225","b248","b45","b261","b316","b267","b315","b269","b273","b264","b268","b263","b272","b152"];
+
+	  const DONE_KEY = 'tangshi300_done';
+	  const BEST_PREFIX = 'tangshi300_best_';
+	  const OPEN_KEY = 'tangshi300_open';
+	  const GAME_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
+	  const EMBEDDED = window.self !== window.top;
+	  let audioCtx = null, bgmAudio = null;
+
+  /* ---------- progress storage ---------- */
+  function loadDone(){ try{ return JSON.parse(localStorage.getItem(DONE_KEY))||{}; }catch(e){ return {}; } }
+  let DONE = loadDone();
+  function saveDone(){ try{ localStorage.setItem(DONE_KEY, JSON.stringify(DONE)); }catch(e){} }
+  function isDone(id){ return !!DONE[id]; }
+  function markDone(id){ if(!DONE[id]){ DONE[id]=1; saveDone(); } }
+	  function getBest(id){ try{ const v=localStorage.getItem(BEST_PREFIX+id); return v===null?null:parseInt(v,10);}catch(e){return null;} }
+	  function setBest(id,v){ try{ localStorage.setItem(BEST_PREFIX+id,v);}catch(e){} }
+
+	  function ensureAudio(){
+	    const AudioClass = window.AudioContext || window.webkitAudioContext;
+	    if(!AudioClass) return null;
+	    if(!audioCtx) audioCtx = new AudioClass();
+	    if(audioCtx.state === 'suspended') audioCtx.resume();
+	    return audioCtx;
+	  }
+	  function startBgm(){
+	    if(EMBEDDED) return;
+	    if(!bgmAudio){
+	      bgmAudio = new Audio(GAME_MUSIC);
+	      bgmAudio.loop = true;
+	      bgmAudio.preload = 'auto';
+	      bgmAudio.crossOrigin = 'anonymous';
+	      bgmAudio.playsInline = true;
+	      bgmAudio.volume = .42;
+	    }
+	    bgmAudio.play().catch(()=>{});
+	  }
+	  function playSlideSound(count=1, strength=1){
+	    const ctx = ensureAudio();
+	    if(!ctx) return;
+	    const hits = Math.min(4, Math.max(1, count));
+	    for(let i=0;i<hits;i++){
+	      const t = ctx.currentTime + i * .026;
+	      const osc = ctx.createOscillator();
+	      const gain = ctx.createGain();
+	      const filter = ctx.createBiquadFilter();
+	      osc.type = 'triangle';
+	      osc.frequency.setValueAtTime(360 - i * 28, t);
+	      osc.frequency.exponentialRampToValueAtTime(145, t + .08);
+	      filter.type = 'bandpass';
+	      filter.frequency.setValueAtTime(720, t);
+	      gain.gain.setValueAtTime(.0001, t);
+	      gain.gain.exponentialRampToValueAtTime(.05 * strength, t + .01);
+	      gain.gain.exponentialRampToValueAtTime(.0001, t + .105);
+	      osc.connect(filter).connect(gain).connect(ctx.destination);
+	      osc.start(t);
+	      osc.stop(t + .12);
+	    }
+	  }
+
+  /* ===========================================================
+     CATALOG
+     =========================================================== */
+  const catalogList = document.getElementById('catalog-list');
+  const searchEl = document.getElementById('search');
+  const lvlEls = {};   // id -> [.lvl elements]  (a poem may appear in 必背 + its form section)
+  const cards = [];    // {id, el}
+  const secEls = [];   // {key, head, body, frac, mini, ids:[], els:[]}
+  let openForms = loadOpen();
+  function loadOpen(){ try{ return JSON.parse(localStorage.getItem(OPEN_KEY))||{}; }catch(e){ return {}; } }
+  function saveOpen(){ try{ localStorage.setItem(OPEN_KEY, JSON.stringify(openForms)); }catch(e){} }
+
+  function makeCard(p, pinned){
+    const el=document.createElement('div'); el.className='lvl'+(pinned?' bibei':''); el.dataset.id=p.id;
+    el.innerHTML=`<span class="stamp">✓</span>
+      <div class="no">第 ${p.level} 关</div>
+      <div class="ti">${p.title}</div>
+      <div class="au">${p.author}</div>`;
+    el.addEventListener('click',()=>openPlay(p.level-1));
+    (lvlEls[p.id]=lvlEls[p.id]||[]).push(el);
+    cards.push({id:p.id, el});
+    return el;
+  }
+
+  function makeSection(key, label, list, opts){
+    opts=opts||{};
+    const sec=document.createElement('div'); sec.className='section'+(opts.cls?' '+opts.cls:'');
+    const head=document.createElement('div'); head.className='sec-head';
+    head.innerHTML=`<span class="caret">▶</span><span class="name">${label}</span>
+      <span class="mini"><i></i></span><span class="frac"></span>`;
+    const body=document.createElement('div'); body.className='sec-body';
+    const els=list.map(p=>{ const el=makeCard(p, opts.pinned); body.appendChild(el); return el; });
+    head.addEventListener('click',()=>{
+      const isOpen = body.classList.toggle('open');
+      head.classList.toggle('open', isOpen);
+      openForms[key]=isOpen?1:0; saveOpen();
+    });
+    const open = (key in openForms) ? !!openForms[key] : !!opts.defaultOpen;
+    if(open){ body.classList.add('open'); head.classList.add('open'); }
+    sec.appendChild(head); sec.appendChild(body); catalogList.appendChild(sec);
+    secEls.push({key, head, body, frac:head.querySelector('.frac'), mini:head.querySelector('.mini i'), ids:list.map(p=>p.id), els});
+  }
+
+  function buildCatalog(){
+    document.getElementById('totalCount').textContent = POEMS.length;
+    const bibei = BIBEI.map(id=>byId[id]).filter(Boolean);
+    if(bibei.length) makeSection('__bibei','★ 苏教版 · 小学必背', bibei, {pinned:true, cls:'pinned', defaultOpen:true});
+    FORMS.forEach(form=>{
+      const list = POEMS.filter(p=>p.form===form);
+      if(list.length) makeSection(form, form, list, {});
+    });
+  }
+
+  function refreshCatalog(){
+    const done = POEMS.filter(p=>isDone(p.id)).length;
+    cards.forEach(c=> c.el.classList.toggle('done', isDone(c.id)));
+    secEls.forEach(s=>{
+      const dc=s.ids.filter(isDone).length;
+      s.frac.textContent=`${dc}/${s.ids.length}`;
+      s.mini.style.width=(s.ids.length?dc/s.ids.length*100:0)+'%';
+    });
+    const total=POEMS.length, pct = total?Math.round(done/total*100):0;
+    document.getElementById('doneCount').textContent=done;
+    document.getElementById('overallBar').style.width=pct+'%';
+    document.getElementById('ringPct').textContent=pct+'%';
+    const C=2*Math.PI*24;
+    document.getElementById('ringFg').style.strokeDashoffset = C*(1-pct/100);
+  }
+
+  function applySearch(q){
+    q=q.trim().toLowerCase();
+    cards.forEach(c=>{
+      const p=byId[c.id];
+      const hay=(p.title+p.author+p.para.join('')).toLowerCase();
+      c.el.style.display = (!q || hay.indexOf(q)>=0) ? '' : 'none';
+    });
+    secEls.forEach(s=>{
+      const any = s.els.some(el=>el.style.display!=='none');
+      s.head.parentElement.style.display = any?'':'none';
+      if(q){ s.body.classList.add('open'); s.head.classList.add('open'); }
+      else { const op = (s.key in openForms) ? !!openForms[s.key] : (s.key==='__bibei'); s.body.classList.toggle('open',op); s.head.classList.toggle('open',op); }
+    });
+  }
+  searchEl.addEventListener('input',()=>applySearch(searchEl.value));
+
+  document.getElementById('resetProg').addEventListener('click',()=>{
+    if(confirm('确定清空所有通关记录吗？此操作不可撤销。')){
+      DONE={}; saveDone();
+      POEMS.forEach(p=>{ try{ localStorage.removeItem(BEST_PREFIX+p.id);}catch(e){} });
+      refreshCatalog();
+    }
+  });
+
+  /* ===========================================================
+     PUZZLE ENGINE
+     =========================================================== */
+  const EMPTY=0;
+  const board=document.getElementById('board');
+  const movesEl=document.getElementById('moves');
+  const timeEl=document.getElementById('time');
+  const bestEl=document.getElementById('best');
+  const overlay=document.getElementById('overlay');
+  const overlayPoem=document.getElementById('overlay-poem');
+  const overlaySub=document.getElementById('overlay-sub');
+  const undoBtn=document.getElementById('undo');
+
+  let cur=null, curIndex=-1;          // current poem + its index in POEMS
+  let ROWS,COLS,SIZE,CHARS,GHOST;
+  let state=[], tiles={}, ghostEl=null;
+  let moves=0, startTime=null, timerId=null, won=false, history=[];
+
+  function metrics(){
+    const rect=board.getBoundingClientRect();
+    const pad=parseFloat(getComputedStyle(board).getPropertyValue('--pad'))||12;
+    const gap=Math.max(6, Math.min(rect.width,rect.height)*0.018);
+    const availW=rect.width-pad*2-gap*(COLS-1), availH=rect.height-pad*2-gap*(ROWS-1);
+    const cell=Math.min(availW/COLS, availH/ROWS);
+    const gridW=cell*COLS+gap*(COLS-1), gridH=cell*ROWS+gap*(ROWS-1);
+    return {pad,gap,cell,offX:(rect.width-gridW)/2, offY:(rect.height-gridH)/2};
+  }
+  function cellPos(idx){ const {gap,cell,offX,offY}=metrics(); const r=Math.floor(idx/COLS),c=idx%COLS; return {x:offX+c*(cell+gap), y:offY+r*(cell+gap), cell}; }
+  const rc=i=>[Math.floor(i/COLS), i%COLS];
+  const emptyIndex=()=>state.indexOf(EMPTY);
+  function inLineWithEmpty(idx){ const e=emptyIndex(); if(idx===e) return false; const [r1,c1]=rc(idx),[r2,c2]=rc(e); return r1===r2||c1===c2; }
+
+  function buildBoard(){
+    board.innerHTML=''; tiles={};
+    for(let i=0;i<SIZE;i++){ const s=document.createElement('div'); s.className='slot'; board.appendChild(s); }
+    ghostEl=document.createElement('div'); ghostEl.className='ghost'; ghostEl.textContent=GHOST; board.appendChild(ghostEl);
+    for(let n=1;n<SIZE;n++){
+      const t=document.createElement('div'); t.className='tile'; t.dataset.num=n;
+      const span=document.createElement('span'); span.className='zi'; span.textContent=CHARS[n-1]; t.appendChild(span);
+      t.addEventListener('click',()=>onTileClick(n)); attachSwipe(t,n);
+      board.appendChild(t); tiles[n]=t;
+    }
+    layout();
+  }
+  function layout(){
+    const {cell}=metrics();
+    board.querySelectorAll('.slot').forEach((s,i)=>{ const p=cellPos(i); s.style.width=cell+'px'; s.style.height=cell+'px'; s.style.left=p.x+'px'; s.style.top=p.y+'px'; });
+    const font=Math.round(cell*0.52);
+    if(ghostEl){ const gp=cellPos(SIZE-1); ghostEl.style.width=cell+'px'; ghostEl.style.height=cell+'px'; ghostEl.style.left=gp.x+'px'; ghostEl.style.top=gp.y+'px'; ghostEl.style.fontSize=font+'px'; }
+    for(let i=0;i<SIZE;i++){ const n=state[i]; if(n===EMPTY||!tiles[n]) continue; const t=tiles[n],p=cellPos(i); t.style.width=cell+'px'; t.style.height=cell+'px'; t.style.left=p.x+'px'; t.style.top=p.y+'px'; t.style.fontSize=font+'px'; }
+    refreshStatus();
+  }
+  function refreshStatus(){
+    // judge by the CHARACTER shown, not the tile id, so repeated chars (e.g. 明/月) are interchangeable
+    for(let i=0;i<SIZE;i++){ const n=state[i]; if(n===EMPTY||!tiles[n]) continue; const t=tiles[n]; t.classList.toggle('correct', CHARS[n-1]===CHARS[i]); t.classList.toggle('movable', !won&&inLineWithEmpty(i)); }
+    if(ghostEl) ghostEl.classList.toggle('lit', won);
+  }
+  function slideOne(cell){ const e=emptyIndex(); [state[cell],state[e]]=[state[e],state[cell]]; const n=state[e]; const p=cellPos(e); tiles[n].style.left=p.x+'px'; tiles[n].style.top=p.y+'px'; return e; }
+  function lineMove(idx, record){
+    if(won) return false;
+    const e0=emptyIndex(); const [er,ec]=rc(e0),[ir,ic]=rc(idx);
+    if(idx===e0) return false; if(er!==ir && ec!==ic) return false;
+    const step=(er===ir)?(ic>ec?1:-1):(ir>er?COLS:-COLS);
+    const dist=(er===ir)?Math.abs(ic-ec):Math.abs(ir-er);
+    const group=[]; for(let k=0;k<dist;k++) group.push(slideOne(emptyIndex()+step));
+	    if(record){ playSlideSound(dist, 1); moves+=dist; movesEl.textContent=moves; history.push(group); undoBtn.disabled=false; if(!startTime) startTimer(); }
+    refreshStatus(); if(record) checkWin(); return true;
+  }
+  function onTileClick(n){ if(won) return; lineMove(state.indexOf(n),true); }
+  function keyMove(dir){
+    if(won) return; const [er,ec]=rc(emptyIndex()); let tr=er,tc=ec;
+    if(dir==='up') tr=er+1; if(dir==='down') tr=er-1; if(dir==='left') tc=ec+1; if(dir==='right') tc=ec-1;
+    if(tr<0||tr>=ROWS||tc<0||tc>=COLS) return; lineMove(tr*COLS+tc,true);
+  }
+  function undo(){
+	    if(won||history.length===0) return; const g=history.pop();
+	    for(let k=g.length-1;k>=0;k--) slideOne(g[k]);
+	    playSlideSound(g.length, .72);
+	    moves=Math.max(0,moves-g.length); movesEl.textContent=moves; undoBtn.disabled=history.length===0;
+    if(history.length===0){ stopTimer(); startTime=null; timeEl.textContent='00:00'; }
+    refreshStatus();
+  }
+  function attachSwipe(el,n){
+    let sx=0,sy=0,active=false,swiped=false;
+    el.addEventListener('touchstart',e=>{ if(won) return; active=true; swiped=false; sx=e.touches[0].clientX; sy=e.touches[0].clientY; },{passive:true});
+    el.addEventListener('touchend',e=>{
+      if(!active) return; active=false;
+      const dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+      if(Math.abs(dx)<14&&Math.abs(dy)<14) return;
+      const idx=state.indexOf(n); const [tr,tc]=rc(idx),[er,ec]=rc(emptyIndex()); let did=false;
+      if(Math.abs(dx)>Math.abs(dy)){ if(tr===er){ if(dx>0&&ec>tc) did=lineMove(idx,true); if(dx<0&&ec<tc) did=lineMove(idx,true); } }
+      else { if(tc===ec){ if(dy>0&&er>tr) did=lineMove(idx,true); if(dy<0&&er<tr) did=lineMove(idx,true); } }
+      if(did){ swiped=true; setTimeout(()=>swiped=false,350); }
+    },{passive:true});
+    el.addEventListener('click',e=>{ if(swiped){ e.stopImmediatePropagation(); swiped=false; } }, true);
+  }
+  function isSolved(){ if(state[SIZE-1]!==EMPTY) return false; for(let i=0;i<SIZE-1;i++){ const n=state[i]; if(n===EMPTY||CHARS[n-1]!==CHARS[i]) return false; } return true; }
+  function shuffle(){
+    state=[...Array(SIZE).keys()].slice(1).concat(0);
+    let e=SIZE-1, prev=-1; const steps=Math.max(200, SIZE*14);
+    for(let k=0;k<steps;k++){
+      const [er,ec]=rc(e); const nb=[];
+      if(er>0) nb.push(e-COLS); if(er<ROWS-1) nb.push(e+COLS); if(ec>0) nb.push(e-1); if(ec<COLS-1) nb.push(e+1);
+      const ch=nb.filter(x=>x!==prev); const pool=ch.length?ch:nb;
+      const pick=pool[Math.floor(Math.random()*pool.length)];
+      [state[e],state[pick]]=[state[pick],state[e]]; prev=e; e=pick;
+    }
+    if(isSolved()){ shuffle(); return; }
+    resetGame(); layout();
+  }
+  function startTimer(){ startTime=Date.now(); timerId=setInterval(updateTimer,250); }
+  function stopTimer(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+  function updateTimer(){ const s=Math.floor((Date.now()-startTime)/1000); timeEl.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+  function resetGame(){ moves=0; movesEl.textContent='0'; history=[]; undoBtn.disabled=true; stopTimer(); startTime=null; timeEl.textContent='00:00'; won=false; overlay.classList.remove('show'); }
+
+  function checkWin(){
+    if(!isSolved()) return;
+    won=true; stopTimer(); undoBtn.disabled=true; refreshStatus();
+    markDone(cur.id);
+    const prev=getBest(cur.id);
+    if(prev===null||moves<prev){ setBest(cur.id,moves); bestEl.textContent=moves; }
+    overlayPoem.innerHTML = fullPoemHTML(cur);
+    let msg=`步数 <b>${moves}</b> · 用时 <b>${timeEl.textContent}</b>`;
+    if(prev===null||moves<prev) msg+='<br>🏆 新纪录！';
+    if(prev===null) msg+='<br>已加入打卡 ✓';
+    overlaySub.innerHTML=msg;
+    overlay.classList.add('show'); celebrate();
+  }
+
+  function celebrate(){
+    const colors=['#ffcd6b','#ff9d4d','#7bd88f','#6bd0ff','#ff7eb6','#c79bff'];
+    for(let i=0;i<70;i++){
+      const c=document.createElement('div'); c.className='confetti';
+      c.style.left=Math.random()*100+'vw'; c.style.background=colors[i%colors.length]; c.style.transform=`rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(c); const dur=1600+Math.random()*1400;
+      c.animate([{transform:'translateY(0) rotate(0deg)',opacity:1},{transform:`translateY(105vh) rotate(${360+Math.random()*540}deg)`,opacity:1}],{duration:dur,easing:'cubic-bezier(.3,.6,.5,1)'});
+      setTimeout(()=>c.remove(),dur);
+    }
+  }
+
+  /* ---------- full-poem display (highlight the puzzle segment) ---------- */
+  function fullPoemHTML(p){
+    const segSet=new Set(p.seg);
+    // split each paragraph into clauses, mark clauses that belong to the segment
+    return p.para.map(line=>{
+      const parts=line.split(/(?<=[，。！？；：、])/);  // keep punctuation
+      return parts.map(seg=>{
+        const bare=seg.replace(/[，。！？；：、]/g,'');
+        return segSet.has(bare) ? `<span class="seg-line">${seg}</span>` : seg;
+      }).join('');
+    }).join('<br>');
+  }
+
+  /* ===========================================================
+     VIEW SWITCHING
+     =========================================================== */
+  const catalogView=document.getElementById('catalog');
+  const playView=document.getElementById('play');
+
+  function loadPoem(p){
+    cur=p; ROWS=p.rows; COLS=p.cols; SIZE=ROWS*COLS;
+    CHARS=p.seg.join('').split(''); GHOST=CHARS[SIZE-1];
+    board.style.aspectRatio=COLS+'/'+ROWS;
+    document.getElementById('p-level').textContent='第 '+p.level+' 关 / '+POEMS.length;
+    document.getElementById('p-title').textContent='《'+p.title+'》';
+    document.getElementById('p-author').textContent=p.author;
+    document.getElementById('p-form').textContent=p.form;
+    document.getElementById('fullPoem').innerHTML=fullPoemHTML(p);
+    const b=getBest(p.id); bestEl.textContent = b===null?'—':b;
+    document.getElementById('prevLv').disabled = (curIndex<=0);
+    document.getElementById('nextLv').disabled = (curIndex>=POEMS.length-1);
+    buildBoard(); shuffle();
+  }
+  function openPlay(index){
+    curIndex=index; const p=POEMS[index];
+    catalogView.style.display='none'; playView.style.display='block';
+    window.scrollTo(0,0);
+    loadPoem(p);
+  }
+  function gotoCatalog(){
+    playView.style.display='none'; catalogView.style.display='block';
+    stopTimer(); refreshCatalog();
+    if(searchEl.value) applySearch(searchEl.value);
+    window.scrollTo(0,0);
+  }
+  function gotoLevel(delta){
+    const ni=curIndex+delta;
+    if(ni<0||ni>=POEMS.length) return;
+    openPlay(ni);
+  }
+
+  /* ---------- events ---------- */
+  document.getElementById('back').addEventListener('click', gotoCatalog);
+  document.getElementById('ov-back').addEventListener('click', gotoCatalog);
+  document.getElementById('ov-next').addEventListener('click',()=>gotoLevel(1));
+  document.getElementById('prevLv').addEventListener('click',()=>gotoLevel(-1));
+  document.getElementById('nextLv').addEventListener('click',()=>gotoLevel(1));
+  document.getElementById('shuffle').addEventListener('click', shuffle);
+  undoBtn.addEventListener('click', undo);
+	  document.getElementById('welcome-start').addEventListener('click',()=>{
+	    ensureAudio();
+	    startBgm();
+	    const mask=document.getElementById('welcome-mask');
+	    mask.classList.add('hide');
+	    setTimeout(()=>mask.remove(),500);
+	  });
+	  window.addEventListener('keydown',e=>{
+	    if(playView.style.display!=='block') return;
+	    const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'};
+	    if(map[e.key]){ e.preventDefault(); ensureAudio(); startBgm(); keyMove(map[e.key]); }
+    else if((e.key==='z'||e.key==='Z')&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); undo(); }
+    else if(e.key==='Escape'){ gotoCatalog(); }
+  });
+  let rT; window.addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(()=>{ if(playView.style.display==='block') layout(); },80); });
+
+  /* ---------- init ---------- */
+  buildCatalog();
+  refreshCatalog();
+})();
+</script>
+</body>
+</html>
