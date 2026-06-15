@@ -5,94 +5,95 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>箭阵谜域</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --ink:#123235;
-  --panel:#123d3f;
-  --line:rgba(255,255,255,.24);
-  --gold:#ffd166;
-  --mint:#83ead0;
-  --coral:#ff8f87;
-  --text:#fffaf2;
+  --level-total:36;
+  --ink:#07091a;
+  --panel:#15224a;
+  --line:rgba(157,226,255,.18);
+  --gold:#ffe08a;
+  --blue:#7aa2ff;
+  --cyan:#9de2ff;
+  --text:#eaf0ff;
 }
 html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
 body{
   min-height:100dvh;
-  font-family:"Microsoft YaHei",system-ui,sans-serif;
+  font-family:'Nunito','Microsoft YaHei',system-ui,sans-serif;
   color:var(--text);
-  background:
-    radial-gradient(circle at 15% 12%,rgba(255,209,102,.42),transparent 32%),
-    radial-gradient(circle at 82% 18%,rgba(131,234,208,.34),transparent 30%),
-    radial-gradient(circle at 52% 88%,rgba(255,143,135,.28),transparent 38%),
-    linear-gradient(155deg,#174c58,#1f7b72 52%,#123235);
-  display:flex;
-  justify-content:center;
+  background:radial-gradient(ellipse at 20% 20%, #1b2f5e 0%, #0d1430 45%, #07091a 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  position:relative;
+  padding:env(safe-area-inset-top,12px) 0 env(safe-area-inset-bottom,8px);
 }
 #mist{position:fixed;inset:0;z-index:0;pointer-events:none}
 #app{
-  position:relative;z-index:1;width:100%;max-width:860px;min-height:100dvh;
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  padding:12px 14px max(12px,env(safe-area-inset-bottom));
+  position:relative;z-index:1;width:100%;max-width:480px;min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:6px 12px 8px;justify-content:flex-start;
 }
-#top{
-  width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
-  padding:8px;border:1px solid var(--line);border-radius:8px;
-  background:linear-gradient(90deg,rgba(255,255,255,.18),rgba(255,239,194,.16),rgba(255,255,255,.18));
-  box-shadow:0 18px 54px rgba(4,38,45,.24),inset 0 1px 0 rgba(255,255,255,.28);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-}
-#brand{text-align:center;min-width:0}
+#title-wrap{text-align:center}
 h1{
-  font-size:clamp(2rem,6vw,3.05rem);line-height:1;font-weight:900;letter-spacing:0;
-  background:linear-gradient(120deg,#fff7cc,#ffd166 35%,#83ead0 66%,#ff8f87);
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 0 20px rgba(244,201,93,.32));
-  white-space:nowrap;
+  font-size:clamp(1.3rem,6vw,1.9rem);font-weight:900;letter-spacing:6px;line-height:1.05;
+  background:linear-gradient(135deg,#9de2ff,#7aa2ff,#c9b8ff);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 14px #7aa2ff66);
+  animation:titlePop 3s ease-in-out infinite alternate;
 }
-#subtitle{font-size:.86rem;color:#e9fff7;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#levelTag{
-  min-width:84px;text-align:center;padding:10px 12px;border-radius:8px;
-  border:1px solid rgba(255,255,255,.38);background:rgba(255,209,102,.26);
-  color:#fff3c2;font-size:.86rem;font-weight:900;
-  box-shadow:inset 0 0 26px rgba(255,209,102,.14);
+@keyframes titlePop{from{letter-spacing:6px}to{letter-spacing:9px;filter:drop-shadow(0 0 22px #9db8ff99)}}
+#subtitle{font-size:clamp(.58rem,2.2vw,.72rem);color:#8ea2d6;letter-spacing:1.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#level-card{
+  width:100%;max-width:430px;padding:9px 12px 10px;border:1px solid var(--line);border-radius:16px;
+  background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
+  box-shadow:0 10px 30px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.08);
+}
+#level-top{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#9aa6d6;font-size:.72rem;font-weight:800;letter-spacing:1px}
+#level-meta{display:flex;align-items:center;gap:8px;min-width:0}
+#level-kicker{white-space:nowrap}
+#level-size{padding:4px 8px;border-radius:999px;background:rgba(157,226,255,.08);border:1px solid rgba(157,226,255,.14);color:#c9d7ff;white-space:nowrap}
+#level-name{margin-top:4px;color:#eaf0ff;font-size:clamp(.94rem,3.4vw,1.12rem);font-weight:900;letter-spacing:1px}
+#level-note{margin-top:4px;color:#8ea2d6;font-size:clamp(.68rem,2.6vw,.78rem);line-height:1.35;min-height:1.05em}
+#level-rail{display:grid;grid-template-columns:repeat(var(--level-total),1fr);gap:2px;margin-top:9px}
+.rail-dot{height:5px;border-radius:999px;background:rgba(255,255,255,.11)}
+.rail-dot.done{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.55)}
+.rail-dot.current{background:#9de2ff;box-shadow:0 0 10px rgba(157,226,255,.75)}
+#prevBtn{
+  height:28px;padding:0 10px;border-radius:999px;font-size:.68rem;color:#dce8ff;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);box-shadow:none;
 }
 button{
-  height:40px;padding:0 14px;border:1px solid transparent;border-radius:8px;
-  font:900 .86rem "Microsoft YaHei",system-ui,sans-serif;letter-spacing:0;cursor:pointer;
-  color:#08100d;background:var(--gold);
-  box-shadow:0 9px 24px rgba(4,38,45,.22),inset 0 2px 0 rgba(255,255,255,.46);
-  transition:transform .13s ease,filter .13s ease,opacity .13s ease,background .13s ease;
+  padding:9px 16px;border:none;border-radius:999px;font-size:clamp(.75rem,3vw,.84rem);
+  cursor:pointer;font-family:inherit;font-weight:700;letter-spacing:.5px;color:#08142a;
+  transition:all .14s cubic-bezier(.34,1.56,.64,1);box-shadow:0 3px 12px #0004;
   touch-action:manipulation;
 }
-button:active{transform:scale(.96)}
-button:disabled{opacity:.42;pointer-events:none;filter:saturate(.55)}
-.ghost{background:rgba(255,255,255,.15);color:#ecfff8;border-color:rgba(255,255,255,.26)}
+button:active{transform:scale(.93)}
+button:disabled{opacity:.3;pointer-events:none;filter:saturate(.55)}
 #hud,#tools{
-  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;width:100%;
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;width:100%;
 }
 #hud{
-  width:auto;max-width:100%;padding:7px 12px;border:1px solid var(--line);border-radius:8px;
-  background:rgba(18,50,53,.48);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  color:#d6fff2;font-size:.86rem;box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  width:auto;max-width:100%;padding:6px 14px;border:1px solid rgba(255,255,255,.1);border-radius:999px;
+  background:rgba(255,255,255,.06);color:#aebde8;font-size:clamp(.72rem,2.8vw,.86rem);
+  box-shadow:none;row-gap:3px;
 }
 #hud b{color:#ffe19a}
 #boardWrap{
-  width:min(94vw,650px,calc(100dvh - 202px));aspect-ratio:1/1;min-width:278px;
-  padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,.28);
-  background:
-    radial-gradient(circle at 30% 18%,rgba(255,255,255,.18),transparent 42%),
-    linear-gradient(145deg,rgba(20,73,77,.94),rgba(13,44,47,.9));
-  box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 24px 72px rgba(5,44,51,.42),0 0 58px rgba(131,234,208,.16);
+  width:min(94vw,430px,calc(100dvh - 246px));aspect-ratio:1/1;min-width:260px;
+  padding:12px;border-radius:18px;border:2px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);
+  box-shadow:0 0 50px #3b6aed22,0 16px 50px #00000055,inset 0 1px 0 rgba(255,255,255,.1);
 }
-#board{width:100%;height:100%;display:block;border-radius:6px;touch-action:none;cursor:pointer}
-#tools button:nth-child(1){background:#7de4bd}
-#tools button:nth-child(2){background:#f4c95d}
-#tools button:nth-child(3){background:#b6c7f2}
+#board{width:100%;height:100%;display:block;border-radius:8px;touch-action:none;cursor:pointer}
+#tools button:nth-child(1){background:linear-gradient(135deg,#60a5fa,#3b6aed);color:#fff}
+#tools button:nth-child(2){background:linear-gradient(135deg,#64748b,#4b5563);color:#fff}
+#tools button:nth-child(3){background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff}
 #msg{
-  min-height:26px;max-width:650px;text-align:center;color:#ffe19a;font-weight:900;font-size:.9rem;
-  text-shadow:0 0 16px rgba(255,209,102,.42);
-  padding:4px 12px;border-radius:8px;background:rgba(18,50,53,.34);
+  min-height:1.2rem;max-width:430px;text-align:center;color:#ffe08a;font-weight:700;
+  font-size:clamp(.75rem,3vw,.88rem);letter-spacing:1px;text-shadow:0 0 10px #ffe08a88;
+  padding:0;background:transparent;border-radius:0;
 }
 #win{
   position:fixed;inset:0;z-index:5;display:none;place-items:center;background:rgba(6,8,7,.76);
@@ -100,10 +101,9 @@ button:disabled{opacity:.42;pointer-events:none;filter:saturate(.55)}
 }
 #win.show{display:grid}
 #winCard{
-  width:min(92vw,430px);padding:28px 24px 22px;border-radius:8px;text-align:center;
-  border:1px solid rgba(255,255,255,.38);
-  background:linear-gradient(150deg,rgba(26,83,87,.97),rgba(30,62,69,.97));
-  box-shadow:0 30px 90px rgba(5,44,51,.55),0 0 48px rgba(255,209,102,.16);
+  width:min(92vw,430px);padding:28px 24px 22px;border-radius:30px;text-align:center;
+  border:2px solid #7aa2ff;background:linear-gradient(160deg,#15224a,#0d1430);
+  box-shadow:0 0 70px #3b6aed77,0 24px 70px #000b;
 }
 #winCard h2{font-size:2rem;margin-bottom:8px;color:#fff}
 #winCard p{color:#c2d8cc;line-height:1.75;margin-bottom:16px}
@@ -117,35 +117,172 @@ button:disabled{opacity:.42;pointer-events:none;filter:saturate(.55)}
 .stat b{display:block;margin-top:4px;color:#ffe19a;font-size:1.15rem}
 #winBtns{display:flex;gap:8px}
 #winBtns button{flex:1}
+#welcome-mask{
+  position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 28%,#1b2f5e 0%,#0d1430 52%,#07091a 100%);
+  transition:opacity .5s ease;overflow:hidden;
+}
+#welcome-mask::before{
+  content:"";position:absolute;inset:-20%;
+  background:
+    radial-gradient(circle at 30% 28%,rgba(157,226,255,.18),transparent 28%),
+    radial-gradient(circle at 68% 72%,rgba(122,162,255,.16),transparent 30%);
+  filter:blur(10px);animation:coverGlow 5s ease-in-out infinite alternate;
+}
+#welcome-mask.hide{opacity:0;pointer-events:none}
+#welcome-card{
+  position:relative;width:min(88vw,430px);padding:0 24px;text-align:center;animation:coverIn .58s ease both;
+}
+@keyframes coverIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes coverGlow{from{transform:scale(1)}to{transform:scale(1.08) rotate(3deg)}}
+#welcome-logo{
+  font-size:clamp(46px,13vw,84px);font-weight:900;line-height:.96;letter-spacing:1px;
+  background:linear-gradient(135deg,#9de2ff,#60a5fa,#c9b8ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 4px 24px rgba(96,165,250,.42));margin-bottom:7px;
+}
+#welcome-title{font-size:clamp(22px,5.8vw,32px);font-weight:900;color:#eaf0ff;letter-spacing:5px;margin-bottom:9px}
+#welcome-sub{font-size:clamp(12px,3.2vw,15px);color:#9aa6d6;letter-spacing:1.4px;margin-bottom:24px}
+#welcome-demo{
+  width:118px;height:118px;margin:0 auto 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  transform:rotate(-6deg);
+}
+.cover-bubble{
+  position:relative;border-radius:50%;
+  background:radial-gradient(circle at 32% 24%,#fff 0 10%,#9de2ff 22%,#7aa2ff 58%,#4257a7 100%);
+  border:1px solid rgba(234,240,255,.72);
+  box-shadow:0 8px 20px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.55);
+  animation:coverBubble 2.2s ease-in-out infinite alternate;
+}
+.cover-bubble:nth-child(2n){animation-delay:.22s}
+.cover-bubble:nth-child(3n){animation-delay:.44s}
+.cover-bubble::before{
+  content:"";position:absolute;left:24%;top:18%;width:34%;height:16%;border-radius:999px;
+  background:rgba(255,255,255,.58);transform:rotate(-28deg);
+}
+.cover-bubble::after{
+  content:"";position:absolute;left:29%;top:48%;width:43%;height:11px;border-radius:999px;
+  background:#f9fff8;border:2px solid #21465a;box-shadow:0 0 0 2px rgba(255,255,255,.65);
+}
+.cover-bubble.a1::after{transform:rotate(0deg)}
+.cover-bubble.a2::after{transform:rotate(45deg)}
+.cover-bubble.a3::after{transform:rotate(90deg)}
+.cover-bubble.a4::after{transform:rotate(135deg)}
+@keyframes coverBubble{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+#welcome-start{
+  min-width:196px;height:54px;padding:0 48px;border-radius:999px;font-size:clamp(18px,4.7vw,22px);
+  font-weight:900;color:#08142a;background:linear-gradient(135deg,#9de2ff,#3b82f6);
+  box-shadow:0 8px 32px rgba(59,130,246,.5);animation:startPulse 1.8s ease-in-out infinite;
+}
+#welcome-start:active{transform:scale(.97)}
+@keyframes startPulse{0%,100%{box-shadow:0 8px 32px rgba(59,130,246,.5)}50%{box-shadow:0 8px 44px rgba(59,130,246,.82)}}
 @media(max-height:760px){
   #app{gap:7px;padding-top:8px}
-  #boardWrap{width:min(92vw,calc(100dvh - 184px))}
+  #level-card{padding:8px 12px 9px}
+  #level-rail{margin-top:7px}
+  #boardWrap{width:min(92vw,430px,calc(100dvh - 322px))}
   #subtitle{display:none}
   button{height:36px}
   #msg{font-size:.82rem;min-height:22px}
+  #welcome-demo{width:98px;height:98px;margin-bottom:22px}
+  #welcome-sub{margin-bottom:18px}
+  #welcome-start{height:48px}
 }
 @media(max-width:560px){
   #app{padding-left:10px;padding-right:10px}
-  #top{gap:6px;padding:6px}
   h1{font-size:1.9rem}
-  #levelTag{min-width:68px;padding:8px 8px;font-size:.76rem}
   button{height:37px;padding:0 10px;font-size:.78rem}
   #hud{font-size:.78rem;gap:7px}
   #boardWrap{padding:9px;min-width:260px}
 }
 </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
+<div id="welcome-mask">
+  <div id="welcome-card">
+    <div id="welcome-logo">G-Game</div>
+    <div id="welcome-title">箭阵谜域</div>
+    <div id="welcome-sub">空间力 · 推理力 · 观察力</div>
+    <div id="welcome-demo" aria-hidden="true">
+      <div class="cover-bubble a1"></div>
+      <div class="cover-bubble a2"></div>
+      <div class="cover-bubble a3"></div>
+      <div class="cover-bubble a4"></div>
+      <div class="cover-bubble a2"></div>
+      <div class="cover-bubble a1"></div>
+      <div class="cover-bubble a3"></div>
+      <div class="cover-bubble a4"></div>
+      <div class="cover-bubble a2"></div>
+    </div>
+    <button id="welcome-start" type="button">开始游戏</button>
+  </div>
+</div>
 <canvas id="mist"></canvas>
 <main id="app">
-  <header id="top">
-    <button id="prevBtn" class="ghost" title="上一关">上一关</button>
-    <div id="brand">
-      <h1>箭阵谜域</h1>
-      <div id="subtitle">八向箭阵 · 单点连锁 · 全盘破泡</div>
+  <div id="title-wrap">
+    <h1>箭 阵 谜 域</h1>
+    <div id="subtitle">八向箭阵 · 单点连锁 · 全盘破泡</div>
+  </div>
+
+  <section id="level-card">
+    <div id="level-top">
+      <button id="prevBtn" title="上一关">上一关</button>
+      <div id="level-meta">
+        <span id="level-kicker">第 1 关</span>
+        <span id="level-size">5×5</span>
+      </div>
     </div>
-    <div id="levelTag">第 1 关</div>
-  </header>
+    <div id="level-name">阵心探测</div>
+    <div id="level-note">选择一个泡泡触发箭阵，找出一次清空全盘的阵心。</div>
+    <div id="level-rail" aria-label="关卡进度"></div>
+  </section>
 
   <section id="hud">
     <span>尝试 <b id="tries">0</b></span>
@@ -159,7 +296,7 @@ button:disabled{opacity:.42;pointer-events:none;filter:saturate(.55)}
   <section id="tools">
     <button id="nextBtn" title="通关后进入下一关">下一关</button>
     <button id="resetBtn" title="重置本关">重置</button>
-    <button id="soundBtn" title="音效开关">音效</button>
+    <button id="soundBtn" title="声音开关">声音</button>
   </section>
   <div id="msg">寻找阵心：一次连锁戳破全盘。</div>
 </main>
@@ -211,7 +348,13 @@ const ui={
   next:document.getElementById("nextBtn"),
   reset:document.getElementById("resetBtn"),
   sound:document.getElementById("soundBtn"),
-  level:document.getElementById("levelTag"),
+  welcome:document.getElementById("welcome-mask"),
+  welcomeStart:document.getElementById("welcome-start"),
+  levelKicker:document.getElementById("level-kicker"),
+  levelSize:document.getElementById("level-size"),
+  levelName:document.getElementById("level-name"),
+  levelNote:document.getElementById("level-note"),
+  levelRail:document.getElementById("level-rail"),
   tries:document.getElementById("tries"),
   left:document.getElementById("left"),
   chain:document.getElementById("chain"),
@@ -228,13 +371,17 @@ const ui={
 };
 
 const SAVE_KEY="arrowMazeMaxUnlocked";
+const DISPLAY_LEVELS=36;
+const BGM_SHARE_URL="https://suno.com/s/X3gx97oPYsp6XQhT";
+const BGM_URL=BGM_SHARE_URL;
+const BGM_VOLUME=.055;
 let level=1,maxUnlocked=loadUnlockedLevel();
 let puzzle=null,cache=new Map();
 let dpr=1,boardSize=0,pad=0,cell=0;
 let alive=[],state="ready",tries=0,chain=0,startedAt=0,elapsed=0;
 let hover=-1,soundOn=true;
 let anim=null,particles=[],backgroundDots=[];
-let audioCtx=null;
+let audioCtx=null,bgmAudio=null,bgmFailed=false,launched=false;
 
 function idx(x,y,n=puzzle.n){return y*n+x}
 function xy(i,n=puzzle.n){return {x:i%n,y:Math.floor(i/n)}}
@@ -475,6 +622,28 @@ function unlockNextLevel(){
   }
 }
 
+function modeLabel(mode){
+  const names=["浅阵探测","环阵扩散","雾阵回声","重阵连锁","终阵谜域"];
+  return names[mode]||"箭阵谜域";
+}
+
+function updateLevelCard(){
+  if(!puzzle)return;
+  const shown=Math.min(level,DISPLAY_LEVELS);
+  ui.levelKicker.textContent="第 "+level+" / "+DISPLAY_LEVELS+" 关";
+  ui.levelSize.textContent=puzzle.n+"×"+puzzle.n;
+  ui.levelName.textContent=modeLabel(puzzle.mode);
+  ui.levelNote.textContent=level<maxUnlocked
+    ?"已完成关卡，可回看或继续下一关。"
+    :"选择一个泡泡触发箭阵，找出一次清空全盘的阵心。";
+  ui.levelRail.innerHTML="";
+  for(let i=1;i<=DISPLAY_LEVELS;i++){
+    const dot=document.createElement("span");
+    dot.className="rail-dot"+(i<shown?" done":"")+(i===shown?" current":"");
+    ui.levelRail.appendChild(dot);
+  }
+}
+
 function startLevel(){
   if(level>maxUnlocked)level=maxUnlocked;
   puzzle=puzzleForCurrentLevel();
@@ -482,7 +651,7 @@ function startLevel(){
   state="ready";
   tries=0;chain=0;elapsed=0;startedAt=performance.now();
   anim=null;particles=[];
-  ui.level.textContent="第 "+level+" 关";
+  updateLevelCard();
   ui.win.classList.remove("show");
   setMessage(puzzle.n+"×"+puzzle.n+" · 找到唯一阵心");
   updateHud();
@@ -568,6 +737,7 @@ function finishAnimation(){
     setMessage("全盘清空。");
     unlockNextLevel();
     winSound();
+    updateLevelCard();
     updateNav();
     setTimeout(showWin,260);
   }else{
@@ -617,7 +787,7 @@ function resizeMist(){
     r:Math.random()*2.2+0.5,
     s:Math.random()*0.3+0.08,
     a:Math.random()*Math.PI*2,
-    c:Math.random()<.5?"125,228,189":(Math.random()<.5?"244,201,93":"245,133,117")
+    c:Math.random()<.5?"157,226,255":(Math.random()<.5?"122,162,255":"201,184,255")
   }));
 }
 
@@ -661,16 +831,16 @@ function drawPlate(){
   ctx.save();
   roundRect(ctx,2,2,boardSize-4,boardSize-4,8);
   const g=ctx.createLinearGradient(0,0,boardSize,boardSize);
-  g.addColorStop(0,"rgba(36,105,107,.96)");
-  g.addColorStop(.58,"rgba(18,61,64,.96)");
-  g.addColorStop(1,"rgba(43,80,76,.96)");
+  g.addColorStop(0,"rgba(32,50,102,.96)");
+  g.addColorStop(.58,"rgba(12,20,48,.96)");
+  g.addColorStop(1,"rgba(28,36,82,.96)");
   ctx.fillStyle=g;
   ctx.fill();
-  ctx.strokeStyle="rgba(255,255,255,.22)";
+  ctx.strokeStyle="rgba(157,226,255,.22)";
   ctx.lineWidth=1.5;
   ctx.stroke();
   const n=puzzle.n;
-  ctx.strokeStyle="rgba(255,255,255,.1)";
+  ctx.strokeStyle="rgba(157,226,255,.1)";
   ctx.lineWidth=1;
   for(let i=0;i<=n;i++){
     const p=pad+i*cell;
@@ -866,19 +1036,19 @@ function drawBeam(shot,progress,alpha){
   const x=a.x+(b.x-a.x)*progress;
   const y=a.y+(b.y-a.y)*progress;
   const grad=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
-  grad.addColorStop(0,"rgba(244,201,93,0)");
-  grad.addColorStop(.4,"rgba(244,201,93,"+(.75*alpha)+")");
-  grad.addColorStop(1,"rgba(125,228,189,"+(.95*alpha)+")");
+  grad.addColorStop(0,"rgba(122,162,255,0)");
+  grad.addColorStop(.4,"rgba(157,226,255,"+(.75*alpha)+")");
+  grad.addColorStop(1,"rgba(255,224,138,"+(.95*alpha)+")");
   ctx.strokeStyle=grad;
   ctx.lineWidth=Math.max(2.5,cell*.07);
-  ctx.shadowColor="rgba(244,201,93,.8)";
+  ctx.shadowColor="rgba(157,226,255,.8)";
   ctx.shadowBlur=16;
   ctx.beginPath();
   ctx.moveTo(a.x,a.y);
   ctx.lineTo(x,y);
   ctx.stroke();
   ctx.shadowBlur=0;
-  ctx.fillStyle="rgba(255,238,173,"+alpha+")";
+  ctx.fillStyle="rgba(255,224,138,"+alpha+")";
   ctx.beginPath();
   ctx.arc(x,y,Math.max(2.5,cell*.055),0,Math.PI*2);
   ctx.fill();
@@ -905,7 +1075,7 @@ function burstAt(i,amount){
       x:c.x,y:c.y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,
       r:Math.max(1.4,cell*(.018+Math.random()*.025)),
       born:performance.now(),dur:420+Math.random()*420,
-      color:Math.random()<.45?"244,201,93":(Math.random()<.65?"125,228,189":"245,133,117")
+      color:Math.random()<.45?"255,224,138":(Math.random()<.65?"157,226,255":"122,162,255")
     });
   }
 }
@@ -941,6 +1111,35 @@ function ensureAudio(){
   if(!soundOn)return;
   if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==="suspended")audioCtx.resume();
+}
+
+function getBgm(){
+  if(!bgmAudio){
+    bgmAudio=new Audio(BGM_URL);
+    bgmAudio.preload="auto";
+    bgmAudio.loop=true;
+    bgmAudio.playsInline=true;
+    bgmAudio.volume=BGM_VOLUME;
+    bgmAudio.addEventListener("error",()=>{
+      bgmFailed=true;
+      stopBgm();
+    });
+  }
+  return bgmAudio;
+}
+
+function startBgm(){
+  if(!soundOn||bgmFailed)return;
+  const audio=getBgm();
+  audio.muted=false;
+  audio.volume=BGM_VOLUME;
+  const play=audio.play();
+  if(play&&play.catch)play.catch(()=>{});
+}
+
+function stopBgm(){
+  if(!bgmAudio)return;
+  bgmAudio.pause();
 }
 
 function tone(freq,dur,type="sine",gain=.05,delay=0){
@@ -988,8 +1187,9 @@ ui.next.addEventListener("click",()=>{
 ui.reset.addEventListener("click",()=>{ensureAudio();resetBoard()});
 ui.sound.addEventListener("click",()=>{
   soundOn=!soundOn;
-  ui.sound.textContent=soundOn?"音效":"静音";
-  if(soundOn){ensureAudio();tapSound()}
+  ui.sound.textContent=soundOn?"声音":"静音";
+  if(soundOn){ensureAudio();startBgm();tapSound()}
+  else stopBgm();
 });
 ui.again.addEventListener("click",()=>{ui.win.classList.remove("show");startLevel()});
 ui.closeWin.addEventListener("click",()=>ui.win.classList.remove("show"));
@@ -997,10 +1197,80 @@ ui.winNext.addEventListener("click",()=>{
   if(level<maxUnlocked){level++;startLevel()}
 });
 
+function launchGame(evt){
+  if(evt){evt.preventDefault();evt.stopPropagation()}
+  if(launched)return;
+  launched=true;
+  startedAt=performance.now();
+  elapsed=0;
+  updateHud();
+  if(ui.welcome){
+    ui.welcome.classList.add("hide");
+    setTimeout(()=>{ui.welcome.style.display="none"},520);
+  }
+  ensureAudio();
+  startBgm();
+  tapSound();
+}
+
+ui.welcomeStart.addEventListener("click",launchGame);
+ui.welcomeStart.addEventListener("touchend",launchGame,{passive:false});
+
 window.addEventListener("resize",()=>{resizeMist();resizeBoard()});
 resizeMist();
 startLevel();
 requestAnimationFrame(loop);
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
+})();
 </script>
 </body>
 </html>

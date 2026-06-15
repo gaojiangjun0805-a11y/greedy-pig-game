@@ -383,10 +383,10 @@
       transition: fill .16s ease, stroke .16s ease, filter .16s ease, opacity .16s ease;
     }
 
-    .tile.tone-0 polygon { fill: url(#tileFillA); }
-    .tile.tone-1 polygon { fill: url(#tileFillB); }
-    .tile.tone-2 polygon { fill: url(#tileFillC); }
-    .tile.tone-3 polygon { fill: url(#tileFillD); }
+    .tile.tone-0 polygon,
+    .tile.tone-1 polygon,
+    .tile.tone-2 polygon,
+    .tile.tone-3 polygon { fill: url(#tileFill); }
 
     .tile text {
       pointer-events: none;
@@ -896,10 +896,10 @@
       filter: drop-shadow(0 5px 0 rgba(82, 39, 15, .36)) drop-shadow(0 10px 11px rgba(27, 10, 3, .34));
     }
 
-    .tile.movable.tone-0 polygon { fill: url(#tileFillA); }
-    .tile.movable.tone-1 polygon { fill: url(#tileFillB); }
-    .tile.movable.tone-2 polygon { fill: url(#tileFillC); }
-    .tile.movable.tone-3 polygon { fill: url(#tileFillD); }
+    .tile.movable.tone-0 polygon,
+    .tile.movable.tone-1 polygon,
+    .tile.movable.tone-2 polygon,
+    .tile.movable.tone-3 polygon { fill: url(#tileFill); }
 
     .tile.correct polygon {
       fill: url(#correctFill);
@@ -1300,6 +1300,53 @@
       }
     }
   </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
 <canvas id="stars" aria-hidden="true"></canvas>
@@ -1560,29 +1607,29 @@
         <stop offset="1" stop-color="#8e4c21" stop-opacity="1"/>
       </linearGradient>
       <linearGradient id="tileFillA" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#fff1cc"/>
-        <stop offset=".5" stop-color="#dca05c"/>
-        <stop offset="1" stop-color="#985424"/>
+        <stop offset="0" stop-color="#fff0cb"/>
+        <stop offset=".48" stop-color="#d99a55"/>
+        <stop offset="1" stop-color="#8e4c21"/>
       </linearGradient>
       <linearGradient id="tileFillB" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#ffe6b4"/>
-        <stop offset=".48" stop-color="#b8783b"/>
-        <stop offset="1" stop-color="#6b3416"/>
+        <stop offset="0" stop-color="#fff0cb"/>
+        <stop offset=".48" stop-color="#d99a55"/>
+        <stop offset="1" stop-color="#8e4c21"/>
       </linearGradient>
       <linearGradient id="tileFillC" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#fff7dd"/>
-        <stop offset=".5" stop-color="#e2b06d"/>
-        <stop offset="1" stop-color="#a8652c"/>
+        <stop offset="0" stop-color="#fff0cb"/>
+        <stop offset=".48" stop-color="#d99a55"/>
+        <stop offset="1" stop-color="#8e4c21"/>
       </linearGradient>
       <linearGradient id="tileFillD" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#f5d79f"/>
-        <stop offset=".48" stop-color="#9b5a29"/>
-        <stop offset="1" stop-color="#55240e"/>
+        <stop offset="0" stop-color="#fff0cb"/>
+        <stop offset=".48" stop-color="#d99a55"/>
+        <stop offset="1" stop-color="#8e4c21"/>
       </linearGradient>
       <linearGradient id="moveFill" x1="0" x2="1" y1="0" y2="1">
-        <stop offset="0" stop-color="#fff8d8" stop-opacity="1"/>
-        <stop offset=".56" stop-color="#f0c675" stop-opacity="1"/>
-        <stop offset="1" stop-color="#a76126" stop-opacity="1"/>
+        <stop offset="0" stop-color="#fff0cb" stop-opacity="1"/>
+        <stop offset=".48" stop-color="#d99a55" stop-opacity="1"/>
+        <stop offset="1" stop-color="#8e4c21" stop-opacity="1"/>
       </linearGradient>
       <linearGradient id="correctFill" x1="0" x2="1" y1="0" y2="1">
         <stop offset="0" stop-color="#fff6c7" stop-opacity="1"/>
@@ -1972,7 +2019,7 @@
 
   function startBgm() {
     if (!musicEnabled || !els.bgm) return;
-    els.bgm.volume = .34;
+    els.bgm.volume = .16;
     const play = els.bgm.play();
     if (play && typeof play.catch === "function") play.catch(() => {});
   }
@@ -2009,9 +2056,10 @@
     const now = ac.currentTime;
 
     if (kind === "slide") {
-      woodKnock(now, 210, .075, .085);
-      woodKnock(now + .055, 330, .048, .055);
-      playNoise(now, .055, .012, 650);
+      woodKnock(now, 196, .24, .105);
+      woodKnock(now + .058, 294, .17, .082);
+      woodKnock(now + .108, 392, .095, .058);
+      playNoise(now, .085, .045, 920);
       return;
     }
 
@@ -2026,10 +2074,10 @@
       const gain = ac.createGain();
       const osc = ac.createOscillator();
       const t = now + i * .075;
-      osc.type = kind === "bad" ? "sawtooth" : "sine";
+      osc.type = kind === "bad" ? "triangle" : "sine";
       osc.frequency.setValueAtTime(freq, t);
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(kind === "bad" ? .055 : .045, t + .012);
+      gain.gain.linearRampToValueAtTime(kind === "bad" ? .024 : .045, t + .012);
       gain.gain.exponentialRampToValueAtTime(.0001, t + (kind === "win" ? .38 : .16));
       osc.connect(gain);
       gain.connect(ac.destination);
@@ -2149,7 +2197,7 @@
 
   function bindEvents() {
     syncMusicButton();
-    els.bgm.volume = .34;
+    els.bgm.volume = .16;
     els.newGame.addEventListener("click", newGame);
     els.example.addEventListener("click", loadExample);
     els.undo.addEventListener("click", undo);
@@ -2158,6 +2206,11 @@
     els.music.addEventListener("click", toggleMusic);
     els.startGame.addEventListener("click", () => {
       els.start.classList.remove("show");
+      if (!musicEnabled) {
+        musicEnabled = true;
+        localStorage.setItem("hex-speed-skate-music", "on");
+        syncMusicButton();
+      }
       startBgm();
       playTone("hint");
     });
@@ -2189,6 +2242,57 @@
   initStars();
   updateHud();
   layoutTiles();
+})();
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
 })();
 </script>
 </body>

@@ -216,6 +216,53 @@
     .sec-body{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));}
   }
 </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
 <div id="welcome-mask">
@@ -327,6 +374,8 @@
 	  const BEST_PREFIX = 'tangshi300_best_';
 	  const OPEN_KEY = 'tangshi300_open';
 	  const GAME_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
+		  const BGM_VOLUME = .1;
+		  const SFX_VOLUME = .42;
 	  const EMBEDDED = window.self !== window.top;
 	  let audioCtx = null, bgmAudio = null;
 
@@ -339,13 +388,13 @@
 	  function getBest(id){ try{ const v=localStorage.getItem(BEST_PREFIX+id); return v===null?null:parseInt(v,10);}catch(e){return null;} }
 	  function setBest(id,v){ try{ localStorage.setItem(BEST_PREFIX+id,v);}catch(e){} }
 
-	  function ensureAudio(){
-	    const AudioClass = window.AudioContext || window.webkitAudioContext;
-	    if(!AudioClass) return null;
-	    if(!audioCtx) audioCtx = new AudioClass();
-	    if(audioCtx.state === 'suspended') audioCtx.resume();
-	    return audioCtx;
-	  }
+		  function ensureAudio(){
+		    const AudioClass = window.AudioContext || window.webkitAudioContext;
+		    if(!AudioClass) return null;
+		    if(!audioCtx) audioCtx = new AudioClass();
+		    if(audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+		    return audioCtx;
+		  }
 	  function startBgm(){
 	    if(EMBEDDED) return;
 	    if(!bgmAudio){
@@ -354,30 +403,68 @@
 	      bgmAudio.preload = 'auto';
 	      bgmAudio.crossOrigin = 'anonymous';
 	      bgmAudio.playsInline = true;
-	      bgmAudio.volume = .42;
+	      bgmAudio.volume = BGM_VOLUME;
 	    }
 	    bgmAudio.play().catch(()=>{});
 	  }
-	  function playSlideSound(count=1, strength=1){
-	    const ctx = ensureAudio();
-	    if(!ctx) return;
-	    const hits = Math.min(4, Math.max(1, count));
+		  function playSlideSound(count=1, strength=1){
+		    const ctx = ensureAudio();
+		    if(!ctx) return;
+		    if(ctx.state === 'suspended'){
+		      ctx.resume().then(()=>playSlideSound(count, strength)).catch(()=>{});
+		      return;
+		    }
+		    const hits = Math.min(4, Math.max(1, count));
 	    for(let i=0;i<hits;i++){
-	      const t = ctx.currentTime + i * .026;
-	      const osc = ctx.createOscillator();
-	      const gain = ctx.createGain();
-	      const filter = ctx.createBiquadFilter();
-	      osc.type = 'triangle';
-	      osc.frequency.setValueAtTime(360 - i * 28, t);
-	      osc.frequency.exponentialRampToValueAtTime(145, t + .08);
-	      filter.type = 'bandpass';
-	      filter.frequency.setValueAtTime(720, t);
-	      gain.gain.setValueAtTime(.0001, t);
-	      gain.gain.exponentialRampToValueAtTime(.05 * strength, t + .01);
-	      gain.gain.exponentialRampToValueAtTime(.0001, t + .105);
-	      osc.connect(filter).connect(gain).connect(ctx.destination);
-	      osc.start(t);
-	      osc.stop(t + .12);
+	      const t = ctx.currentTime + i * .034;
+	      const body = ctx.createOscillator();
+	      const bodyGain = ctx.createGain();
+	      const bodyFilter = ctx.createBiquadFilter();
+	      body.type = 'sine';
+	      body.frequency.setValueAtTime(260 - i * 18, t);
+	      body.frequency.exponentialRampToValueAtTime(168, t + .11);
+	      bodyFilter.type = 'bandpass';
+	      bodyFilter.frequency.setValueAtTime(410 - i * 18, t);
+	      bodyFilter.Q.setValueAtTime(5.5, t);
+	      bodyGain.gain.setValueAtTime(.0001, t);
+	      bodyGain.gain.exponentialRampToValueAtTime(SFX_VOLUME * .78 * strength, t + .006);
+	      bodyGain.gain.exponentialRampToValueAtTime(.0001, t + .13);
+	      body.connect(bodyFilter).connect(bodyGain).connect(ctx.destination);
+	      body.start(t);
+	      body.stop(t + .15);
+
+	      const click = ctx.createOscillator();
+	      const clickGain = ctx.createGain();
+	      const clickFilter = ctx.createBiquadFilter();
+	      click.type = 'square';
+	      click.frequency.setValueAtTime(1180 - i * 90, t);
+	      click.frequency.exponentialRampToValueAtTime(620, t + .028);
+	      clickFilter.type = 'bandpass';
+	      clickFilter.frequency.setValueAtTime(1320 - i * 70, t);
+	      clickFilter.Q.setValueAtTime(7, t);
+	      clickGain.gain.setValueAtTime(.0001, t);
+	      clickGain.gain.exponentialRampToValueAtTime(SFX_VOLUME * .52 * strength, t + .003);
+	      clickGain.gain.exponentialRampToValueAtTime(.0001, t + .045);
+	      click.connect(clickFilter).connect(clickGain).connect(ctx.destination);
+	      click.start(t);
+	      click.stop(t + .055);
+
+	      const len = Math.floor(ctx.sampleRate * .035);
+	      const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+	      const data = buffer.getChannelData(0);
+	      for(let j=0;j<len;j++) data[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / len, 3);
+	      const noise = ctx.createBufferSource();
+	      const noiseFilter = ctx.createBiquadFilter();
+	      const noiseGain = ctx.createGain();
+	      noise.buffer = buffer;
+	      noiseFilter.type = 'bandpass';
+	      noiseFilter.frequency.setValueAtTime(2100 - i * 80, t);
+	      noiseFilter.Q.setValueAtTime(1.2, t);
+	      noiseGain.gain.setValueAtTime(SFX_VOLUME * .36 * strength, t);
+	      noiseGain.gain.exponentialRampToValueAtTime(.0001, t + .04);
+	      noise.connect(noiseFilter).connect(noiseGain).connect(ctx.destination);
+	      noise.start(t);
+	      noise.stop(t + .045);
 	    }
 	  }
 
@@ -665,8 +752,10 @@
     openPlay(ni);
   }
 
-  /* ---------- events ---------- */
-  document.getElementById('back').addEventListener('click', gotoCatalog);
+	  /* ---------- events ---------- */
+	  document.addEventListener('pointerdown', ensureAudio, {capture:true, passive:true});
+	  document.addEventListener('touchstart', ensureAudio, {capture:true, passive:true});
+	  document.getElementById('back').addEventListener('click', gotoCatalog);
   document.getElementById('ov-back').addEventListener('click', gotoCatalog);
   document.getElementById('ov-next').addEventListener('click',()=>gotoLevel(1));
   document.getElementById('prevLv').addEventListener('click',()=>gotoLevel(-1));
@@ -692,6 +781,57 @@
   /* ---------- init ---------- */
   buildCatalog();
   refreshCatalog();
+})();
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
 })();
 </script>
 </body>

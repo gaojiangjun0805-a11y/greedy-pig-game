@@ -181,6 +181,22 @@
     .gameTop h2{font-size:15px}
   }
 </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
 </head>
 <body>
 <div id="bootCover">
@@ -291,7 +307,6 @@
     <button class="ghostBtn" id="closeGame">返回大厅</button>
     <h2 id="gameTitle">游戏</h2>
     <button class="primaryBtn" id="completeGame">完成本局</button>
-    <button class="ghostBtn" id="openNew">新窗口</button>
   </div>
   <iframe id="gameFrame" title="G-Game embedded game"></iframe>
 </section>
@@ -383,7 +398,7 @@ const GAMES = [
   {id:'nebula', name:'星云穿越', zone:'logic', difficulty:'高阶', path:'../星云穿越/index.html', internalAudio:true, desc:'让星球穿越、碰撞、连锁清空。', abilities:{logic:.5, space:.32, observe:.18}},
   {id:'brush-world', name:'提笔乾坤', zone:'create', difficulty:'进阶', path:'../蜂巢一笔/index.html', internalAudio:true, desc:'一笔连格，构造每圈同色的路径。', abilities:{create:.42, space:.32, logic:.26}},
   {id:'sand-blocks', name:'沙画方块', zone:'observe', difficulty:'进阶', path:'../木纹方块/index.html', internalAudio:true, desc:'让方块化为沙粒，在堆积中寻找消除机会。', abilities:{observe:.42, space:.32, create:.26}},
-  {id:'tangshi', name:'唐诗华容道', zone:'memory', difficulty:'进阶', path:'../唐诗华容道/唐诗华容道.html', music:TANGSHI_MUSIC, desc:'拼回唐诗句段，在诗词记忆中通关。', abilities:{memory:.58, space:.24, observe:.18}},
+  {id:'tangshi', name:'唐诗华容道', zone:'memory', difficulty:'进阶', path:'../唐诗华容道/唐诗华容道.html', internalAudio:true, desc:'拼回唐诗句段，在诗词记忆中通关。', abilities:{memory:.58, space:.24, observe:.18}},
   {id:'hex-speed', name:'六边速滑', zone:'observe', difficulty:'入门', path:'../六边速滑/index.html', internalAudio:true, desc:'在六边轨道里快速判断方向与时机。', abilities:{observe:.48, space:.34, logic:.18}},
   {id:'rotate-array', name:'旋转数阵', zone:'calc', difficulty:'高阶', path:'../旋转数阵/index.html', desc:'旋转数字结构，寻找数阵变化规律。', abilities:{calc:.45, logic:.35, space:.2}},
   {id:'calendar', name:'日历拼图', zone:'logic', difficulty:'高阶', path:'../日历拼图/index.html', internalAudio:true, desc:'用有限拼块覆盖日历目标。', abilities:{logic:.42, space:.36, calc:.22}},
@@ -2352,7 +2367,6 @@ function setupUi(){
   document.getElementById('markDone').onclick = () => completeGame(focusedPortal?.game);
   document.getElementById('closeGame').onclick = closeGame;
   document.getElementById('completeGame').onclick = () => completeGame(activeGame);
-  document.getElementById('openNew').onclick = () => { if(activeGame) window.open(activeGame.path, '_blank'); };
   document.getElementById('enterHint').onclick = () => openGame(focusedPortal?.game);
 
   const colors = ['#4aa8ff','#a778ff','#ffd166','#2ee6d6','#ff7fca','#75e06f','#ff9d4d','#ffffff'];
@@ -2938,16 +2952,9 @@ function focusPortal(portal){
 
 function openGame(game){
   if(!game) return;
-  const dock = document.getElementById('gameDock');
-  if(activeGame?.id === game.id && dock.classList.contains('show')) return;
-  activeGame = game;
-  if(soundEnabled){
-    fadeHubBgm(0, 850);
-    startGameMusic(game);
-  }
-  document.getElementById('gameTitle').textContent = game.name;
-  document.getElementById('gameFrame').src = game.path;
-  dock.classList.add('show');
+  const gameUrl = new URL(game.path, location.href);
+  gameUrl.searchParams.set('from', 'ggame-hub');
+  window.location.assign(gameUrl.href);
 }
 function closeGame(){
   document.getElementById('gameDock').classList.remove('show');
@@ -3125,6 +3132,20 @@ function renderLoop(now=performance.now()){
   });
   renderer.render(scene,camera);
 }
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
 </script>
 </body>
 </html>

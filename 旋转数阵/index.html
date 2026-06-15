@@ -4,26 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>旋转数阵</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --bg: #06111f;
-      --panel: rgba(8, 18, 33, .78);
-      --panel-strong: rgba(11, 25, 43, .94);
-      --line: rgba(98, 176, 218, .18);
-      --line-strong: rgba(123, 221, 255, .34);
-      --text: #eff8ff;
-      --muted: #9fb2c5;
-      --red: #ee283f;
-      --green: #20f19a;
-      --grey: #89919a;
+      --bg: #07091a;
+      --panel: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.035));
+      --panel-flat: rgba(255, 255, 255, .06);
+      --panel-strong: rgba(13, 20, 48, .94);
+      --line: rgba(157, 226, 255, .18);
+      --line-strong: rgba(157, 226, 255, .42);
+      --text: #eaf0ff;
+      --muted: #8ea2d6;
+      --red: #f87171;
+      --green: #4ade80;
+      --grey: #8f98aa;
       --ink: #09101a;
-      --amber: #f7c869;
-      --blue: #4bb3ff;
+      --amber: #ffe08a;
+      --blue: #9de2ff;
     }
 
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html,
@@ -34,14 +39,16 @@
     }
 
     body {
-      min-height: 100%;
+      min-height: 100dvh;
       overflow: hidden;
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at 18% 12%, rgba(65, 150, 255, .24), transparent 31%),
-        radial-gradient(circle at 84% 82%, rgba(28, 232, 168, .16), transparent 28%),
-        linear-gradient(145deg, #040810 0%, #071a2c 52%, #0a111c 100%);
+      overscroll-behavior: none;
+      font-family: "Nunito", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
+      background: radial-gradient(ellipse at 20% 20%, #1b2f5e 0%, #0d1430 45%, #07091a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
     }
 
     body::before {
@@ -49,61 +56,92 @@
       position: fixed;
       inset: 0;
       pointer-events: none;
-      opacity: .42;
+      opacity: .28;
       background-image:
-        linear-gradient(rgba(113, 215, 255, .08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(113, 215, 255, .08) 1px, transparent 1px),
-        linear-gradient(90deg, transparent 0 48%, rgba(58, 177, 255, .15) 48% 49%, transparent 49% 100%);
-      background-size: 74px 74px, 74px 74px, 260px 100%;
+        radial-gradient(circle at 24% 18%, rgba(157, 226, 255, .24), transparent 26%),
+        radial-gradient(circle at 78% 72%, rgba(201, 184, 255, .14), transparent 24%),
+        linear-gradient(rgba(157, 226, 255, .07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(157, 226, 255, .07) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 58px 58px, 58px 58px;
       mask-image: radial-gradient(circle at center, black 0 62%, transparent 88%);
     }
 
     .app {
       display: grid;
-      grid-template-columns: minmax(270px, 340px) minmax(0, 1fr) minmax(260px, 330px);
-      gap: 20px;
+      grid-template-areas:
+        "brand"
+        "metrics"
+        "board"
+        "progress"
+        "tools"
+        "hint";
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+      gap: 7px;
+      width: 100%;
+      max-width: 480px;
       height: 100vh;
       height: 100dvh;
-      padding: 22px;
+      min-height: 0;
+      padding: max(6px, env(safe-area-inset-top)) 10px max(6px, env(safe-area-inset-bottom));
       overflow: hidden;
+      position: relative;
+      z-index: 1;
     }
 
-    .side,
+    .side {
+      display: contents;
+    }
+
     .status {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      min-width: 0;
-      padding-top: 8px;
+      display: none;
     }
 
     .brand {
-      padding: 18px 18px 16px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: 0 20px 55px rgba(0, 0, 0, .28);
-      backdrop-filter: blur(16px);
+      grid-area: brand;
+      text-align: center;
+      padding: 0 6px 2px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      backdrop-filter: none;
     }
 
     h1 {
-      margin: 0;
-      font-size: clamp(27px, 3.2vw, 42px);
+      font-size: clamp(1.35rem, 6vw, 2rem);
       line-height: 1;
-      letter-spacing: 0;
+      font-weight: 900;
+      letter-spacing: 6px;
+      background: linear-gradient(135deg, #9de2ff, #7aa2ff, #c9b8ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 14px rgba(122, 162, 255, .42));
     }
 
     .subline {
-      margin: 12px 0 0;
+      margin-top: 3px;
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
+      font-size: clamp(.58rem, 2.2vw, .72rem);
+      line-height: 1.25;
+      letter-spacing: 1.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .metrics {
+      grid-area: metrics;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      width: 100%;
+      padding: 9px 10px 10px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.08);
     }
 
     .metric,
@@ -112,29 +150,37 @@
     .history,
     .victory {
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: 16px;
       background: var(--panel);
-      box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+      box-shadow: 0 10px 30px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.08);
       backdrop-filter: blur(16px);
     }
 
     .metric {
-      min-height: 82px;
-      padding: 13px 14px;
+      min-height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      text-align: center;
+      backdrop-filter: none;
     }
 
     .metric span {
       display: block;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 10px;
+      letter-spacing: .7px;
     }
 
     .metric strong {
       display: block;
-      margin-top: 7px;
-      font-size: 28px;
+      margin-top: 4px;
+      font-size: clamp(18px, 5vw, 24px);
       line-height: 1;
       font-variant-numeric: tabular-nums;
+      color: var(--text);
     }
 
     .toolbox,
@@ -144,32 +190,37 @@
     }
 
     .toolbox {
+      grid-area: tools;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 9px;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 5px;
+      padding: 6px;
     }
 
     button {
       appearance: none;
-      min-height: 42px;
-      border: 1px solid rgba(130, 207, 255, .28);
-      border-radius: 8px;
+      min-height: 30px;
+      border: 0;
+      border-radius: 999px;
       color: var(--text);
-      background: rgba(20, 45, 72, .78);
+      background: linear-gradient(135deg, #64748b, #4b5563);
       font: inherit;
       font-weight: 700;
+      font-size: clamp(.66rem, 2.6vw, .78rem);
+      letter-spacing: 0;
       cursor: pointer;
-      transition: transform .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+      box-shadow: 0 3px 12px rgba(0,0,0,.28);
+      touch-action: manipulation;
+      transition: transform .14s cubic-bezier(.34,1.56,.64,1), filter .14s ease, opacity .16s ease;
     }
 
     button:hover {
-      transform: translateY(-1px);
-      border-color: rgba(137, 234, 255, .65);
-      background: rgba(27, 70, 108, .9);
+      transform: translateY(-1px) scale(1.02);
+      filter: brightness(1.08);
     }
 
     button:active {
-      transform: translateY(0);
+      transform: scale(.94);
     }
 
     button:disabled {
@@ -179,11 +230,33 @@
     }
 
     .primary {
-      border-color: rgba(45, 245, 173, .62);
-      background: linear-gradient(180deg, rgba(38, 184, 139, .96), rgba(12, 98, 88, .96));
+      background: linear-gradient(135deg, #60a5fa, #3b6aed);
+      color: #fff;
+    }
+
+    #resetBtn {
+      background: linear-gradient(135deg, #64748b, #4b5563);
+    }
+
+    #undoBtn {
+      background: linear-gradient(135deg, #334155, #1f2937);
+    }
+
+    #hintBtn {
+      background: linear-gradient(135deg, #ffe08a, #f59e0b);
+      color: #1a1a2e;
+    }
+
+    #autoBtn {
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+    }
+
+    #soundBtn {
+      background: linear-gradient(135deg, #a78bfa, #7c3aed);
     }
 
     .board-shell {
+      grid-area: board;
       position: relative;
       display: grid;
       place-items: center;
@@ -194,21 +267,22 @@
 
     .board {
       position: relative;
-      width: min(77vh, 76vw);
-      max-width: 900px;
-      min-width: 520px;
+      width: min(94vw, calc(100dvh - 220px), 430px);
+      max-width: 100%;
+      min-width: 0;
       aspect-ratio: 1 / 1;
       user-select: none;
       touch-action: manipulation;
-      border-radius: 8px;
+      border-radius: 18px;
+      border: 2px solid rgba(255,255,255,.08);
       background:
-        linear-gradient(rgba(255, 255, 255, .02), rgba(255, 255, 255, 0)),
-        repeating-linear-gradient(0deg, transparent 0 82px, rgba(78, 194, 255, .08) 83px 84px),
-        repeating-linear-gradient(90deg, transparent 0 82px, rgba(78, 194, 255, .08) 83px 84px);
+        rgba(255,255,255,.04),
+        repeating-linear-gradient(0deg, transparent 0 56px, rgba(157,226,255,.055) 57px 58px),
+        repeating-linear-gradient(90deg, transparent 0 56px, rgba(157,226,255,.055) 57px 58px);
       box-shadow:
-        inset 0 0 0 1px rgba(121, 215, 255, .14),
-        inset 0 0 70px rgba(24, 138, 255, .08),
-        0 30px 80px rgba(0, 0, 0, .26);
+        0 0 50px rgba(59,106,237,.13),
+        0 16px 50px rgba(0,0,0,.34),
+        inset 0 1px 0 rgba(255,255,255,.1);
     }
 
     .board::before,
@@ -251,9 +325,10 @@
       position: absolute;
       inset: 0;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, .16);
+      border: 2px solid rgba(255,255,255,.14);
       background: rgba(115, 125, 135, .86);
       clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
     }
 
     .diamond::after {
@@ -264,8 +339,8 @@
       width: 100%;
       height: 2px;
       transform: translateY(-1px);
-      background: rgba(5, 10, 16, .5);
-      box-shadow: 0 0 10px rgba(255, 255, 255, .18);
+      background: rgba(5, 10, 16, .64);
+      box-shadow: 0 0 10px rgba(255, 255, 255, .14);
       z-index: 2;
     }
 
@@ -279,18 +354,18 @@
 
     .live-half {
       top: 0;
-      background: var(--red);
+      background: linear-gradient(135deg, #fb7185, #ef4444);
       transition: background .2s ease, box-shadow .2s ease;
     }
 
     .goal-half {
       bottom: 0;
-      background: var(--grey);
+      background: linear-gradient(135deg, #a8b0bf, #747d8d);
     }
 
     .pad.solved .live-half {
-      background: var(--green);
-      box-shadow: 0 0 28px rgba(32, 241, 154, .48);
+      background: linear-gradient(135deg, #86efac, #22c55e);
+      box-shadow: 0 0 28px rgba(74,222,128,.46);
     }
 
     .pad.flash .diamond {
@@ -341,24 +416,21 @@
       z-index: 5;
       color: #141922;
       font-size: clamp(15px, 1.95vw, 25px);
-      font-weight: 850;
+      font-weight: 900;
       font-variant-numeric: tabular-nums;
-      background:
-        radial-gradient(circle at 34% 26%, #fff 0 24%, #f8fafc 25% 50%, #dce2e9 100%);
+      background: linear-gradient(135deg, #f4f7ff, #d6def0);
       box-shadow:
-        inset -7px -9px 14px rgba(92, 99, 112, .2),
-        inset 5px 7px 10px rgba(255, 255, 255, .92),
-        0 11px 22px rgba(0, 0, 0, .44);
+        0 3px 8px rgba(0,0,0,.28),
+        inset 0 1px 0 rgba(255,255,255,.8);
       transition: left .28s cubic-bezier(.2, .78, .2, 1), top .28s cubic-bezier(.2, .78, .2, 1), transform .2s ease;
     }
 
     .ball.moving {
       transform: translate(-50%, -50%) scale(1.08);
       box-shadow:
-        inset -7px -9px 14px rgba(92, 99, 112, .2),
-        inset 5px 7px 10px rgba(255, 255, 255, .92),
-        0 0 0 5px rgba(75, 179, 255, .2),
-        0 13px 25px rgba(0, 0, 0, .5);
+        0 0 0 5px rgba(96,165,250,.18),
+        0 12px 24px rgba(0,0,0,.42),
+        inset 0 1px 0 rgba(255,255,255,.85);
     }
 
     .ring {
@@ -436,7 +508,8 @@
     }
 
     .progress {
-      height: 9px;
+      grid-area: progress;
+      height: 6px;
       overflow: hidden;
       border-radius: 999px;
       background: rgba(255, 255, 255, .08);
@@ -447,19 +520,26 @@
       height: 100%;
       width: 0%;
       border-radius: inherit;
-      background: linear-gradient(90deg, var(--blue), var(--green));
+      background: linear-gradient(90deg, #60a5fa, #4ade80);
       transition: width .25s ease;
     }
 
     .hint-line {
-      min-height: 42px;
-      padding: 12px 13px;
-      border: 1px solid rgba(247, 200, 105, .22);
-      border-radius: 8px;
+      grid-area: hint;
+      min-height: 31px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 224, 138, .24);
+      border-radius: 14px;
       color: #ffe5a7;
-      background: rgba(70, 48, 18, .32);
-      font-size: 13px;
-      line-height: 1.45;
+      background: rgba(255, 224, 138, .08);
+      font-size: clamp(.72rem, 2.8vw, .84rem);
+      line-height: 1.2;
+      letter-spacing: .5px;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255,224,138,.4);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .victory {
@@ -467,13 +547,15 @@
       position: absolute;
       left: 50%;
       top: 50%;
-      width: min(390px, calc(100% - 34px));
+      width: min(390px, calc(100% - 28px));
       transform: translate(-50%, -50%);
-      padding: 22px;
+      padding: 26px 22px 22px;
       z-index: 20;
       text-align: center;
-      background: rgba(7, 20, 31, .96);
-      border-color: rgba(32, 241, 154, .5);
+      background: linear-gradient(160deg, #15224a, #0d1430);
+      border: 2px solid #7aa2ff;
+      border-radius: 26px;
+      box-shadow: 0 0 70px rgba(59,106,237,.47), 0 24px 70px rgba(0,0,0,.68);
     }
 
     .victory.show {
@@ -489,6 +571,11 @@
     .victory h2 {
       margin: 0;
       font-size: 30px;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #ffe08a, #fb923c, #c9b8ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
 
     .victory p {
@@ -507,8 +594,8 @@
       height: 22px;
       border-radius: 999px;
       color: var(--text);
-      background: rgba(10, 22, 36, .92);
-      border: 1px solid rgba(132, 219, 255, .26);
+      background: rgba(8, 12, 29, .94);
+      border: 1px solid rgba(157, 226, 255, .28);
       font-size: 12px;
       font-weight: 850;
       z-index: 3;
@@ -522,8 +609,8 @@
       padding: 10px 14px;
       border-radius: 999px;
       color: var(--text);
-      background: rgba(4, 12, 20, .88);
-      border: 1px solid rgba(137, 234, 255, .28);
+      background: rgba(8, 12, 29, .9);
+      border: 1px solid rgba(157, 226, 255, .28);
       box-shadow: 0 16px 38px rgba(0, 0, 0, .38);
       opacity: 0;
       pointer-events: none;
@@ -535,6 +622,120 @@
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(-4px);
+    }
+
+    #welcome-mask {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #16224d, #080c1d 70%);
+      transition: opacity .5s ease;
+    }
+
+    #welcome-mask.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #welcome-card {
+      width: min(100%, 460px);
+      text-align: center;
+      padding: 0 24px;
+      animation: wcIn .6s ease both;
+    }
+
+    @keyframes wcIn {
+      from { opacity: 0; transform: translateY(24px) scale(.96); }
+      to { opacity: 1; transform: none; }
+    }
+
+    #welcome-logo {
+      margin-bottom: 6px;
+      font-size: clamp(46px, 13vw, 88px);
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #9de2ff, #60a5fa, #c9b8ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 4px 24px rgba(96,165,250,.4));
+    }
+
+    #welcome-title {
+      margin-bottom: 14px;
+      color: #e8ecff;
+      font-size: clamp(20px, 5vw, 30px);
+      font-weight: 700;
+    }
+
+    #welcome-sub {
+      max-width: 430px;
+      margin: 0 auto 22px;
+      color: #9aa6d6;
+      font-size: clamp(13px, 3.4vw, 16px);
+      line-height: 1.7;
+    }
+
+    #welcome-demo {
+      position: relative;
+      width: 150px;
+      height: 106px;
+      margin: 0 auto 30px;
+    }
+
+    .demo-ball {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      color: #10162b;
+      background: linear-gradient(135deg, #f4f7ff, #d6def0);
+      box-shadow: 0 3px 8px rgba(0,0,0,.34);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .demo-diamond {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 58px;
+      height: 58px;
+      transform: translate(-50%, -50%);
+      clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%);
+      background: linear-gradient(to bottom, #fb7185 0 50%, #8f98aa 50% 100%);
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow: 0 0 22px rgba(122,162,255,.24);
+      animation: demoPulse 1.4s ease-in-out infinite alternate;
+    }
+
+    @keyframes demoPulse {
+      from { filter: brightness(.95); transform: translate(-50%, -50%) scale(.95); }
+      to { filter: brightness(1.2); transform: translate(-50%, -50%) scale(1.06); }
+    }
+
+    #welcome-start {
+      cursor: pointer;
+      border: 0;
+      border-radius: 999px;
+      padding: 15px 54px;
+      color: #08142a;
+      background: linear-gradient(135deg, #9de2ff, #3b82f6);
+      box-shadow: 0 8px 32px rgba(59,130,246,.5);
+      font-size: clamp(18px, 4.6vw, 22px);
+      font-weight: 800;
+      animation: wcPulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes wcPulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(59,130,246,.5); }
+      50% { box-shadow: 0 8px 44px rgba(59,130,246,.85); }
     }
 
     @media (max-width: 1050px) {
@@ -622,14 +823,14 @@
 
       .toolbox {
         grid-area: tools;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 7px;
-        padding: 8px;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 5px;
+        padding: 6px;
       }
 
       button {
-        min-height: 36px;
-        font-size: 14px;
+        min-height: 30px;
+        font-size: 12px;
       }
 
       .hint-line {
@@ -646,8 +847,8 @@
 
     @media (max-width: 620px) {
       .app {
-        padding: 10px;
-        gap: 7px;
+        padding: max(6px, env(safe-area-inset-top)) 8px max(6px, env(safe-area-inset-bottom));
+        gap: 6px;
       }
 
       .brand {
@@ -672,7 +873,7 @@
       }
 
       .board {
-        width: min(96vw, calc(100dvh - 264px));
+        width: min(94vw, calc(100dvh - 224px));
       }
 
       .pad {
@@ -714,17 +915,79 @@
       }
 
       .board {
-        width: min(96vw, calc(100dvh - 166px));
+        width: min(94vw, calc(100dvh - 128px));
       }
     }
   </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
+  <div id="welcome-mask">
+    <div id="welcome-card">
+      <div id="welcome-logo">G—Game</div>
+      <div id="welcome-title">旋转数阵</div>
+      <div id="welcome-sub">点击菱形区域，让四个相邻白球顺时针旋转；当上方和值等于下方目标，区域就会点亮。</div>
+      <div id="welcome-demo" aria-hidden="true">
+        <span class="demo-diamond"></span>
+        <span class="demo-ball" style="left:50%;top:8%;">1</span>
+        <span class="demo-ball" style="left:18%;top:50%;">0</span>
+        <span class="demo-ball" style="left:82%;top:50%;">2</span>
+        <span class="demo-ball" style="left:50%;top:92%;">1</span>
+      </div>
+      <button id="welcome-start" type="button">开始游戏</button>
+    </div>
+  </div>
   <main class="app">
     <section class="side" aria-label="游戏信息">
       <div class="brand">
-        <h1>旋转数阵</h1>
-        <p class="subline">点击菱形区域，四个相邻白球顺时针转动。上半数字等于下方目标时，区域变绿。</p>
+        <h1>旋 转 数 阵</h1>
+        <p class="subline">逐关推进 · 旋转小球 · 对齐目标</p>
       </div>
       <div class="metrics">
         <div class="metric">
@@ -757,11 +1020,11 @@
       </div>
       <div class="toolbox" aria-label="控制按钮">
         <button class="primary" id="newGameBtn" type="button">下一关</button>
-        <button id="resetBtn" type="button">重置本关</button>
+        <button id="resetBtn" type="button">重置</button>
         <button id="undoBtn" type="button">撤销</button>
         <button id="hintBtn" type="button">提示</button>
         <button id="autoBtn" type="button">演示</button>
-        <button id="soundBtn" type="button">音效开</button>
+        <button id="soundBtn" type="button">音效</button>
       </div>
       <div class="hint-line" id="hintLine">提示会根据当前棋盘寻找下一步，卡住时可以点一下。</div>
     </section>
@@ -807,6 +1070,8 @@
     const victoryText = document.getElementById("victoryText");
     const hintLine = document.getElementById("hintLine");
     const toast = document.getElementById("toast");
+    const welcomeMask = document.getElementById("welcome-mask");
+    const welcomeStart = document.getElementById("welcome-start");
 
     const LEVEL_STEP = 5;
     const gridPoints = [
@@ -1139,6 +1404,7 @@
     }
 
     function rotate(index, options = {}) {
+      if (welcomeMask && !welcomeMask.classList.contains("hide")) return;
       if (busy || victory.classList.contains("show")) return;
       if (!options.silentStart) startTimer();
       busy = true;
@@ -1295,6 +1561,7 @@
     }
 
     async function autoPlay() {
+      if (welcomeMask && !welcomeMask.classList.contains("hide")) return;
       if (autoPlaying || busy || victory.classList.contains("show")) return;
       autoPlaying = true;
       startTimer();
@@ -1351,7 +1618,14 @@
     document.getElementById("autoBtn").addEventListener("click", () => autoPlay());
     document.getElementById("soundBtn").addEventListener("click", (event) => {
       soundOn = !soundOn;
-      event.currentTarget.textContent = soundOn ? "音效开" : "音效关";
+      event.currentTarget.textContent = soundOn ? "音效" : "静音";
+    });
+    welcomeStart.addEventListener("click", () => {
+      welcomeMask.classList.add("hide");
+      window.setTimeout(() => {
+        welcomeMask.style.display = "none";
+      }, 520);
+      playTone("win");
     });
 
     window.addEventListener("keydown", (event) => {
@@ -1368,5 +1642,56 @@
     renderStaticBoard();
     resetGame();
   </script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
+})();
+</script>
 </body>
 </html>

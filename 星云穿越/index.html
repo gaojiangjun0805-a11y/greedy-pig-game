@@ -164,6 +164,53 @@ button:disabled{ opacity:.32; pointer-events:none; }
   box-shadow:0 8px 32px rgba(59,130,246,.5); animation:wcPulse 1.8s ease-in-out infinite; }
 @keyframes wcPulse{ 0%,100%{box-shadow:0 8px 32px rgba(59,130,246,.5);} 50%{box-shadow:0 8px 44px rgba(59,130,246,.85);} }
 </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
 <div id="welcome-mask">
@@ -207,7 +254,7 @@ button:disabled{ opacity:.32; pointer-events:none; }
     <button id="btn-undo">↶ 撤销</button>
     <button id="btn-reset">↺ 重置</button>
     <button id="btn-hint">💡 提示</button>
-    <button id="btn-music">🔇 关音乐</button>
+    <button id="btn-music">🎵 开音乐</button>
   </div>
 
   <div id="msg"></div>
@@ -222,7 +269,7 @@ button:disabled{ opacity:.32; pointer-events:none; }
     <div class="settle-total"><span>⭐ 总分</span><span id="settle-total-val">0</span></div>
     <div id="settle-btns">
       <button id="sb-again">🔄 重玩本关</button>
-      <button id="sb-next">⬆ 下一关</button>
+      <button id="sb-next">⬇ 下一关</button>
     </div>
   </div>
 </div>
@@ -666,6 +713,7 @@ async function doMove(cellId,d){
   for(const hop of o.hops){
     const [fr,fc]=RC(hop.from), [er,ec]=RC(hop.enter);
     const dist=Math.abs(er-fr)+Math.abs(ec-fc);
+    sfxCross(dist);
     trail(hop.from, hop.enter, ci);
     await slideTo(el, hop.enter, Math.max(80, dist*46));
     if(hop.portal){
@@ -852,31 +900,109 @@ function spawnSparks(cx,cy,colors){
 // ════════════════════════════════════════════════════════════
 //  audio
 // ════════════════════════════════════════════════════════════
-let actx=null,mgain=null,musicOn=false,mtimer=null,_auto=false,mnodes=new Set();
-function AC(){ if(!actx){ actx=new(window.AudioContext||window.webkitAudioContext)(); mgain=actx.createGain(); mgain.gain.value=.3; mgain.connect(actx.destination);} return actx; }
-function tone(f,t,dur,vol,type){ const ac=AC(),o=ac.createOscillator(),g=ac.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
-  o.connect(g); g.connect(mgain); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.012);
-  g.gain.exponentialRampToValueAtTime(.0001,t+dur); o.start(t); o.stop(t+dur+.02); mnodes.add(o); o.onended=()=>mnodes.delete(o); }
-function sfxSelect(){ const t=AC().currentTime; tone(660,t,.09,.05,'sine'); tone(990,t+.04,.08,.04,'sine'); }
-function sfxCross(d){ const t=AC().currentTime; for(let i=0;i<Math.min(d,5);i++) tone(420+i*70,t+i*.05,.1,.035,'triangle'); }
-function sfxWarp(){ const t=AC().currentTime; tone(720,t,.13,.045,'sine'); tone(1180,t+.05,.12,.03,'triangle'); }
-function sfxCapture(){ const t=AC().currentTime; [523,659,784,1046].forEach((f,i)=>tone(f,t+i*.05,.3,.07,'sine')); tone(160,t,.18,.05,'sine'); }
-function sfxWin(){ const t=AC().currentTime; [523,659,784,1046,1318].forEach((f,i)=>tone(f,t+i*.1,.4,.08,'sine')); }
-// gentle ambient arpeggio
-const ARP=[261.63,329.63,392,523.25,392,329.63, 293.66,349.23,440,587.33,440,349.23,
-          220,329.63,392,523.25,392,329.63, 246.94,392,493.88,392];
-let arpStart=0,arpIdx=0;
-function schedMusic(){ if(!musicOn) return; const ac=AC(), look=ac.currentTime+.4;
-  while(true){ const when=arpStart+arpIdx*.32; if(when<look){ tone(ARP[arpIdx%ARP.length],when,.46,.04,'sine');
-    tone(ARP[arpIdx%ARP.length]/2,when,.5,.025,'triangle'); arpIdx++; } else break; }
-  mtimer=setTimeout(schedMusic,80); }
-function startMusic(){ const ac=AC(); if(ac.state==='suspended')ac.resume(); musicOn=true; arpStart=ac.currentTime+.1; arpIdx=0; schedMusic();
-  const b=$('btn-music'); b.textContent='🔇 关音乐'; }
-function stopMusic(){ musicOn=false; clearTimeout(mtimer); const b=$('btn-music'); b.textContent='🎵 开音乐'; }
+const BGM_SRC='bgm-suno.mp3', BGM_START=7;
+let actx=null,mgain=null,limiter=null,bgm=null,musicOn=false,_auto=false,mnodes=new Set();
+function AC(){
+  if(!actx){
+    actx=new(window.AudioContext||window.webkitAudioContext)();
+    mgain=actx.createGain();
+    limiter=actx.createDynamicsCompressor();
+    mgain.gain.value=.78;
+    limiter.threshold.value=-16;
+    limiter.knee.value=20;
+    limiter.ratio.value=5;
+    limiter.attack.value=.004;
+    limiter.release.value=.18;
+    mgain.connect(limiter);
+    limiter.connect(actx.destination);
+  }
+  return actx;
+}
+function ensureBgm(){
+  if(bgm)return bgm;
+  bgm=new Audio(BGM_SRC);
+  bgm.preload='auto';
+  bgm.volume=.62;
+  bgm.loop=false;
+  bgm.addEventListener('loadedmetadata',()=>{ if(musicOn && bgm.currentTime<BGM_START-.1) bgm.currentTime=BGM_START; });
+  bgm.addEventListener('ended',()=>{ if(musicOn){ bgm.currentTime=BGM_START; bgm.play().catch(()=>{}); } });
+  return bgm;
+}
+function updateMusicButton(){ const b=$('btn-music'); if(b) b.textContent=musicOn?'🔇 关音乐':'🎵 开音乐'; }
+function tone(f,t,dur,vol,type){
+  const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f,t);
+  o.connect(g); g.connect(mgain);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.start(t); o.stop(t+dur+.03); mnodes.add(o); o.onended=()=>mnodes.delete(o);
+}
+function sweep(f0,f1,t,dur,vol,type){
+  const ac=AC(),o=ac.createOscillator(),g=ac.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f0,t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(1,f1),t+dur);
+  o.connect(g); g.connect(mgain);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.015);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.start(t); o.stop(t+dur+.04); mnodes.add(o); o.onended=()=>mnodes.delete(o);
+}
+function noise(t,dur,vol,freq,type){
+  const ac=AC(),len=Math.max(1,Math.floor(ac.sampleRate*dur)),buf=ac.createBuffer(1,len,ac.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/len,1.6);
+  const src=ac.createBufferSource(),filter=ac.createBiquadFilter(),g=ac.createGain();
+  filter.type=type||'bandpass'; filter.frequency.setValueAtTime(freq||900,t); filter.Q.value=1.5;
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  src.buffer=buf; src.connect(filter); filter.connect(g); g.connect(mgain);
+  src.start(t); src.stop(t+dur+.02);
+}
+function sfxSelect(){
+  const t=AC().currentTime;
+  sweep(520,980,t,.12,.065,'triangle');
+  tone(1460,t+.035,.11,.034,'sine');
+}
+function sfxCross(d){
+  const t=AC().currentTime, n=Math.min(d,5);
+  noise(t,.12,.028,760,'bandpass');
+  for(let i=0;i<n;i++)sweep(260+i*32,420+i*55,t+i*.038,.13,.04,'triangle');
+}
+function sfxWarp(){
+  const t=AC().currentTime;
+  sweep(310,1680,t,.32,.12,'sine');
+  sweep(940,210,t+.03,.28,.055,'sawtooth');
+  noise(t,.24,.06,1350,'highpass');
+}
+function sfxCapture(){
+  const t=AC().currentTime;
+  sweep(180,54,t,.26,.14,'sawtooth');
+  noise(t,.25,.13,520,'lowpass');
+  [1046,784,1318,988].forEach((f,i)=>tone(f,t+.03+i*.038,.2,.055,'sine'));
+}
+function sfxWin(){
+  const t=AC().currentTime;
+  [523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,t+i*.075,.5,.08,'sine'));
+  [392,523,659].forEach((f,i)=>sweep(f,f*2,t+.14+i*.12,.42,.052,'triangle'));
+  noise(t+.08,.55,.045,1800,'highpass');
+}
+function startMusic(){
+  const ac=AC(); if(ac.state==='suspended')ac.resume();
+  const m=ensureBgm(); musicOn=true;
+  try{ m.currentTime=BGM_START; }catch(_){}
+  m.play().catch(()=>{});
+  updateMusicButton();
+}
+function stopMusic(){
+  musicOn=false;
+  if(bgm)bgm.pause();
+  updateMusicButton();
+}
 function toggleMusic(){ musicOn?stopMusic():startMusic(); }
 function autoMusic(){ if(!_auto){ _auto=true; try{startMusic();}catch(e){} } }
 document.addEventListener('click',autoMusic,{once:true});
 document.addEventListener('touchstart',autoMusic,{once:true});
+updateMusicButton();
 
 // ════════════════════════════════════════════════════════════
 //  background starfield
@@ -912,6 +1038,57 @@ function launch(e){ if(e){try{e.preventDefault();}catch(_){}} if(_launched)retur
   newGame(); autoMusic(); }
 $('welcome-start').addEventListener('click',launch);
 $('welcome-start').addEventListener('touchend',launch);
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
+})();
 </script>
 </body>
 </html>

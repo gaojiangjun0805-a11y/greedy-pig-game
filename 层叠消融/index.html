@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>见证谜语：层叠消融</title>
+<title>层叠消融</title>
 <style>
   :root{
     --ink:#070707;
-    --paper:#201916;
-    --panel:#261d18;
-    --line:rgba(255,232,185,.18);
-    --dot:#8f887d;
-    --surface:#efe2c9;
-    --surface2:#e2cfad;
-    --text:#fff1d0;
-    --muted:#b9aa8e;
-    --accent:#f0b65b;
-    --teal:#5fc8b5;
+    --paper:#121b1c;
+    --panel:#172322;
+    --line:rgba(205,238,221,.18);
+    --dot:#7f9189;
+    --surface:#e9e0ca;
+    --surface2:#cfc1a2;
+    --text:#f7f0db;
+    --muted:#a9bbb0;
+    --accent:#7fd9c6;
+    --teal:#d9b76e;
   }
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -26,9 +26,9 @@
     font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,Segoe UI,sans-serif;
     padding:8px;
     background:
-      radial-gradient(900px 520px at 18% -10%,rgba(240,182,91,.18),transparent 58%),
-      radial-gradient(760px 680px at 115% 110%,rgba(95,200,181,.12),transparent 52%),
-      linear-gradient(155deg,#171311,#231814 56%,#101714);
+      radial-gradient(circle at 18% 22%,rgba(255,244,218,.62) 0 1px,transparent 1.8px),
+      radial-gradient(circle at 78% 68%,rgba(127,217,198,.42) 0 1px,transparent 1.8px),
+      linear-gradient(155deg,#050812,#0b141a 52%,#05070f);
   }
 
   button{font:inherit;touch-action:manipulation;}
@@ -108,9 +108,9 @@
 
   .btn:active{transform:translateY(1px);}
   .btn.active,.btn.primary{
-    color:#24170f;
-    background:linear-gradient(155deg,#ffe5a8,var(--accent));
-    border-color:#ffd37a;
+    color:#10211e;
+    background:linear-gradient(155deg,#d9fff2,var(--accent));
+    border-color:#b7f5e6;
   }
 
   .btn:disabled{
@@ -216,6 +216,53 @@
     .paper,.panel{box-shadow:0 10px 28px rgba(0,0,0,.14);}
   }
 </style>
+<style id="touchGuardStyle">
+  html, body, body *{
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+  }
+  img, svg, canvas{
+    -webkit-user-drag:none;
+    user-drag:none;
+  }
+  input, textarea, [contenteditable="true"]{
+    -webkit-user-select:text;
+    user-select:text;
+    -webkit-touch-callout:default;
+  }
+</style>
+<style id="hubReturnStyle">
+  #hubReturnBtn{
+    position:fixed;
+    left:max(10px, env(safe-area-inset-left));
+    top:max(10px, env(safe-area-inset-top));
+    z-index:2147483000;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:74px;
+    height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    border:1px solid rgba(159,216,255,.48);
+    background:rgba(6,12,24,.74);
+    color:#f3f7ff;
+    box-shadow:0 10px 30px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.12);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    font:900 13px/1 "PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+    letter-spacing:0;
+    text-decoration:none;
+    pointer-events:auto;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-touch-callout:none;
+    transition:transform .12s ease, border-color .16s ease, background .16s ease;
+  }
+  #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+</style>
 </head>
 <body>
   <main class="app">
@@ -262,7 +309,7 @@
         <button class="btn" id="flipBtn" type="button">翻面</button>
         <button class="btn" id="undoBtn" type="button">撤销</button>
         <button class="btn" id="hintBtn" type="button">提示</button>
-        <button class="btn active" id="musicBtn" type="button">音乐开</button>
+        <button class="btn" id="musicBtn" type="button">开音乐</button>
         <button class="btn" id="resetBtn" type="button">重置</button>
         <button class="btn primary" id="nextBtn" type="button">下一题</button>
       </div>
@@ -300,9 +347,8 @@
   const BGM_URL = 'audio/bgm.mp3';
   const W = 390;
   const H = 760;
-  const board = {cx:195, cy:405, r:112, size:0, cell:0, x:0, y:0};
-  const answerBoard = {cx:195, cy:405, r:112, size:0, cell:0, x:0, y:0};
-  const small = {cx:195, cy:202, r:58};
+  const targetBoard = {cx:195, cy:224, r:96, size:0, cell:0, x:0, y:0};
+  const answerBoard = {cx:195, cy:428, r:96, size:0, cell:0, x:0, y:0};
 
   const audioState = {
     ctx:null,
@@ -312,13 +358,19 @@
     musicStarted:false
   };
 
+  function musicLabel(){
+    if(audioState.muted) return '音乐关';
+    return audioState.musicStarted ? '音乐开' : '开音乐';
+  }
+
   function updateMusicButton(){
-    musicBtn.textContent = audioState.muted ? '音乐关' : '音乐开';
-    musicBtn.classList.toggle('active',!audioState.muted);
+    musicBtn.textContent = musicLabel();
+    musicBtn.classList.toggle('active',!audioState.muted && audioState.musicStarted);
+    requestDraw();
   }
 
   function startMusic(){
-    if(audioState.muted || !audioState.musicWanted) return;
+    if(audioState.muted || !audioState.musicWanted) return Promise.resolve(false);
     if(!audioState.music){
       audioState.music = new Audio(BGM_URL);
       audioState.music.loop = true;
@@ -326,16 +378,22 @@
       audioState.music.volume = .34;
       audioState.music.addEventListener('error',() => showToast('背景音乐加载失败'));
     }
+    audioState.musicStarted = true;
+    updateMusicButton();
     const play = audioState.music.play();
-    if(play){
-      play.then(() => {
+    if(play && typeof play.then === 'function'){
+      return play.then(() => {
         audioState.musicStarted = true;
         updateMusicButton();
+        return true;
       }).catch(() => {
         audioState.musicStarted = false;
         updateMusicButton();
+        if(!audioState.muted && audioState.musicWanted) showToast('再点一次开音乐');
+        return false;
       });
     }
+    return Promise.resolve(true);
   }
 
   function stopMusic(){
@@ -353,62 +411,134 @@
     return audioState.ctx;
   }
 
-  function playTone(freq,duration,delay,type,gain){
+  function makeNoiseBuffer(ac,duration){
+    const frames = Math.max(1,Math.floor(ac.sampleRate * duration));
+    const buffer = ac.createBuffer(1,frames,ac.sampleRate);
+    const data = buffer.getChannelData(0);
+    let last = 0;
+    for(let i=0;i<frames;i++){
+      last = last * .74 + (Math.random() * 2 - 1) * .26;
+      data[i] = last;
+    }
+    return buffer;
+  }
+
+  function connectOutput(ac,node,pan){
+    if(ac.createStereoPanner){
+      const panner = ac.createStereoPanner();
+      panner.pan.value = pan || 0;
+      node.connect(panner).connect(ac.destination);
+    }else{
+      node.connect(ac.destination);
+    }
+  }
+
+  function playNoiseHit(options){
+    const ac = ensureAudio();
+    if(!ac) return;
+    const opts = options || {};
+    const duration = opts.duration || .08;
+    const t = ac.currentTime + (opts.delay || 0);
+    const source = ac.createBufferSource();
+    const filter = ac.createBiquadFilter();
+    const amp = ac.createGain();
+    source.buffer = makeNoiseBuffer(ac,duration + .04);
+    filter.type = opts.type || 'bandpass';
+    filter.frequency.setValueAtTime(opts.frequency || 900,t);
+    filter.Q.setValueAtTime(opts.q || .8,t);
+    amp.gain.setValueAtTime(0,t);
+    amp.gain.linearRampToValueAtTime(opts.gain || .025,t+.008);
+    amp.gain.exponentialRampToValueAtTime(.0001,t+duration);
+    source.connect(filter).connect(amp);
+    connectOutput(ac,amp,opts.pan || 0);
+    source.start(t);
+    source.stop(t+duration+.04);
+  }
+
+  function playResonance(freq,duration,delay,gain){
     const ac = ensureAudio();
     if(!ac) return;
     const osc = ac.createOscillator();
     const amp = ac.createGain();
     const t = ac.currentTime + (delay || 0);
-    osc.type = type || 'sine';
-    osc.frequency.setValueAtTime(freq,t);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq + (Math.random() * 6 - 3),t);
     amp.gain.setValueAtTime(0,t);
-    amp.gain.linearRampToValueAtTime(gain || .045,t+.01);
+    amp.gain.linearRampToValueAtTime(gain || .016,t+.012);
     amp.gain.exponentialRampToValueAtTime(.0001,t+duration);
-    osc.connect(amp).connect(ac.destination);
+    osc.connect(amp);
+    connectOutput(ac,amp,Math.random() * .16 - .08);
     osc.start(t);
     osc.stop(t+duration+.02);
   }
 
-  function playSweep(from,to,duration,type,gain){
+  function playSoftChime(freq,duration,delay,gain){
     const ac = ensureAudio();
     if(!ac) return;
-    const osc = ac.createOscillator();
-    const amp = ac.createGain();
-    const t = ac.currentTime;
-    osc.type = type || 'triangle';
-    osc.frequency.setValueAtTime(from,t);
-    osc.frequency.exponentialRampToValueAtTime(to,t+duration);
-    amp.gain.setValueAtTime(gain || .055,t);
-    amp.gain.exponentialRampToValueAtTime(.0001,t+duration);
-    osc.connect(amp).connect(ac.destination);
-    osc.start(t);
-    osc.stop(t+duration+.03);
+    const t = ac.currentTime + (delay || 0);
+    [1,2.01,3.02].forEach((ratio,index) => {
+      const osc = ac.createOscillator();
+      const amp = ac.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq * ratio,t);
+      amp.gain.setValueAtTime(0,t);
+      amp.gain.linearRampToValueAtTime((gain || .014) / (index + 1.25),t+.025);
+      amp.gain.exponentialRampToValueAtTime(.0001,t+duration * (1 - index * .18));
+      osc.connect(amp);
+      connectOutput(ac,amp,(index - 1) * .08);
+      osc.start(t);
+      osc.stop(t+duration+.03);
+    });
   }
 
-  function playTap(){ playTone(520,.075,0,'triangle',.035); }
-  function playPlace(){ playTone(260,.08,0,'sine',.04); playTone(520,.12,.055,'triangle',.035); }
-  function playErase(){ playSweep(620,150,.16,'sawtooth',.032); }
-  function playUndo(){ playSweep(360,170,.12,'triangle',.035); }
+  function playTap(){
+    playNoiseHit({duration:.05,frequency:1300,q:1.7,gain:.017,type:'bandpass'});
+  }
+  function playPlace(){
+    playNoiseHit({duration:.09,frequency:520,q:.75,gain:.03,type:'lowpass'});
+    playResonance(196,.16,.015,.014);
+  }
+  function playErase(){
+    playNoiseHit({duration:.16,frequency:1150,q:.45,gain:.026,type:'highpass',pan:-.05});
+    playNoiseHit({duration:.12,delay:.045,frequency:360,q:.7,gain:.016,type:'lowpass',pan:.06});
+  }
+  function playUndo(){
+    playNoiseHit({duration:.075,frequency:760,q:1.1,gain:.019,type:'bandpass'});
+    playResonance(174,.13,.03,.012);
+  }
   function playWin(){
-    [392,523,659,784].forEach((freq,index) => playTone(freq,.18,index*.075,'triangle',.042));
+    [523,659,784].forEach((freq,index) => playSoftChime(freq,.62,index*.1,.018));
+    playNoiseHit({duration:.12,delay:.02,frequency:980,q:.9,gain:.012,type:'bandpass'});
+  }
+  function playStart(){
+    [392,523,659].forEach((freq,index) => playSoftChime(freq,.42,index*.075,.014));
+    playNoiseHit({duration:.1,frequency:600,q:.7,gain:.016,type:'lowpass'});
   }
 
   function toggleMusic(){
-    audioState.muted = !audioState.muted;
-    audioState.musicWanted = !audioState.muted;
     if(audioState.muted){
+      audioState.muted = false;
+      audioState.musicWanted = true;
+      ensureAudio();
+      showToast('音乐已开');
+    }else if(!audioState.musicStarted){
+      audioState.musicWanted = true;
+      ensureAudio();
+      showToast('音乐已开');
+    }else{
+      audioState.muted = true;
+      audioState.musicWanted = false;
       stopMusic();
       showToast('音乐已关');
-    }else{
-      ensureAudio();
-      playTap();
-      showToast('音乐已开');
     }
     updateMusicButton();
   }
 
   function unlockAudio(){
-    ensureAudio();
+    if(!audioState.muted && !audioState.musicStarted){
+      audioState.musicWanted = true;
+      ensureAudio();
+    }
   }
 
   function rows(pattern){
@@ -495,14 +625,13 @@
     },
     {
       icon:'5',
-      name:'转角练习',
+      name:'两块转角',
       size:7,
-      par:3,
-      tip:'教学 5：旋转后再补块',
+      par:2,
+      tip:'教学 5：两块拼出转角',
       pieces:[
-        piece('转角块',lib.elbow,{x:1,y:2,r:1,f:false},{x:100,y:350,r:0,f:false,s:24}),
-        piece('横条',lib.bar3,{x:3,y:4,r:0,f:false},{x:210,y:350,r:0,f:false,s:24}),
-        piece('补块',lib.square2,{x:3,y:2,r:0,f:false},{x:310,y:350,r:0,f:false,s:24})
+        piece('竖块',lib.rect23,{x:1,y:2,r:0,f:false},{x:115,y:350,r:0,f:false,s:24}),
+        piece('横条',lib.bar3,{x:3,y:4,r:0,f:false},{x:260,y:350,r:0,f:false,s:24})
       ]
     },
     {
@@ -552,6 +681,7 @@
   const runLength = levels.length;
 
   const state = {
+    screen:'lobby',
     levelIndex:0,
     phase:'question',
     pieces:[],
@@ -683,6 +813,7 @@
 
   function finishRun(){
     clearAutoAdvance();
+    state.screen = 'game';
     state.finished = true;
     state.phase = 'result';
     state.drag = null;
@@ -693,12 +824,13 @@
     requestDraw();
   }
 
-  function loadLevel(index){
+  function loadLevel(index,options){
     clearAutoAdvance();
     if(index >= runLength){
       finishRun();
       return;
     }
+    if(!options?.keepScreen) state.screen = 'game';
     state.finished = false;
     state.levelIndex = Math.max(0,index);
     state.pieces = currentLevel().pieces.map(clonePiece);
@@ -716,6 +848,16 @@
     requestDraw();
   }
 
+  function startGame(){
+    state.screen = 'game';
+    audioState.muted = false;
+    audioState.musicWanted = true;
+    loadLevel(0);
+    ensureAudio();
+    playStart();
+    showToast('开始游戏');
+  }
+
   function elapsed(){
     const t = state.completedAt ?? Math.floor((performance.now() - state.startedAt) / 1000);
     return Math.max(0,t);
@@ -730,6 +872,7 @@
   }
 
   function setPhase(phase){
+    if(state.screen === 'lobby') return;
     if(state.finished) return;
     state.phase = phase;
     if(phase === 'answer' && !state.completedAt) state.startedAt = performance.now();
@@ -788,11 +931,52 @@
 
   function drawPaperTexture(){
     const bg = ctx.createLinearGradient(0,0,W,H);
-    bg.addColorStop(0,'#2a1d18');
-    bg.addColorStop(.58,'#191512');
-    bg.addColorStop(1,'#111816');
+    bg.addColorStop(0,'#060916');
+    bg.addColorStop(.5,'#0b151d');
+    bg.addColorStop(1,'#040711');
     ctx.fillStyle = bg;
     ctx.fillRect(0,0,W,H);
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=0;i<118;i++){
+      const x = starRand(i + 1) * W;
+      const y = starRand(i + 131) * H;
+      const r = .35 + starRand(i + 263) * 1.15;
+      const alpha = .22 + starRand(i + 397) * .55;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = i % 11 === 0 ? '#ffe4a6' : '#d9fff2';
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI * 2);
+      ctx.fill();
+      if(i % 17 === 0){
+        ctx.globalAlpha = alpha * .42;
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = .65;
+        ctx.beginPath();
+        ctx.moveTo(x - r * 3.2,y);
+        ctx.lineTo(x + r * 3.2,y);
+        ctx.moveTo(x,y - r * 3.2);
+        ctx.lineTo(x,y + r * 3.2);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = .1;
+    ctx.strokeStyle = '#7fd9c6';
+    for(let i=0;i<10;i++){
+      const x1 = starRand(i + 701) * W;
+      const y1 = starRand(i + 809) * H;
+      const x2 = x1 + (starRand(i + 907) - .5) * 74;
+      const y2 = y1 + (starRand(i + 1009) - .5) * 42;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x2,y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function starRand(seed){
+    return Math.abs(Math.sin(seed * 12.9898) * 43758.5453) % 1;
   }
 
   function drawDots(cx,cy,r,spacing){
@@ -883,15 +1067,15 @@
   function drawCanvasButton(text,action,x,y,w,h,active,disabled){
     roundedRect(ctx,x,y,w,h,6);
     ctx.fillStyle = active
-      ? 'rgba(240,182,91,.95)'
+      ? 'rgba(127,217,198,.95)'
       : disabled
         ? 'rgba(255,244,220,.07)'
         : 'rgba(255,244,220,.13)';
     ctx.fill();
-    ctx.strokeStyle = active ? '#ffe4a6' : 'rgba(255,232,185,.25)';
+    ctx.strokeStyle = active ? '#d9fff2' : 'rgba(205,238,221,.24)';
     ctx.lineWidth = active ? 2 : 1;
     ctx.stroke();
-    ctx.fillStyle = active ? '#24170f' : disabled ? 'rgba(255,241,208,.38)' : '#fff1d0';
+    ctx.fillStyle = active ? '#10211e' : disabled ? 'rgba(247,240,219,.38)' : '#f7f0db';
     ctx.font = '900 13px "PingFang SC","Microsoft YaHei",sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -918,13 +1102,15 @@
 
   function drawHud(){
     const level = currentLevel();
-    ctx.fillStyle = '#ffe4a6';
+    ctx.fillStyle = '#d9fff2';
     ctx.font = '900 22px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText('见证谜语',18,30);
+    ctx.fillText('G-Game',18,30);
     ctx.fillStyle = '#b9aa8e';
     ctx.font = '900 12px "PingFang SC","Microsoft YaHei",sans-serif';
     const progress = state.finished ? runLength + '/' + runLength : (state.levelIndex + 1) + '/' + runLength;
-    ctx.fillText(progress + ' · 层叠消融',286,29);
+    ctx.textAlign = 'right';
+    ctx.fillText(progress,372,29);
+    ctx.textAlign = 'left';
 
     const tabs = [
       ['题目','phaseQuestion','question'],
@@ -948,16 +1134,14 @@
 
     ctx.fillStyle = '#ffe4a6';
     ctx.font = '900 14px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText('题目',178,142);
-    ctx.fillText(mode === 'result' ? '答案' : '作答',178,288);
+    ctx.fillText('题目',178,132);
+    ctx.fillText(mode === 'result' ? '答案' : '作答',178,330);
     ctx.fillStyle = '#b9aa8e';
     ctx.font = '800 11px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText(level.name + ' · 7×7',18,136);
-    ctx.fillText(level.tip || '',110,136);
 
-    drawCircle(small.cx,small.cy,small.r);
-    drawMatrixDots({size:0,cell:0,x:0,y:0},level.size,small.cx,small.cy,small.r);
-    drawGridShape(state.target,{size:0,cell:0,x:0,y:0},small.cx,small.cy,small.r,'#000');
+    drawCircle(targetBoard.cx,targetBoard.cy,targetBoard.r);
+    drawMatrixDots(targetBoard,level.size,targetBoard.cx,targetBoard.cy,targetBoard.r);
+    drawGridShape(state.target,targetBoard,targetBoard.cx,targetBoard.cy,targetBoard.r,'#000');
 
     drawCircle(answerBoard.cx,answerBoard.cy,answerBoard.r);
     drawMatrixDots(answerBoard,level.size,answerBoard.cx,answerBoard.cy,answerBoard.r);
@@ -968,17 +1152,17 @@
   function drawTray(){
     ctx.fillStyle = '#ffe4a6';
     ctx.font = '900 15px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText('基础图形',18,535);
+    ctx.fillText('基础图形',18,542);
     const p = selectedPiece();
     ctx.fillStyle = '#b9aa8e';
     ctx.font = '800 11px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText(p ? '选中：' + p.name : '选中：—',105,535);
+    ctx.fillText(p ? '拖到盘面后按 1:1 显示 · 选中：' + p.name : '选中：—',105,542);
 
     const cardW = 56;
     const cardH = 48;
     const gap = 6;
     const startX = 12;
-    const startY = 546;
+    const startY = 552;
     state.pieces.forEach((piece,index) => {
       const col = index % 6;
       const row = Math.floor(index / 6);
@@ -1022,7 +1206,7 @@
     drawCanvasButton('撤销','undo',264,610,108,36,false,disabled || !state.history.length);
     drawCanvasButton('提示','hint',18,654,108,36,false,disabled);
     drawCanvasButton('重置','reset',141,654,108,36,false,state.finished);
-    drawCanvasButton(audioState.muted ? '音乐关' : '音乐开','music',264,654,108,36,!audioState.muted,false);
+    drawCanvasButton(musicLabel(),'music',264,654,108,36,!audioState.muted && audioState.musicStarted,false);
   }
 
   function drawProgressRail(){
@@ -1035,9 +1219,56 @@
     const w = (354 - gap * (runLength - 1)) / runLength;
     for(let i=0;i<runLength;i++){
       roundedRect(ctx,x0 + i * (w + gap),y + 12,w,10,5);
-      ctx.fillStyle = i < state.levelIndex || state.finished ? '#f0b65b' : i === state.levelIndex ? '#5fc8b5' : 'rgba(255,244,220,.16)';
+      ctx.fillStyle = i < state.levelIndex || state.finished ? '#d9b76e' : i === state.levelIndex ? '#7fd9c6' : 'rgba(255,244,220,.16)';
       ctx.fill();
     }
+  }
+
+  function drawLobby(){
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,244,220,.06)';
+    roundedRect(ctx,18,20,354,720,10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(205,238,221,.18)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#d9fff2';
+    ctx.font = '900 38px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('G-Game',34,86);
+    ctx.fillStyle = '#f7f0db';
+    ctx.font = '900 30px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('层叠消融',34,136);
+
+    ctx.fillStyle = 'rgba(233,224,202,.95)';
+    ctx.beginPath();
+    ctx.arc(195,282,92,0,Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(127,217,198,.72)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    const preview = {size:0,cell:0,x:0,y:0};
+    drawMatrixDots(preview,7,195,282,80);
+    ctx.fillStyle = '#111';
+    const cells = transformCells(lib.elbow,1,false);
+    drawCellShape(cells,preview.x + 2 * preview.cell,preview.y + 2 * preview.cell,preview.cell,'#111',1);
+
+    ctx.fillStyle = '#d9fff2';
+    ctx.font = '900 17px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('项目规则',34,416);
+    ctx.fillStyle = '#a9bbb0';
+    ctx.font = '800 13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText('基础图形叠加：奇数次保留，偶数次消融。',34,445);
+    ctx.fillText('观察题目，在作答盘复刻同样的影像。',34,470);
+    ctx.fillText('完成后自动进入下一题，整轮结束后退场。',34,495);
+
+    drawCanvasButton('开始游戏','startGame',74,548,242,48,true,false);
+    ctx.fillStyle = '#a9bbb0';
+    ctx.font = '800 12px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('点击开始后播放《轻柔棋局》',195,625);
+    ctx.textAlign = 'left';
+    ctx.restore();
   }
 
   function drawFinish(){
@@ -1118,7 +1349,7 @@
     if(!state.drag) return;
     const p = state.drag.piece;
     const cells = pieceCells(p);
-    const cell = state.hover?.valid ? answerBoard.cell : 20;
+    const cell = answerBoard.cell || 17;
     const x = state.hover?.valid ? answerBoard.x + state.hover.x * answerBoard.cell : state.drag.x - state.drag.offsetX;
     const y = state.hover?.valid ? answerBoard.y + state.hover.y * answerBoard.cell : state.drag.y - state.drag.offsetY;
     drawCellShape(cells,x,y,cell,'#000',.72);
@@ -1141,6 +1372,11 @@
     state.renderHits = [];
     state.uiHits = [];
     drawPaperTexture();
+    if(state.screen === 'lobby'){
+      drawLobby();
+      updateUI();
+      return;
+    }
     if(state.finished){
       drawFinish();
       updateUI();
@@ -1188,6 +1424,7 @@
 
   function handleUi(action){
     if(!action) return;
+    if(action === 'startGame'){ startGame(); return; }
     if(action === 'phaseQuestion'){ playTap(); setPhase('question'); return; }
     if(action === 'phaseAnswer'){ playTap(); setPhase('answer'); return; }
     if(action === 'phaseResult'){ playTap(); setPhase('result'); return; }
@@ -1409,10 +1646,62 @@
 
   populateLevels();
   resizeCanvas();
-  loadLevel(0);
+  loadLevel(0,{keepScreen:true});
+  state.screen = 'lobby';
   updateMusicButton();
   requestAnimationFrame(forceDraw);
   setTimeout(forceDraw,80);
+})();
+</script>
+<script id="touchGuardScript">
+(function(){
+  const allowText = 'input, textarea, [contenteditable="true"]';
+  const isAllowed = target => {
+    const el = target && target.nodeType === 1 ? target : target && target.parentElement;
+    return !!(el && el.closest && el.closest(allowText));
+  };
+  ['selectstart','dragstart','contextmenu'].forEach(type => {
+    document.addEventListener(type, event => {
+      if(!isAllowed(event.target)) event.preventDefault();
+    }, {passive:false});
+  });
+})();
+</script>
+<script id="hubReturnScript">
+(function(){
+  if(document.getElementById('hubReturnBtn')) return;
+  function hubHref(){
+    const url = new URL(location.href);
+    const parts = url.pathname.split('/');
+    const decoded = parts.map(part => {
+      try{return decodeURIComponent(part);}catch(e){return part;}
+    });
+    const markers = ['G-Game-发布版','g-game-hub','写程序'];
+    let pivot = -1;
+    markers.forEach(marker => {
+      const idx = decoded.lastIndexOf(marker);
+      if(idx > pivot) pivot = idx;
+    });
+    if(pivot >= 0){
+      url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
+      url.search = '?v=return-hub';
+      url.hash = '';
+      return url.href;
+    }
+    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+  }
+  function mount(){
+    if(!document.body) return;
+    const link = document.createElement('a');
+    link.id = 'hubReturnBtn';
+    link.href = hubHref();
+    link.target = '_top';
+    link.textContent = '返回大厅';
+    link.setAttribute('aria-label', '返回大厅');
+    document.body.appendChild(link);
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
+  else mount();
 })();
 </script>
 </body>
