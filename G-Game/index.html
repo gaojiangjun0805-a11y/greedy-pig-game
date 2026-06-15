@@ -345,11 +345,13 @@ const ABILITIES = [
 const NUMBER_PUZZLE_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8dbcd6ec3.mp3';
 const TANGSHI_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
 const FOLD_COLOR_MUSIC = 'https://cdn1.suno.ai/2e6b75d5-9314-4747-9ee7-4df64510ffc9.mp3';
-const ASSET_VERSION = '20260615-mobile-models-2';
+const ASSET_VERSION = '20260616-perf-1';
 const REAL_AVATAR_MODEL = `./assets/avatar-animated.glb?v=${ASSET_VERSION}`;
 const WISDOM_TREE_MODEL = `./assets/wisdom-tree/island_tree_mobile.glb?v=${ASSET_VERSION}`;
-const WISDOM_TREE_MOBILE_MODEL = WISDOM_TREE_MODEL;
+const WISDOM_TREE_PHONE_MODEL = `./assets/wisdom-tree/island_tree_phone.glb?v=${ASSET_VERSION}`;
+const WISDOM_TREE_MOBILE_MODEL = WISDOM_TREE_PHONE_MODEL;
 const LOW_POWER_DEVICE = innerWidth <= 900 || matchMedia('(pointer: coarse)').matches || (navigator.deviceMemory && navigator.deviceMemory <= 4) || navigator.connection?.saveData;
+const MOBILE_FRAME_MS = LOW_POWER_DEVICE ? 1000 / 45 : 0;
 const AVATAR_MOVE_SPEED = 5.4;
 const AVATAR_ACTIONS = {
   idle:{label:'待机', duration:0},
@@ -390,9 +392,9 @@ const GAMES = [
 
 const state = loadState();
 const canvas = document.getElementById('three');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.15));
-renderer.shadowMap.enabled = true;
+const renderer = new THREE.WebGLRenderer({canvas, antialias:!LOW_POWER_DEVICE, alpha:false, powerPreference:LOW_POWER_DEVICE ? 'default' : 'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_POWER_DEVICE ? .9 : 1.15));
+renderer.shadowMap.enabled = !LOW_POWER_DEVICE;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 if(THREE.SRGBColorSpace){ renderer.outputColorSpace = THREE.SRGBColorSpace; }
 if(THREE.ACESFilmicToneMapping !== undefined){ renderer.toneMapping = THREE.ACESFilmicToneMapping; }
@@ -410,7 +412,7 @@ const hemi = new THREE.HemisphereLight(0xe8f5ff, 0x1b2340, 1.65);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 2.4);
 sun.position.set(18, 28, 12);
-sun.castShadow = true;
+sun.castShadow = !LOW_POWER_DEVICE;
 sun.shadow.mapSize.set(1024, 1024);
 scene.add(sun);
 const fillLight = new THREE.DirectionalLight(0x7fb8ff, .72);
@@ -2990,7 +2992,7 @@ function checkCanvasVisible(){
 
 function resize(){
   const w = innerWidth, h = innerHeight;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.15));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW_POWER_DEVICE ? .9 : 1.15));
   renderer.setSize(w,h,false);
   camera.aspect = w/h;
   camera.updateProjectionMatrix();
@@ -3082,6 +3084,13 @@ function updatePortals(t){
 }
 
 function renderLoop(now=performance.now()){
+  requestAnimationFrame(renderLoop);
+  if(activeGame){
+    last = now;
+    return;
+  }
+  if(MOBILE_FRAME_MS && renderLoop._lastFrame && now - renderLoop._lastFrame < MOBILE_FRAME_MS) return;
+  renderLoop._lastFrame = now;
   const dt = Math.min(.05, (now-last)/1000);
   last = now;
   updateMovement(dt);
@@ -3115,7 +3124,6 @@ function renderLoop(now=performance.now()){
     }
   });
   renderer.render(scene,camera);
-  requestAnimationFrame(renderLoop);
 }
 </script>
 </body>
