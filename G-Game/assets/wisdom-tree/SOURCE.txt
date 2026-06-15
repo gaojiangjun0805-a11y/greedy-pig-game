@@ -1,0 +1,4 @@
+Asset: Island Tree 02
+Source: https://polyhaven.com/a/island_tree_02
+License: CC0 / Poly Haven public domain assets
+Authors: Rob Tuytel (scanning, processing), Rico Cilliers (cleanup, processing)

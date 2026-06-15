@@ -346,6 +346,7 @@ const NUMBER_PUZZLE_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8db
 const TANGSHI_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
 const FOLD_COLOR_MUSIC = 'https://cdn1.suno.ai/2e6b75d5-9314-4747-9ee7-4df64510ffc9.mp3';
 const REAL_AVATAR_MODEL = './assets/avatar-animated.glb';
+const WISDOM_TREE_MODEL = './assets/wisdom-tree/island_tree_02_1k.gltf';
 const AVATAR_MOVE_SPEED = 5.4;
 const AVATAR_ACTIONS = {
   idle:{label:'待机', duration:0},
@@ -962,155 +963,109 @@ function buildWisdomTree(){
   tree.position.set(0,.28,0);
   root.add(tree);
 
-  const barkMat = new THREE.MeshStandardMaterial({
-    color:0x6b5138,
-    roughness:.74,
-    metalness:.08,
-    emissive:new THREE.Color(0x241509),
-    emissiveIntensity:.08
-  });
-  const darkBarkMat = new THREE.MeshStandardMaterial({
-    color:0x3f2d21,
-    roughness:.82,
-    metalness:.06,
-    emissive:new THREE.Color(0x120b06),
-    emissiveIntensity:.04
-  });
-  const leafMats = [
-    new THREE.MeshStandardMaterial({color:0x244f39, roughness:.62, metalness:.02, emissive:new THREE.Color(0x0e3d2d), emissiveIntensity:.2}),
-    new THREE.MeshStandardMaterial({color:0x3a7652, roughness:.58, metalness:.04, emissive:new THREE.Color(0x145d44), emissiveIntensity:.18}),
-    new THREE.MeshStandardMaterial({color:0x7d9f66, roughness:.55, metalness:.04, emissive:new THREE.Color(0x315f31), emissiveIntensity:.14})
-  ];
   const rootGlow = makeGlowMat(0x8ef7d4,.36);
-  const coreGlow = makeGlowMat(0x9fd8ff,.44);
   const gold = makeMat(0xc9a45a,.34,.24,.08);
 
-  const soil = new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.65,.2,72), makeMat(0x171c24,.72,.12));
+  const soil = new THREE.Mesh(new THREE.CylinderGeometry(3.55,3.9,.28,72), makeMat(0x171c24,.72,.12));
   soil.position.y = .1;
   soil.receiveShadow = true;
   soil.castShadow = true;
   tree.add(soil);
 
-  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(2.68,.055,12,96), gold);
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(3.95,.07,12,128), gold);
   baseRing.rotation.x = Math.PI/2;
-  baseRing.position.y = .24;
+  baseRing.position.y = .29;
   tree.add(baseRing);
 
-  const rootRing = new THREE.Mesh(new THREE.TorusGeometry(3.62,.035,10,128), rootGlow);
+  const rootRing = new THREE.Mesh(new THREE.TorusGeometry(4.7,.036,10,128), rootGlow);
   rootRing.rotation.x = Math.PI/2;
-  rootRing.position.y = .29;
+  rootRing.position.y = .34;
   rootRing.userData.floatBaseY = rootRing.position.y;
   rootRing.userData.kind = 'ring';
   wisdomTreeParts.push(rootRing);
   tree.add(rootRing);
 
-  for(let i=0;i<12;i++){
-    const angle = i / 12 * Math.PI * 2;
-    const len = i % 3 === 0 ? 4.45 : 3.48;
-    addTube(tree, [.45*Math.cos(angle+.18), .3, .45*Math.sin(angle+.18)], [len*Math.cos(angle), .33, len*Math.sin(angle)], i % 2 ? .026 : .034, i % 2 ? rootGlow : darkBarkMat);
-  }
-
-  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(.58,.9,3.18,28), barkMat);
-  trunk.position.y = 1.72;
-  trunk.rotation.z = -.045;
-  trunk.castShadow = true;
-  trunk.receiveShadow = true;
-  tree.add(trunk);
-
-  const trunkRidgeGeo = new THREE.CylinderGeometry(.032,.048,3.28,8);
-  for(let i=0;i<7;i++){
-    const ridge = new THREE.Mesh(trunkRidgeGeo, darkBarkMat);
-    const angle = i / 7 * Math.PI * 2;
-    ridge.position.set(Math.cos(angle)*.51,1.73,Math.sin(angle)*.51);
-    ridge.rotation.z = Math.sin(angle)*.08;
-    ridge.rotation.x = Math.cos(angle)*.05;
-    ridge.castShadow = true;
-    tree.add(ridge);
-  }
-
-  addTube(tree, [0,.38,.08], [.1,3.42,.05], .05, coreGlow);
-
-  [
-    [[0,2.45,0],[-1.55,3.42,-.8],.19],
-    [[0,2.78,0],[1.72,3.72,-.62],.17],
-    [[.03,2.94,0],[-.55,4.14,1.38],.15],
-    [[0,3.05,0],[.82,4.4,1.08],.13],
-    [[0,2.56,0],[.36,3.42,-1.82],.14],
-    [[-.05,3.14,0],[-1.28,4.38,.5],.12]
-  ].forEach(([from,to,r], i)=>{
-    addTube(tree, from, to, r, barkMat);
-    if(i < 4) addTube(tree, from, to, r*.16, coreGlow);
-  });
-
-  const crownGeo = new THREE.SphereGeometry(1,36,22);
-  [
-    {pos:[0,4.42,0], scale:[1.95,1.18,1.55], mat:leafMats[1]},
-    {pos:[-1.1,4.08,-.42], scale:[1.25,.82,1.04], mat:leafMats[0]},
-    {pos:[1.18,4.22,-.35], scale:[1.34,.9,1.05], mat:leafMats[2]},
-    {pos:[-.58,4.82,.62], scale:[1.12,.78,.98], mat:leafMats[2]},
-    {pos:[.68,4.9,.36], scale:[1.05,.72,.92], mat:leafMats[1]},
-    {pos:[.08,5.18,-.18], scale:[.84,.62,.78], mat:leafMats[0]}
-  ].forEach((item,i)=>{
-    const crown = new THREE.Mesh(crownGeo, item.mat);
-    crown.position.set(...item.pos);
-    crown.scale.set(...item.scale);
-    crown.castShadow = true;
-    crown.receiveShadow = true;
-    crown.userData.kind = 'crown';
-    crown.userData.floatBaseY = crown.position.y;
-    crown.userData.floatAmp = .035 + i*.006;
-    wisdomTreeParts.push(crown);
-    tree.add(crown);
-  });
-
+  const pillarMat = makeMat(0x242b34,.52,.28,.03);
   ABILITIES.forEach((ability,i)=>{
     const angle = i / ABILITIES.length * Math.PI * 2 - Math.PI/2;
-    const color = new THREE.Color(ability.color);
-    const fruit = new THREE.Mesh(new THREE.SphereGeometry(.18,26,16), makeMat(color,.25,.18,.7));
-    fruit.position.set(Math.cos(angle)*1.56, 4.22 + (i%3)*.36, Math.sin(angle)*1.18);
-    fruit.castShadow = true;
-    fruit.userData.kind = 'fruit';
-    fruit.userData.floatBaseY = fruit.position.y;
-    fruit.userData.floatAmp = .07;
-    wisdomTreeParts.push(fruit);
-    tree.add(fruit);
+    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,1.18,6), pillarMat);
+    pillar.position.set(Math.cos(angle)*4.18,.85,Math.sin(angle)*4.18);
+    pillar.rotation.y = angle;
+    pillar.castShadow = true;
+    pillar.receiveShadow = true;
+    tree.add(pillar);
 
-    const fruitHalo = new THREE.Mesh(new THREE.TorusGeometry(.29,.018,8,42), makeGlowMat(color,.38));
-    fruitHalo.position.copy(fruit.position);
-    fruitHalo.rotation.x = Math.PI/2;
-    fruitHalo.userData.kind = 'fruitHalo';
-    fruitHalo.userData.floatBaseY = fruitHalo.position.y;
-    fruitHalo.userData.floatAmp = .07;
-    wisdomTreeParts.push(fruitHalo);
-    tree.add(fruitHalo);
+    const flame = new THREE.Mesh(new THREE.IcosahedronGeometry(.14,1), makeGlowMat(ability.color,.42));
+    flame.position.set(Math.cos(angle)*4.18,1.55,Math.sin(angle)*4.18);
+    flame.userData.kind = 'spark';
+    flame.userData.floatBaseY = flame.position.y;
+    flame.userData.floatAmp = .045;
+    wisdomTreeParts.push(flame);
+    tree.add(flame);
   });
 
-  for(let i=0;i<42;i++){
-    const angle = i * 2.399963;
-    const radius = .62 + (i % 9) * .18;
-    const leaf = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(.055 + (i%4)*.014,0),
-      i % 5 === 0 ? makeGlowMat(ABILITIES[i % ABILITIES.length].color,.28) : leafMats[i % leafMats.length]
-    );
-    leaf.position.set(Math.cos(angle)*radius, 3.62 + (i%11)*.16, Math.sin(angle)*radius*.78);
-    leaf.rotation.set(i*.37,i*.22,i*.51);
-    leaf.castShadow = true;
-    leaf.userData.kind = 'leaf';
-    leaf.userData.floatBaseY = leaf.position.y;
-    leaf.userData.floatAmp = .045 + (i%5)*.01;
-    wisdomTreeParts.push(leaf);
-    tree.add(leaf);
+  for(let i=0;i<10;i++){
+    const angle = i / 12 * Math.PI * 2;
+    const len = i % 3 === 0 ? 4.25 : 3.35;
+    addTube(tree, [.42*Math.cos(angle+.18), .3, .42*Math.sin(angle+.18)], [len*Math.cos(angle), .32, len*Math.sin(angle)], .018, rootGlow);
   }
 
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.82,.026,8,128), makeGlowMat(0x9fd8ff,.3));
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(3.05,.026,8,128), makeGlowMat(0x9fd8ff,.3));
   halo.rotation.x = Math.PI/2;
-  halo.position.y = 4.55;
+  halo.position.y = 6.85;
   halo.userData.kind = 'halo';
   wisdomTreeParts.push(halo);
   tree.add(halo);
 
+  const loader = new GLTFLoader();
+  loader.load(WISDOM_TREE_MODEL, gltf => {
+    const source = gltf.scene;
+    const chosen = source.getObjectByName('island_tree_02_LOD0')
+      || source.children.find(child => child.isObject3D)
+      || source;
+    const realTree = chosen.clone(true);
+    realTree.traverse(obj => {
+      if(obj.isMesh){
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        mats.filter(Boolean).forEach(mat => {
+          mat.side = THREE.DoubleSide;
+          mat.alphaTest = Math.max(mat.alphaTest || 0, .32);
+          mat.transparent = false;
+          if(mat.map && THREE.SRGBColorSpace) mat.map.colorSpace = THREE.SRGBColorSpace;
+        });
+      }
+    });
+    const box = new THREE.Box3().setFromObject(realTree);
+    if(!Number.isFinite(box.min.x)) return;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const scale = Math.min(11 / Math.max(size.y,.001), 8.2 / Math.max(size.x,size.z,.001));
+    realTree.position.x -= center.x;
+    realTree.position.z -= center.z;
+    realTree.position.y -= box.min.y;
+    realTree.scale.set(scale * 1.12, scale * 1.36, scale * 1.12);
+    realTree.rotation.y = -.3;
+    realTree.userData.kind = 'realTree';
+    tree.add(realTree);
+
+    ABILITIES.forEach((ability,i)=>{
+      const angle = i / ABILITIES.length * Math.PI * 2 - Math.PI/2;
+      const spark = new THREE.Mesh(new THREE.IcosahedronGeometry(.08,1), makeGlowMat(ability.color,.36));
+      spark.position.set(Math.cos(angle)*3.18, 7.35 + (i%2)*.56, Math.sin(angle)*2.48);
+      spark.userData.kind = 'spark';
+      spark.userData.floatBaseY = spark.position.y;
+      spark.userData.floatAmp = .06;
+      wisdomTreeParts.push(spark);
+      tree.add(spark);
+    });
+  }, undefined, err => {
+    console.warn('Wisdom tree model failed to load', err);
+  });
+
   const treeLight = new THREE.PointLight(0xa9ffd6,18,22,1.55);
-  treeLight.position.set(0,4.45,0);
+  treeLight.position.set(0,7.25,0);
   tree.add(treeLight);
   const warmLight = new THREE.PointLight(0xffd166,7,16,1.9);
   warmLight.position.set(-1.2,2.2,1.4);
@@ -1643,19 +1598,7 @@ function buildAvatar(){
 
 function createAstronautKit(){
   const root = new THREE.Group();
-  const darkMat = makeMat(0x101827,.42,.28,.04);
   const trimMat = makeMat(0x78d9ff,.28,.18,.18);
-
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(.46,.3,.045), darkMat);
-  chest.position.set(0,1.34,.34);
-  chest.rotation.x = -.08;
-  chest.castShadow = true;
-  root.add(chest);
-
-  const glow = new THREE.Mesh(new THREE.BoxGeometry(.32,.035,.052), trimMat);
-  glow.position.set(0,1.38,.37);
-  glow.rotation.x = -.08;
-  root.add(glow);
 
   const collar = new THREE.Mesh(new THREE.TorusGeometry(.23,.018,10,34), trimMat);
   collar.position.set(0,1.72,.03);
@@ -3053,6 +2996,10 @@ function renderLoop(now=performance.now()){
       part.position.y = part.userData.floatBaseY + Math.sin(now/620+i)*part.userData.floatAmp;
       part.rotation.x += dt * .45;
       part.rotation.y += dt * .62;
+    }else if(kind === 'spark'){
+      part.position.y = part.userData.floatBaseY + Math.sin(now/520+i)*part.userData.floatAmp;
+      part.rotation.x += dt * .6;
+      part.rotation.y += dt * 1.2;
     }else if(kind === 'halo' || kind === 'ring'){
       part.rotation.z += dt * (kind === 'halo' ? .34 : .16);
     }
