@@ -1107,7 +1107,7 @@
         setTimeout(() => tone(147,.09,.03,'sawtooth'),300);
         setTimeout(() => tone(330,.06,.026,'triangle'),480);
       }
-      function animateFactory(tile,nextValue,finalStage){
+      function animateFactory(tile,nextValue,shipOrder){
         const wrap = el.stage.querySelector('.factory-wrap');
         const row = tile ? tile.closest('.factory-row') : null;
         const box = el.stage.querySelector('.factory-box');
@@ -1122,27 +1122,26 @@
         if(box){
           box.style.setProperty('--progress-next',nextProgress + '%');
           box.classList.add('moving');
-          if(finalStage) box.classList.add('shipping');
+          if(shipOrder) box.classList.add('shipping');
           const label = box.querySelector('span');
           if(label) setTimeout(() => { label.textContent = nextValue; },270);
         }
-        if(finalStage){
+        if(shipOrder){
           if(wrap) wrap.classList.add('factory-shipping');
           if(targetCrate) targetCrate.classList.add('receiving');
         }
       }
+      function rejectFactory(tile){
+        const wrap = el.stage.querySelector('.factory-wrap');
+        const box = el.stage.querySelector('.factory-box');
+        const targetCrate = el.stage.querySelector('.factory-crate.target');
+        if(wrap) wrap.classList.add('factory-reject');
+        if(box) box.classList.add('rejected');
+        if(tile) tile.classList.add('bad');
+        if(targetCrate) targetCrate.classList.add('rejecting');
+      }
       async function choose(stageIndex,op,tile){
         if(!state.active || state.locked || stageIndex !== d.stage) return;
-        const want = d.solution[d.stage]?.label;
-        if(op.label !== want){
-          if(tile){
-            tile.classList.remove('hint');
-            tile.classList.add('bad','quality-fail');
-            setTimeout(() => tile.classList.remove('bad','quality-fail'),430);
-          }
-          api.mistake('质检没通过，换一台机器');
-          return;
-        }
         const nv = apply(d.value,op);
         if(!Number.isInteger(nv)){
           if(tile){
@@ -1153,17 +1152,26 @@
           return;
         }
         const finalStage = d.stage === d.stages.length - 1;
+        const shipOrder = finalStage && nv === d.target;
         state.locked = true;
         clickSound();
         factoryChug();
         api.message(`${d.stage + 1} 号工位开机：${op.label}`);
-        animateFactory(tile,nv,finalStage);
-        await wait(finalStage ? 1080 : 820);
+        animateFactory(tile,nv,shipOrder);
+        await wait(finalStage ? 1040 : 820);
         d.value = nv;
         d.chosen.push(op.label);
         if(finalStage){
-          state.locked = false;
-          api.complete(300,'订单箱收货完成');
+          if(d.value === d.target){
+            state.locked = false;
+            api.complete(300,'订单箱收货完成');
+          }else{
+            rejectFactory(tile);
+            api.mistake(`出厂数值 ${d.value} 不合格，回炉重排`);
+            await wait(660);
+            state.locked = false;
+            if(state.active) reset();
+          }
         }else{
           d.stage++;
           render();
@@ -1233,7 +1241,7 @@
         ],[
           {label:'↺ 回炉',onClick:reset,primary:true},
           {label:'流程',onClick:() => api.message(chosenText)},
-          {label:'规则',onClick:() => api.message('按 1 到 4 号工位依次选机器')}
+          {label:'规则',onClick:() => api.message('每站选一台能加工的机器，最后订单箱验收')}
         ]);
       }
       function hint(){
@@ -1242,7 +1250,7 @@
         Array.from(el.stage.querySelectorAll('.factory-row.active .factory-machine')).forEach(tile => {
           if(tile.dataset.op === want) tile.classList.add('hint');
         });
-        api.message(`${d.stage + 1} 号工位试试 ${want}`);
+        api.message(`一条可行路线：${d.stage + 1} 号工位可试 ${want}`);
         hintSound();
       }
       return {next,hint,render};

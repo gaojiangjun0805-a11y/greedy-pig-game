@@ -317,6 +317,10 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
 .factory-box.shipping{
   animation:factoryBoxShip 1.05s cubic-bezier(.2,.82,.24,1) both;
 }
+.factory-box.rejected{
+  border-color:#f58a67;background:linear-gradient(180deg,#f0a05f,#8f3f27);
+  animation:boxReject .36s linear 2;
+}
 .factory-stations{position:relative;z-index:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .factory-row{
   min-width:0;min-height:0;display:grid;grid-template-rows:auto 1fr auto;gap:6px;padding:7px;border-radius:8px;
@@ -446,6 +450,10 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
   box-shadow:0 0 0 4px rgba(255,210,122,.18),0 0 28px rgba(255,210,122,.32),inset 0 2px 0 rgba(255,238,196,.24);
 }
 .factory-wrap.factory-shipping .factory-crate.target b{animation:targetDigits .56s ease both}
+.factory-crate.target.rejecting{
+  border-color:#e67d5d;animation:targetReject .18s linear 3;
+  box-shadow:0 0 0 3px rgba(245,138,103,.18),0 0 22px rgba(245,138,103,.24),inset 0 2px 0 rgba(255,238,196,.2);
+}
 .factory-output{display:none}
 .factory-output span{font-size:.58rem;font-weight:900;color:#d7b27c}
 .factory-output b{font-size:.82rem;color:#fff0bf;font-weight:900;font-variant-numeric:tabular-nums}
@@ -484,6 +492,10 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
   0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1) rotate(0)}
   58%{opacity:1;transform:translateX(-50%) translateY(-4px) scale(1.04) rotate(2deg)}
   100%{opacity:0;transform:translateX(calc(-50% + 76px)) translateY(-5px) scale(.72) rotate(7deg)}
+}
+@keyframes boxReject{
+  25%{transform:translateX(calc(-50% - 5px)) rotate(-2deg)}
+  75%{transform:translateX(calc(-50% + 5px)) rotate(2deg)}
 }
 @keyframes stationChug{
   0%,100%{transform:translateY(0)}
@@ -528,6 +540,10 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
   38%{transform:scale(1.08) rotate(-1deg)}
   68%{transform:scale(.98) rotate(1deg)}
   100%{transform:scale(1)}
+}
+@keyframes targetReject{
+  25%{transform:translateX(-3px)}
+  75%{transform:translateX(3px)}
 }
 @keyframes targetDigits{
   0%{transform:scale(.86);filter:brightness(.9)}
