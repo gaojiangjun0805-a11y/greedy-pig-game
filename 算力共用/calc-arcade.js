@@ -1091,7 +1091,7 @@
         }
         d.target = v;
         d.stages = d.solution.map((sol,idxStage) => {
-          const decoys = tools.shuffle(state.rand,opDefs.filter(op => op.label !== sol.label)).slice(0,3);
+          const decoys = tools.shuffle(state.rand,opDefs.filter(op => op.label !== sol.label)).slice(0,2);
           return tools.shuffle(state.rand,[sol].concat(decoys));
         });
         render();

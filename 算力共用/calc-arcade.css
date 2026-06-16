@@ -323,7 +323,7 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
 }
 .factory-stations{position:relative;z-index:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .factory-row{
-  min-width:0;min-height:0;display:grid;grid-template-rows:auto 1fr auto;gap:6px;padding:7px;border-radius:8px;
+  min-width:0;min-height:0;display:grid;grid-template-rows:auto 1fr;gap:6px;padding:7px;border-radius:8px;
   border:2px solid rgba(142,83,43,.72);
   background:linear-gradient(180deg,rgba(255,222,170,.13),rgba(37,21,13,.78));
   box-shadow:inset 0 2px 0 rgba(255,235,190,.12),0 8px 18px rgba(20,8,3,.26);
@@ -347,8 +347,11 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
 .factory-label b{font-size:1.18rem;line-height:1;color:#fff3c6}
 .factory-row.active .factory-label{background:linear-gradient(180deg,#e2a04e,#9a592d);color:#291507}
 .factory-row.operating .factory-label{animation:labelClamp .4s steps(2) infinite}
-.machine-bank{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(36px,1fr));gap:5px;min-height:0}
-.machine-tile{width:100%;height:auto;min-height:36px;min-width:0}
+.machine-bank{
+  display:grid;grid-template-columns:1fr;grid-template-rows:repeat(3,minmax(34px,1fr));
+  gap:5px;min-height:0;
+}
+.machine-tile{width:100%;height:auto;min-height:34px;min-width:0}
 .factory-machine{
   display:grid;grid-template-columns:16px 1fr;grid-template-rows:1fr;align-items:center;gap:3px;
   padding:4px 6px;border-radius:8px;border:2px solid #4d3424;background:linear-gradient(180deg,#e9b66a,#9b5c31);
@@ -680,8 +683,8 @@ body.factory-skin .settle-actions button{border-radius:8px;background:linear-gra
   body.factory-skin .factory-label{min-height:34px;gap:3px}
   body.factory-skin .factory-label span{font-size:.52rem}
   body.factory-skin .factory-label b{font-size:1rem}
-  body.factory-skin .machine-bank{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(34px,1fr));gap:4px}
-  body.factory-skin .machine-tile{min-height:34px}
+  body.factory-skin .machine-bank{grid-template-columns:1fr;grid-template-rows:repeat(3,minmax(30px,1fr));gap:4px}
+  body.factory-skin .machine-tile{min-height:30px}
   body.factory-skin .factory-machine{grid-template-columns:1fr;padding:4px}
   body.factory-skin .factory-machine b{font-size:.9rem}
   body.factory-skin .factory-machine small{font-size:.48rem}
@@ -709,6 +712,6 @@ body.factory-skin .settle-actions button{border-radius:8px;background:linear-gra
   body.factory-skin .factory-belt-track{min-height:48px}
   body.factory-skin .factory-label{min-height:34px}
   body.factory-skin .machine-bank{gap:4px}
-  body.factory-skin .machine-tile{min-height:33px}
+  body.factory-skin .machine-tile{min-height:30px}
   body.factory-skin .factory-output{min-height:28px}
 }
