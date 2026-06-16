@@ -141,6 +141,7 @@
   function isEndless(){ return !!(cfg.endless || cfg.infinite); }
   function isRoundTimer(){ return !!cfg.perRoundTimer; }
   function isRoundOnly(){ return !!(cfg.roundOnly || cfg.hideProgressRail || isRoundTimer()); }
+  function retryRoundOnTimeout(){ return !!(cfg.retryRoundOnTimeout && isRoundTimer()); }
   function minRoundTime(){ return cfg.minRoundTime || 1; }
   function targetGoal(){ return cfg.goal || 8; }
   function railGoal(){ return isEndless() ? (cfg.progressWindow || 12) : targetGoal(); }
@@ -243,7 +244,7 @@
       el.msg.textContent = text || '算错一步，节奏断了';
       badSound();
       updateHud();
-      if(state.timeLeft <= 0) finish(false);
+      if(state.timeLeft <= 0) handleTimeUp(false);
     },
     complete(points, text){
       if(state.locked) return;
@@ -326,8 +327,24 @@
       if(!state.active || (isRoundTimer() && state.locked)) return;
       state.timeLeft--;
       updateHud();
-      if(state.timeLeft <= 0) finish(false);
+      if(state.timeLeft <= 0) handleTimeUp(true);
     },1000);
+  }
+  function handleTimeUp(countMiss){
+    if(retryRoundOnTimeout()){
+      if(state.locked) return;
+      state.locked = true;
+      state.combo = 0;
+      if(countMiss){
+        state.mistakes++;
+        state.roundMistakes++;
+      }
+      state.timeLeft = 0;
+      updateHud();
+      showRoundTimeoutSettlement();
+      return;
+    }
+    finish(false);
   }
   function finish(cleared){
     if(!state.active) return;
@@ -419,6 +436,38 @@
       el.settleRank.classList.add('reveal');
       el.settleStars.classList.add('reveal');
     },520);
+  }
+  function showRoundTimeoutSettlement(){
+    const roundNo = state.solved + 1;
+    state.pendingNext = () => state.mode.next();
+    el.settleTitle.textContent = '本局超时';
+    el.settleSub.textContent = `第 ${roundNo} 局 · 保留进度 · 换一道同难度题`;
+    el.settleRank.className = 'counting';
+    el.settleRank.style.color = '';
+    el.settleRank.textContent = '计算中…';
+    el.settleStars.className = '';
+    el.settleStars.textContent = '☆☆☆';
+    el.settleRows.innerHTML = [
+      ['本局结果','未完成'],
+      ['当前局数',`第 ${roundNo} 局`],
+      ['本局失误',state.roundMistakes],
+      ['已完成局数',state.solved]
+    ].map(([k,v]) => `<div class="settle-row"><span>${k}</span><b>${v}</b></div>`).join('');
+    el.settleTotalVal.textContent = Math.round(state.score);
+    el.settleBest.textContent = '不会从头开始，只刷新一道同档难度的新题';
+    el.settleAgain.textContent = '换一题';
+    el.settleClose.textContent = '继续本关';
+    el.settle.classList.add('round-settle','show');
+    badSound();
+    setTimeout(() => {
+      if(!state.pendingNext) return;
+      el.settleRank.className = '';
+      el.settleRank.style.color = '#c4b5fd';
+      el.settleRank.textContent = 'C';
+      void el.settleRank.offsetWidth;
+      el.settleRank.classList.add('reveal');
+      el.settleStars.classList.add('reveal');
+    },420);
   }
   const dirs4 = [[1,0],[-1,0],[0,1],[0,-1]];
   const dirs8 = dirs4.concat([[1,1],[1,-1],[-1,1],[-1,-1]]);
@@ -972,6 +1021,7 @@
 
     factoryLine(api){
       const d = { start:0, value:0, target:0, stage:0, stages:[], solution:[], chosen:[] };
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
       const opDefs = [
         ['+3',v=>v+3],['+5',v=>v+5],['+7',v=>v+7],['+9',v=>v+9],['+12',v=>v+12],
         ['-4',v=>v-4],['-6',v=>v-6],['-8',v=>v-8],
@@ -1003,13 +1053,16 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `tile machine-tile factory-machine ${machineKind(op.label)}`;
+        btn.dataset.op = op.label;
+        btn.dataset.stage = String(stageIndex + 1);
+        btn.setAttribute('aria-label',`${stageIndex + 1} 号工位 ${machineRole(op.label)} ${op.label}`);
         btn.innerHTML = `
           <span class="machine-rivets" aria-hidden="true"></span>
           <span class="machine-core" aria-hidden="true"><i></i></span>
           <span class="machine-op"><b>${op.label}</b><small>${machineRole(op.label)}</small></span>
           <span class="machine-pipe" aria-hidden="true"></span>
         `;
-        btn.addEventListener('click',() => choose(stageIndex,op));
+        btn.addEventListener('click',event => choose(stageIndex,op,event.currentTarget));
         return btn;
       }
       function valueAfter(count){
@@ -1043,29 +1096,85 @@
         });
         render();
       }
-      function reset(){ d.stage = 0; d.value = d.start; d.chosen = []; render(); }
-      function choose(stageIndex,op){
+      function reset(){
+        if(state.locked) return;
+        d.stage = 0; d.value = d.start; d.chosen = []; render();
+      }
+      function factoryChug(){
+        tone(196,.07,.04,'square');
+        tone(98,.08,.032,'triangle',.06);
+        setTimeout(() => tone(247,.07,.034,'square'),150);
+        setTimeout(() => tone(147,.09,.03,'sawtooth'),300);
+        setTimeout(() => tone(330,.06,.026,'triangle'),480);
+      }
+      function animateFactory(tile,nextValue,finalStage){
+        const wrap = el.stage.querySelector('.factory-wrap');
+        const row = tile ? tile.closest('.factory-row') : null;
+        const box = el.stage.querySelector('.factory-box');
+        const targetCrate = el.stage.querySelector('.factory-crate.target');
+        const nextProgress = Math.min(100,((d.stage + 1) / Math.max(1,d.stages.length)) * 100);
+        if(wrap) wrap.classList.add('factory-running');
+        if(row) row.classList.add('operating');
+        if(tile){
+          tile.classList.remove('hint');
+          tile.classList.add('selected','operating');
+        }
+        if(box){
+          box.style.setProperty('--progress-next',nextProgress + '%');
+          box.classList.add('moving');
+          if(finalStage) box.classList.add('shipping');
+          const label = box.querySelector('span');
+          if(label) setTimeout(() => { label.textContent = nextValue; },270);
+        }
+        if(finalStage){
+          if(wrap) wrap.classList.add('factory-shipping');
+          if(targetCrate) targetCrate.classList.add('receiving');
+        }
+      }
+      async function choose(stageIndex,op,tile){
         if(!state.active || state.locked || stageIndex !== d.stage) return;
+        const want = d.solution[d.stage]?.label;
+        if(op.label !== want){
+          if(tile){
+            tile.classList.remove('hint');
+            tile.classList.add('bad','quality-fail');
+            setTimeout(() => tile.classList.remove('bad','quality-fail'),430);
+          }
+          api.mistake('质检没通过，换一台机器');
+          return;
+        }
         const nv = apply(d.value,op);
         if(!Number.isInteger(nv)){
+          if(tile){
+            tile.classList.add('bad','quality-fail');
+            setTimeout(() => tile.classList.remove('bad','quality-fail'),430);
+          }
           api.mistake('这台机器现在会卡料');
           return;
         }
+        const finalStage = d.stage === d.stages.length - 1;
+        state.locked = true;
+        clickSound();
+        factoryChug();
+        api.message(`${d.stage + 1} 号工位开机：${op.label}`);
+        animateFactory(tile,nv,finalStage);
+        await wait(finalStage ? 1080 : 820);
         d.value = nv;
         d.chosen.push(op.label);
-        clickSound();
-        if(d.stage === d.stages.length - 1){
-          if(d.value === d.target) api.complete(280,'流水线调试成功');
-          else { api.mistake('出厂数值不合格'); reset(); }
+        if(finalStage){
+          state.locked = false;
+          api.complete(300,'订单箱收货完成');
         }else{
           d.stage++;
           render();
+          state.locked = false;
+          api.message(`${d.stage + 1} 号工位待选机`);
         }
       }
       function render(){
         api.setLevel('算符流水线','1-4 号工位依次加工，每个工位只选一台机器。','四步流水线');
         api.setTarget('订单出厂数',d.target,`当前原料 ${d.value} · 正在 ${Math.min(d.stage + 1,d.stages.length)} 号工位`);
-        const progress = Math.min(100,(d.stage / Math.max(1,d.stages.length - 1)) * 100);
+        const progress = Math.min(100,(d.stage / Math.max(1,d.stages.length)) * 100);
         const chosenText = d.chosen.length ? d.chosen.join(' → ') : '等待 1 号工位开机';
         el.stage.innerHTML = `
           <div class="factory-wrap">
@@ -1131,7 +1240,7 @@
         state.hints++;
         const want = d.solution[d.stage]?.label;
         Array.from(el.stage.querySelectorAll('.factory-row.active .factory-machine')).forEach(tile => {
-          if(tile.textContent.includes(want)) tile.classList.add('hint');
+          if(tile.dataset.op === want) tile.classList.add('hint');
         });
         api.message(`${d.stage + 1} 号工位试试 ${want}`);
         hintSound();
