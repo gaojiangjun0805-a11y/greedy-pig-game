@@ -444,6 +444,11 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
 .operator-mul.operating .machine-core i{animation:boilerPulse .34s ease-in-out infinite alternate}
 .operator-div.operating .machine-core i{animation:valveSlide .38s steps(2) infinite}
 .factory-machine.quality-fail{filter:saturate(1.2) brightness(.88)}
+.factory-machine.tutorial-answer{
+  border-color:#fff0a8;
+  box-shadow:0 0 0 3px rgba(255,226,138,.2),0 6px 0 #59331d,0 0 22px rgba(255,226,138,.28),inset 0 2px 0 rgba(255,242,194,.34);
+  animation:tutorialMachinePulse .86s ease-in-out infinite alternate;
+}
 .factory-machine:disabled{cursor:default}
 .factory-row.locked .factory-machine:not(.selected),
 .factory-row.pending .factory-machine{opacity:.48;filter:grayscale(.18)}
@@ -513,6 +518,10 @@ body.factory-skin #btn-music{background:linear-gradient(180deg,#669f72,#35663f);
 @keyframes machineChug{
   0%,100%{transform:translateY(0) scale(1.02)}
   50%{transform:translateY(-2px) scale(1.04)}
+}
+@keyframes tutorialMachinePulse{
+  from{filter:brightness(1.06)}
+  to{filter:brightness(1.28);box-shadow:0 0 0 3px rgba(255,226,138,.26),0 6px 0 #59331d,0 0 28px rgba(255,226,138,.38),inset 0 2px 0 rgba(255,242,194,.38)}
 }
 @keyframes rivetBlink{
   0%,100%{opacity:.38}

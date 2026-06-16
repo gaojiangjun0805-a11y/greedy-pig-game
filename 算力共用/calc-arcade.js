@@ -1049,6 +1049,9 @@
         if(mark === '÷') return 'operator-div';
         return '';
       }
+      function isTutorialRound(){ return state.solved < 2; }
+      function solutionText(){ return d.solution.map(op => op.label).join(' → '); }
+      function tutorialText(){ return `教学答案：${solutionText()}`; }
       function makeMachineTile(op, stageIndex){
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -1176,12 +1179,18 @@
           d.stage++;
           render();
           state.locked = false;
-          api.message(`${d.stage + 1} 号工位待选机`);
+          api.message(isTutorialRound() ? tutorialText() : `${d.stage + 1} 号工位待选机`);
         }
       }
       function render(){
-        api.setLevel('算符流水线','1-4 号工位依次加工，每个工位只选一台机器。','四步流水线');
-        api.setTarget('订单出厂数',d.target,`当前原料 ${d.value} · 正在 ${Math.min(d.stage + 1,d.stages.length)} 号工位`);
+        const tutorial = isTutorialRound();
+        const answerText = solutionText();
+        api.setLevel(
+          tutorial ? '教学流水线' : '算符流水线',
+          tutorial ? `前两局明牌教学：照着 ${answerText} 跑一遍。` : '1-4 号工位依次加工，每个工位只选一台机器。',
+          tutorial ? '教学局' : '四步流水线'
+        );
+        api.setTarget('订单出厂数',d.target,tutorial ? `当前原料 ${d.value} · 教学答案 ${answerText}` : `当前原料 ${d.value} · 正在 ${Math.min(d.stage + 1,d.stages.length)} 号工位`);
         const progress = Math.min(100,(d.stage / Math.max(1,d.stages.length)) * 100);
         const chosenText = d.chosen.length ? d.chosen.join(' → ') : '等待 1 号工位开机';
         el.stage.innerHTML = `
@@ -1227,6 +1236,7 @@
           bank.className = 'machine-bank';
           ops.forEach(op => {
             const tile = makeMachineTile(op,stageIndex);
+            if(tutorial && stageIndex === d.stage && d.solution[stageIndex]?.label === op.label) tile.classList.add('tutorial-answer');
             if(d.chosen[stageIndex] === op.label) tile.classList.add('selected');
             if(stageIndex !== d.stage) tile.disabled = true;
             bank.appendChild(tile);
@@ -1240,9 +1250,10 @@
           ['目标',d.target]
         ],[
           {label:'↺ 回炉',onClick:reset,primary:true},
-          {label:'流程',onClick:() => api.message(chosenText)},
+          {label:tutorial ? '答案' : '流程',onClick:() => api.message(tutorial ? tutorialText() : chosenText)},
           {label:'规则',onClick:() => api.message('每站选一台能加工的机器，最后订单箱验收')}
         ]);
+        if(tutorial && !state.locked) api.message(tutorialText());
       }
       function hint(){
         state.hints++;
