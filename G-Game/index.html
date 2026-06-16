@@ -347,6 +347,7 @@ window.addEventListener('unhandledrejection', function(e){
 <script type="module">
 import * as THREE from './assets/vendor/three.module.min.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 const ABILITIES = [
   {key:'space', name:'空间力', color:'#4aa8ff'},
@@ -360,11 +361,10 @@ const ABILITIES = [
 const NUMBER_PUZZLE_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8dbcd6ec3.mp3';
 const TANGSHI_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
 const FOLD_COLOR_MUSIC = 'https://cdn1.suno.ai/55609391-8898-4ad5-a602-6934f169d28d.mp3';
-const ASSET_VERSION = '20260616-perf-1';
+const ASSET_VERSION = '20260616-real-tree-1';
 const REAL_AVATAR_MODEL = `./assets/avatar-animated.glb?v=${ASSET_VERSION}`;
-const WISDOM_TREE_MODEL = `./assets/wisdom-tree/island_tree_mobile.glb?v=${ASSET_VERSION}`;
-const WISDOM_TREE_PHONE_MODEL = `./assets/wisdom-tree/island_tree_phone.glb?v=${ASSET_VERSION}`;
-const WISDOM_TREE_MOBILE_MODEL = WISDOM_TREE_PHONE_MODEL;
+const WISDOM_TREE_MODEL = `./assets/wisdom-tree/island_tree_optimized.glb?v=${ASSET_VERSION}`;
+const WISDOM_TREE_MOBILE_MODEL = WISDOM_TREE_MODEL;
 const LOW_POWER_DEVICE = innerWidth <= 900 || matchMedia('(pointer: coarse)').matches || (navigator.deviceMemory && navigator.deviceMemory <= 4) || navigator.connection?.saveData;
 const MOBILE_FRAME_MS = LOW_POWER_DEVICE ? 1000 / 45 : 0;
 const AVATAR_MOVE_SPEED = 5.4;
@@ -1133,6 +1133,9 @@ function buildWisdomTree(){
 
   const treeModelUrl = LOW_POWER_DEVICE ? WISDOM_TREE_MOBILE_MODEL : WISDOM_TREE_MODEL;
   const loader = new GLTFLoader();
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/libs/draco/');
+  loader.setDRACOLoader(dracoLoader);
   loader.load(treeModelUrl, gltf => {
     realTreeLoaded = true;
     clearTimeout(showFallbackTimer);
