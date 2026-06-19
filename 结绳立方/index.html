@@ -68,6 +68,78 @@
       cursor: pointer;
     }
 
+    #startScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(126,199,140,.18), transparent 32%),
+        rgba(5, 8, 6, .72);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      opacity: 1;
+      visibility: visible;
+      transition: opacity .24s ease, visibility .24s ease;
+    }
+
+    #startScreen.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .start-card {
+      width: min(92vw, 460px);
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+      background: rgba(18, 24, 18, .92);
+      box-shadow: 0 28px 80px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+
+    .start-logo {
+      margin-bottom: 12px;
+      font-size: clamp(2.2rem, 10vw, 4.2rem);
+      line-height: .92;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(110deg,#fff,#9fd8ff,#ffdb8a,#ff8bcf,#7df0a0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 4px 30px rgba(159,216,255,.34));
+    }
+
+    .start-card h2 {
+      margin: 0;
+      color: #fff4db;
+      font-size: clamp(1.6rem, 7vw, 2.7rem);
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .start-card p {
+      margin: 14px 0 22px;
+      color: var(--muted);
+      font-weight: 800;
+      line-height: 1.7;
+    }
+
+    #startBtn {
+      width: auto;
+      min-width: 148px;
+      height: 46px;
+      padding: 0 22px;
+      border: none;
+      background: linear-gradient(135deg, #e7bd72, #79c18d);
+      color: #111611;
+      font-size: 1rem;
+    }
+
     #hud {
       position: fixed;
       left: max(14px, env(safe-area-inset-left));
@@ -196,6 +268,15 @@
       background: rgba(255,255,255,.13);
     }
 
+    #soundBtn {
+      color: #fff1b8;
+    }
+
+    #soundBtn.muted {
+      color: var(--muted);
+      opacity: .72;
+    }
+
     #toast {
       position: fixed;
       left: 50%;
@@ -216,6 +297,76 @@
     #toast.show {
       opacity: 1;
       transform: translate(-50%, 0);
+    }
+
+    #landscapeHint {
+      position: fixed;
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 6;
+      display: none;
+      padding: 8px 11px;
+      border: 1px solid rgba(219,184,112,.32);
+      border-radius: 8px;
+      background: rgba(12, 18, 13, .72);
+      color: #f6e6bb;
+      font-size: .76rem;
+      font-weight: 900;
+      pointer-events: none;
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    body.hard-level.portrait-hard #landscapeHint {
+      display: block;
+    }
+
+    body.hard-level.landscape #hud {
+      right: auto;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      width: min(184px, 22vw);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    body.hard-level.landscape .brand {
+      min-width: 0;
+      padding: 10px 11px;
+    }
+
+    body.hard-level.landscape h1 {
+      font-size: 1.02rem;
+    }
+
+    body.hard-level.landscape .brand span {
+      white-space: normal;
+      line-height: 1.25;
+    }
+
+    body.hard-level.landscape .stats {
+      width: 100%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.hard-level.landscape .stat {
+      min-height: 47px;
+      padding: 7px;
+    }
+
+    body.hard-level.landscape .stat b {
+      margin-top: 5px;
+      font-size: 1.02rem;
+    }
+
+    body.hard-level.landscape .actions {
+      justify-content: space-between;
+    }
+
+    body.hard-level.landscape button {
+      width: 36px;
+      height: 36px;
     }
 
     #toast.bad {
@@ -334,6 +485,15 @@
 <body>
   <canvas id="board" aria-label="蛇阵织图平面游戏"></canvas>
 
+  <section id="startScreen" aria-label="开始窗口">
+    <div class="start-card">
+      <div class="start-logo" aria-label="G-Game">G-Game</div>
+      <h2>蛇阵织图</h2>
+      <p>第一结已备好</p>
+      <button id="startBtn" type="button">开始第一结</button>
+    </div>
+  </section>
+
   <main id="hud">
     <section class="brand" aria-label="游戏标题">
       <h1>蛇阵织图</h1>
@@ -352,10 +512,12 @@
       <button id="prevBtn" title="上一结" aria-label="上一结">‹</button>
       <button id="resetBtn" title="重置本结" aria-label="重置本结">↺</button>
       <button id="nextBtnTop" title="下一结" aria-label="下一结">›</button>
+      <button id="soundBtn" title="音乐开关" aria-label="音乐开关">♪</button>
     </section>
   </main>
 
   <div id="toast" role="status" aria-live="polite"></div>
+  <div id="landscapeHint" aria-hidden="true">横屏密结</div>
 
   <section id="result" class="modal" aria-hidden="true">
     <div class="modal-card">
@@ -378,6 +540,8 @@
     const hitsEl = document.getElementById("hitCount");
     const levelEl = document.getElementById("levelCount");
     const levelNameEl = document.getElementById("levelName");
+    const startScreenEl = document.getElementById("startScreen");
+    const startBtn = document.getElementById("startBtn");
     const toastEl = document.getElementById("toast");
     const resultEl = document.getElementById("result");
     const resultTitleEl = document.getElementById("resultTitle");
@@ -386,6 +550,7 @@
     const prevBtn = document.getElementById("prevBtn");
     const resetBtn = document.getElementById("resetBtn");
     const nextBtnTop = document.getElementById("nextBtnTop");
+    const soundBtn = document.getElementById("soundBtn");
     const againBtn = document.getElementById("againBtn");
     const nextBtn = document.getElementById("nextBtn");
 
@@ -399,9 +564,31 @@
     const ACCENTS = ["#e9d35f", "#ff8f5b", "#f26f91", "#83c9ff", "#a7df74", "#7bd7bd", "#c995ff"];
     const ROPE_COLORS = ["#5fb35f", "#6fcf83", "#4ea078", "#88b94e", "#3f8f65", "#7abc59"];
     const BASE_SEED = 20260616;
+    const BGM_SOURCE = "audio/the-slithering-sands.mp3";
+    const BGM_TITLE = "The Slithering Sands";
+    const AUDIO_MIX = {
+      master: .82,
+      bgm: .18,
+      bgmDrone: 0,
+      pullSfx: .36,
+      hitSfx: .24
+    };
     let cachedTanglePuzzle = null;
+    const audioState = {
+      ctx: null,
+      master: null,
+      bgm: null,
+      sfx: null,
+      compressor: null,
+      muted: localStorage.getItem("rope-weave-muted") === "1",
+      bgmTimer: null,
+      bgmStep: 0,
+      bgmAudio: null,
+      drone: null
+    };
 
     const state = {
+      started: false,
       level: 1,
       lives: 5,
       moves: 0,
@@ -424,12 +611,15 @@
     };
 
     bindEvents();
-    loadLevel(1);
+    loadLevel(1, { silent: true });
     resize();
     requestAnimationFrame(tick);
 
     function bindEvents() {
       window.addEventListener("resize", resize);
+      window.addEventListener("pointerdown", () => {
+        if (state.started) resumeAudio();
+      }, { passive: true });
       canvas.addEventListener("pointermove", onPointerMove);
       canvas.addEventListener("pointerleave", () => {
         state.hovered = null;
@@ -437,14 +627,29 @@
       });
       canvas.addEventListener("pointerdown", onPointerDown);
 
+      startBtn.addEventListener("click", startGame);
       prevBtn.addEventListener("click", () => loadLevel(Math.max(1, state.level - 1)));
       resetBtn.addEventListener("click", () => loadLevel(state.level));
       nextBtnTop.addEventListener("click", () => loadLevel(state.level + 1));
+      soundBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        toggleAudio();
+      });
       againBtn.addEventListener("click", () => loadLevel(state.level));
       nextBtn.addEventListener("click", () => loadLevel(state.level + 1));
+      updateSoundButton();
     }
 
-    function loadLevel(level) {
+    function startGame() {
+      if (state.started) return;
+      state.started = true;
+      startScreenEl.classList.add("hide");
+      startScreenEl.setAttribute("aria-hidden", "true");
+      loadLevel(1);
+      resumeAudio();
+    }
+
+    function loadLevel(level, options = {}) {
       state.level = Math.max(1, level);
       state.moves = 0;
       state.hits = 0;
@@ -467,8 +672,9 @@
       resultEl.setAttribute("aria-hidden", "true");
       levelNameEl.textContent = `第${toChineseCount(state.level)}结 ${state.board.name}`;
       updateHud();
+      updateViewportMode();
       resize();
-      showToast(state.level < 3 ? "新结已成" : "密结已成", "good");
+      if (state.started && !options.silent) showToast(state.level < 3 ? "新结已成" : "密结已成", "good");
     }
 
     function buildLevel(level) {
@@ -1282,6 +1488,7 @@
     }
 
     function resize() {
+      updateViewportMode();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -1295,14 +1502,36 @@
     }
 
     function computeLayout(width, height) {
+      const hardLandscape = isHardLandscape(width, height);
+      if (hardLandscape) {
+        const rail = Math.min(196, Math.max(156, width * .17));
+        const pad = width < 900 ? 12 : 18;
+        const availableW = Math.max(300, width - rail - pad * 2);
+        const availableH = Math.max(300, height - pad * 2);
+        const cell = Math.max(1, Math.floor(Math.min(
+          availableW / state.board.cols,
+          availableH / state.board.rows
+        )));
+        const boardW = cell * state.board.cols;
+        const boardH = cell * state.board.rows;
+        state.layout = {
+          x: Math.round(rail + (availableW - boardW) / 2),
+          y: Math.round((height - boardH) / 2),
+          cell,
+          w: boardW,
+          h: boardH
+        };
+        return;
+      }
+
       const hudBottom = window.innerWidth < 760 ? 150 : 92;
       const pad = window.innerWidth < 760 ? 12 : 26;
       const availableW = Math.max(260, width - pad * 2);
       const availableH = Math.max(280, height - hudBottom - pad);
-      const cell = Math.floor(Math.min(
+      const cell = Math.max(1, Math.floor(Math.min(
         availableW / state.board.cols,
         availableH / state.board.rows
-      ));
+      )));
       const boardW = cell * state.board.cols;
       const boardH = cell * state.board.rows;
       state.layout = {
@@ -1312,6 +1541,18 @@
         w: boardW,
         h: boardH
       };
+    }
+
+    function updateViewportMode() {
+      const hard = state.level >= 3;
+      const landscape = hard && isHardLandscape(window.innerWidth, window.innerHeight);
+      document.body.classList.toggle("hard-level", hard);
+      document.body.classList.toggle("landscape", landscape);
+      document.body.classList.toggle("portrait-hard", hard && !landscape);
+    }
+
+    function isHardLandscape(width, height) {
+      return state.level >= 3 && width >= height * 1.08;
     }
 
     function tick(now) {
@@ -1669,7 +1910,7 @@
     }
 
     function shouldShowTutorialHand() {
-      return state.level <= 2 && !state.busy && !state.ended && !state.animation;
+      return state.started && state.level <= 2 && !state.busy && !state.ended && !state.animation;
     }
 
     function tutorialTargetRope() {
@@ -1763,7 +2004,9 @@
     }
 
     function onPointerDown(event) {
+      if (!state.started) return;
       if (state.busy || state.ended) return;
+      resumeAudio();
       const rope = pickRope(eventPoint(event));
       if (!rope) return;
       tryPull(rope);
@@ -1802,6 +2045,7 @@
         rope.shakeUntil = now + 420;
         const blockedRope = blocker.self ? null : state.ropes.find(item => item.id === blocker.id);
         if (blockedRope) blockedRope.flashUntil = now + 560;
+        playHitSound();
         updateHud();
         showToast(blocker.self ? "撞到自己的身体，命 -1" : `撞到${dirName(rope.dir)}侧小蛇，命 -1`, "bad");
         if (state.lives <= 0) finish(false);
@@ -1821,6 +2065,7 @@
         distance,
         progress: 0
       };
+      playPullSound(rope);
       updateHud();
       showToast("游出一条", "good");
     }
@@ -2070,6 +2315,345 @@
       ctx.closePath();
     }
 
+    function toggleAudio() {
+      audioState.muted = !audioState.muted;
+      localStorage.setItem("rope-weave-muted", audioState.muted ? "1" : "0");
+      if (audioState.muted) stopBgm();
+      else resumeAudio();
+      updateSoundButton();
+    }
+
+    function updateSoundButton() {
+      soundBtn.classList.toggle("muted", audioState.muted);
+      soundBtn.textContent = audioState.muted ? "静" : "♪";
+      soundBtn.title = audioState.muted ? "开启音乐" : "关闭音乐";
+      soundBtn.setAttribute("aria-label", soundBtn.title);
+    }
+
+    function ensureAudio() {
+      if (audioState.ctx) return audioState.ctx;
+      const AudioClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioClass) {
+        audioState.muted = true;
+        updateSoundButton();
+        return null;
+      }
+
+      const context = new AudioClass();
+      const buses = createAudioBuses(context, context.destination);
+      audioState.ctx = context;
+      audioState.master = buses.master;
+      audioState.bgm = buses.bgm;
+      audioState.sfx = buses.sfx;
+      audioState.compressor = buses.compressor;
+      return context;
+    }
+
+    function createAudioBuses(context, destination) {
+      const master = context.createGain();
+      const bgm = context.createGain();
+      const sfx = context.createGain();
+      const compressor = context.createDynamicsCompressor();
+
+      master.gain.value = AUDIO_MIX.master;
+      bgm.gain.value = AUDIO_MIX.bgm;
+      sfx.gain.value = 1;
+      compressor.threshold.value = -18;
+      compressor.knee.value = 18;
+      compressor.ratio.value = 7;
+      compressor.attack.value = .006;
+      compressor.release.value = .18;
+
+      bgm.connect(master);
+      sfx.connect(master);
+      master.connect(compressor);
+      compressor.connect(destination);
+      return { master, bgm, sfx, compressor };
+    }
+
+    function resumeAudio() {
+      if (audioState.muted) return false;
+      const context = ensureAudio();
+      if (!context) return false;
+      startBgm();
+      if (context.state === "suspended") {
+        context.resume().then(() => {
+          if (!audioState.muted) startBgm();
+        }).catch(() => {});
+      }
+      return true;
+    }
+
+    function startBgm() {
+      const context = ensureAudio();
+      if (!context || audioState.muted) return;
+      const audio = ensureBgmAudio();
+      if (!audio || !audio.paused) return;
+      audio.volume = AUDIO_MIX.bgm;
+      audio.play().catch(() => {});
+    }
+
+    function stopBgm() {
+      window.clearInterval(audioState.bgmTimer);
+      audioState.bgmTimer = null;
+      if (audioState.bgmAudio) audioState.bgmAudio.pause();
+      if (audioState.drone) {
+        const context = audioState.ctx;
+        const stopAt = context ? context.currentTime + .18 : 0;
+        try {
+          audioState.drone.gain.gain.cancelScheduledValues(context.currentTime);
+          audioState.drone.gain.gain.setTargetAtTime(0, context.currentTime, .06);
+          audioState.drone.oscillators.forEach(osc => osc.stop(stopAt));
+        } catch (error) {}
+        audioState.drone = null;
+      }
+    }
+
+    function ensureBgmAudio() {
+      if (audioState.bgmAudio) return audioState.bgmAudio;
+      const audio = new Audio(BGM_SOURCE);
+      audio.loop = true;
+      audio.preload = "auto";
+      audio.volume = AUDIO_MIX.bgm;
+      audio.setAttribute("aria-hidden", "true");
+      audio.style.display = "none";
+      document.body.appendChild(audio);
+      audioState.bgmAudio = audio;
+      return audio;
+    }
+
+    function startDrone(context) {
+      if (audioState.drone || !audioState.master) return;
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0, context.currentTime);
+      gain.gain.linearRampToValueAtTime(AUDIO_MIX.bgmDrone, context.currentTime + 1.4);
+      gain.connect(audioState.master);
+
+      const oscillators = [98, 147].map((freq, index) => {
+        const osc = context.createOscillator();
+        osc.type = index ? "sine" : "triangle";
+        osc.frequency.value = freq;
+        osc.detune.value = index ? -4 : 0;
+        osc.connect(gain);
+        osc.start();
+        return osc;
+      });
+      audioState.drone = { gain, oscillators };
+    }
+
+    function scheduleBgmPhrase(context, startTime) {
+      if (!audioState.bgm) return;
+      scheduleBgmPattern(context, audioState.bgm, startTime, audioState.bgmStep);
+      audioState.bgmStep = (audioState.bgmStep + 1) % 4;
+    }
+
+    function scheduleBgmPattern(context, destination, startTime, phraseStep = 0) {
+      const scale = [196, 220, 247, 294, 330, 392, 440];
+      const patterns = [
+        [0, 2, 4, 3, 1, 4, 2, 5],
+        [2, 4, 5, 4, 2, 1, 3, 0],
+        [1, 3, 5, 6, 5, 3, 2, 4],
+        [4, 2, 0, 2, 3, 5, 4, 1]
+      ];
+      const pattern = patterns[phraseStep % patterns.length];
+      pattern.forEach((noteIndex, i) => {
+        const time = startTime + i * .46;
+        const freq = scale[noteIndex];
+        scheduleBgmNote(context, destination, time, freq, .42, i % 4 === 0 ? .62 : .46);
+      });
+    }
+
+    function scheduleBgmNote(context, destination, time, freq, duration, velocity) {
+      const filter = context.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1100, time);
+      filter.frequency.exponentialRampToValueAtTime(620, time + duration);
+      filter.Q.value = .7;
+
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(.0001, time);
+      gain.gain.exponentialRampToValueAtTime(velocity, time + .035);
+      gain.gain.exponentialRampToValueAtTime(.0001, time + duration);
+
+      const osc = context.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, time);
+      osc.detune.setValueAtTime(Math.sin(freq) * 3, time);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(destination);
+      osc.start(time);
+      osc.stop(time + duration + .04);
+    }
+
+    function playPullSound(rope) {
+      if (audioState.muted) return;
+      const context = ensureAudio();
+      if (!context) return;
+      if (context.state === "suspended") context.resume();
+      const destination = createSfxDestination(rope);
+      schedulePullSfx(context, destination, context.currentTime + .01);
+    }
+
+    function playHitSound() {
+      if (audioState.muted) return;
+      const context = ensureAudio();
+      if (!context) return;
+      if (context.state === "suspended") context.resume();
+      scheduleHitSfx(context, audioState.sfx, context.currentTime + .01);
+    }
+
+    function createSfxDestination(rope) {
+      if (!audioState.ctx || !audioState.sfx || !rope || !audioState.ctx.createStereoPanner) {
+        return audioState.sfx;
+      }
+      const panner = audioState.ctx.createStereoPanner();
+      const head = cellCenter(rope.cells[0]);
+      const pan = clamp((head.x / Math.max(1, window.innerWidth)) * 2 - 1, -.75, .75);
+      panner.pan.value = pan;
+      panner.connect(audioState.sfx);
+      return panner;
+    }
+
+    function schedulePullSfx(context, destination, time) {
+      const noise = context.createBufferSource();
+      noise.buffer = makeNoiseBuffer(context, .22);
+      const noiseFilter = context.createBiquadFilter();
+      noiseFilter.type = "highpass";
+      noiseFilter.frequency.value = 740;
+      const noiseGain = context.createGain();
+      noiseGain.gain.setValueAtTime(.0001, time);
+      noiseGain.gain.exponentialRampToValueAtTime(AUDIO_MIX.pullSfx * .56, time + .018);
+      noiseGain.gain.exponentialRampToValueAtTime(.0001, time + .19);
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(destination);
+      noise.start(time);
+      noise.stop(time + .23);
+
+      const osc = context.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(180, time);
+      osc.frequency.exponentialRampToValueAtTime(660, time + .18);
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(.0001, time);
+      gain.gain.exponentialRampToValueAtTime(AUDIO_MIX.pullSfx, time + .028);
+      gain.gain.exponentialRampToValueAtTime(.0001, time + .28);
+      osc.connect(gain);
+      gain.connect(destination);
+      osc.start(time);
+      osc.stop(time + .31);
+    }
+
+    function scheduleHitSfx(context, destination, time) {
+      const osc = context.createOscillator();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(130, time);
+      osc.frequency.exponentialRampToValueAtTime(72, time + .16);
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(.0001, time);
+      gain.gain.exponentialRampToValueAtTime(AUDIO_MIX.hitSfx, time + .012);
+      gain.gain.exponentialRampToValueAtTime(.0001, time + .18);
+      osc.connect(gain);
+      gain.connect(destination);
+      osc.start(time);
+      osc.stop(time + .21);
+    }
+
+    function makeNoiseBuffer(context, duration) {
+      const length = Math.max(1, Math.floor(context.sampleRate * duration));
+      const buffer = context.createBuffer(1, length, context.sampleRate);
+      const data = buffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < length; i += 1) {
+        last = last * .72 + (Math.random() * 2 - 1) * .28;
+        data[i] = last;
+      }
+      return buffer;
+    }
+
+    async function measureAudioProfile() {
+      const OfflineClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!OfflineClass) return { supported: false, runtime: audioDebugSnapshot() };
+      const pull = await renderOfflineAudio(.62, (context, buses) => {
+        schedulePullSfx(context, buses.sfx, .05);
+      });
+      const hit = await renderOfflineAudio(.42, (context, buses) => {
+        scheduleHitSfx(context, buses.sfx, .05);
+      });
+      return {
+        supported: true,
+        source: `${BGM_TITLE} MP3; BGM loudness measured offline from local file`,
+        mix: AUDIO_MIX,
+        runtime: audioDebugSnapshot(),
+        pullSfx: analyzeBuffer(pull),
+        hitSfx: analyzeBuffer(hit)
+      };
+    }
+
+    async function renderOfflineAudio(seconds, scheduler) {
+      const sampleRate = 44100;
+      const OfflineClass = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      const context = new OfflineClass(1, Math.ceil(sampleRate * seconds), sampleRate);
+      const buses = createAudioBuses(context, context.destination);
+      scheduler(context, buses);
+      return context.startRendering();
+    }
+
+    function scheduleProfileDrone(context, destination, time, duration) {
+      const gain = context.createGain();
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(AUDIO_MIX.bgmDrone, time + .6);
+      gain.gain.setValueAtTime(AUDIO_MIX.bgmDrone, time + Math.max(.7, duration - .4));
+      gain.gain.linearRampToValueAtTime(.0001, time + duration);
+      gain.connect(destination);
+      [98, 147].forEach((freq, index) => {
+        const osc = context.createOscillator();
+        osc.type = index ? "sine" : "triangle";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        osc.start(time);
+        osc.stop(time + duration + .02);
+      });
+    }
+
+    function analyzeBuffer(buffer) {
+      const data = buffer.getChannelData(0);
+      let peak = 0;
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 1) {
+        const value = Math.abs(data[i]);
+        peak = Math.max(peak, value);
+        sum += value * value;
+      }
+      const rms = Math.sqrt(sum / Math.max(1, data.length));
+      return {
+        peak: Number(peak.toFixed(4)),
+        peakDb: dbfs(peak),
+        rms: Number(rms.toFixed(4)),
+        rmsDb: dbfs(rms)
+      };
+    }
+
+    function dbfs(value) {
+      if (!value) return "-Infinity";
+      return Number((20 * Math.log10(value)).toFixed(1));
+    }
+
+    function audioDebugSnapshot() {
+      const audio = audioState.bgmAudio;
+      return {
+        source: BGM_SOURCE,
+        title: BGM_TITLE,
+        contextState: audioState.ctx ? audioState.ctx.state : "not-created",
+        muted: audioState.muted,
+        bgmRunning: Boolean(audio && !audio.paused),
+        bgmReadyState: audio ? audio.readyState : 0,
+        bgmCurrentTime: audio ? Number(audio.currentTime.toFixed(2)) : 0,
+        mix: AUDIO_MIX
+      };
+    }
+
     function showToast(text, tone = "") {
       toastEl.textContent = text;
       toastEl.className = tone;
@@ -2113,12 +2697,19 @@
       },
       arrows() {
         return debugSnapshot().arrows;
+      },
+      audio() {
+        return audioDebugSnapshot();
+      },
+      measureAudio() {
+        return measureAudioProfile();
       }
     };
 
     function debugSnapshot() {
       return {
         stats: {
+          started: state.started,
           level: state.level,
           lives: state.lives,
           moves: state.moves,
@@ -2129,7 +2720,15 @@
           cells: state.board.cols * state.board.rows,
           minLength: ropeLengthSummary().min,
           maxLength: ropeLengthSummary().max,
-          oneCellRopes: ropeLengthSummary().one
+          oneCellRopes: ropeLengthSummary().one,
+          viewport: isHardLandscape(window.innerWidth, window.innerHeight) ? "landscape-hard" : "standard",
+          layout: {
+            x: state.layout.x,
+            y: state.layout.y,
+            cell: state.layout.cell,
+            w: state.layout.w,
+            h: state.layout.h
+          }
         },
         arrows: state.ropes
           .filter(ropeItem => !ropeItem.removed)
@@ -2143,7 +2742,8 @@
               blocked: Boolean(findBlocker(ropeItem))
             };
           }),
-        tutorial: tutorialDebugSnapshot()
+        tutorial: tutorialDebugSnapshot(),
+        audio: audioDebugSnapshot()
       };
     }
 
