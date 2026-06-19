@@ -109,7 +109,7 @@ h1{
   border:2px solid rgba(255,255,255,.09);
   background:rgba(255,255,255,.045);
   box-shadow:0 0 56px rgba(71,118,255,.18),0 18px 52px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.1);
-  padding:42px 10px 10px;
+  padding:10px;
   overflow:hidden;
 }
 #board{
@@ -305,7 +305,7 @@ h1{
   #level-note{display:none}
   #rail{margin-top:7px}
   #hud{min-height:30px;padding:4px 10px}
-  #board-shell{padding:40px 9px 9px}
+  #board-shell{padding:9px}
   .btn{min-height:34px}
   #guide{min-height:1rem}
 }
@@ -318,6 +318,7 @@ h1{
 </head>
 <body>
 <canvas id="bg"></canvas>
+<audio id="bgm" src="audio/bgm-loop.wav" preload="auto" loop playsinline></audio>
 <div id="welcome">
   <div class="modal">
     <div id="welcome-logo">G-Game</div>
@@ -356,7 +357,7 @@ h1{
     <button class="btn" id="btn-new">重开本关</button>
     <button class="btn" id="btn-replay">重看快门</button>
     <button class="btn" id="btn-check" hidden>自动判定</button>
-    <button class="btn" id="btn-sound">音效开</button>
+    <button class="btn" id="btn-sound">声音开</button>
   </div>
   <div id="guide"></div>
 </main>
@@ -406,6 +407,10 @@ const scanLabel=document.getElementById('scan-label');
 const guideEl=document.getElementById('guide');
 const bg=document.getElementById('bg');
 const bgCtx=bg.getContext('2d');
+const bgmEl=document.getElementById('bgm');
+const BGM_VOLUME=.16;
+const SFX_VOLUME=.95;
+bgmEl.volume=BGM_VOLUME;
 
 let levelIndex=0,level=LEVELS[0],target=[],player=[],phase='idle';
 let moves=0,misses=0,timeLeft=0,timer=null,previewStart=0,raf=null;
@@ -472,13 +477,22 @@ function ensureAudio(){
   if(audioCtx.state==='suspended')audioCtx.resume();
   return audioCtx;
 }
+function startBgm(){
+  if(!soundOn)return;
+  bgmEl.volume=BGM_VOLUME;
+  const play=bgmEl.play();
+  if(play&&play.catch)play.catch(()=>{});
+}
+function stopBgm(){
+  bgmEl.pause();
+}
 function tone(freq,dur,vol,type,delay){
   const ac=ensureAudio(); if(!ac)return;
   const t=ac.currentTime+(delay||0);
   const o=ac.createOscillator(),g=ac.createGain();
   o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
   g.gain.setValueAtTime(.0001,t);
-  g.gain.exponentialRampToValueAtTime(vol||.05,t+.012);
+  g.gain.exponentialRampToValueAtTime((vol||.05)*SFX_VOLUME,t+.012);
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur+.02);
 }
@@ -765,6 +779,7 @@ document.getElementById('welcome-start').addEventListener('click',()=>{
   started=true;
   document.getElementById('welcome').classList.add('hide');
   setTimeout(()=>document.getElementById('welcome').style.display='none',380);
+  startBgm();
   startLevel(0);
 });
 document.getElementById('btn-new').addEventListener('click',()=>startLevel(levelIndex));
@@ -772,8 +787,9 @@ document.getElementById('btn-replay').addEventListener('click',()=>{if(phase==='
 document.getElementById('btn-check').addEventListener('click',checkBoard);
 document.getElementById('btn-sound').addEventListener('click',()=>{
   soundOn=!soundOn;
-  document.getElementById('btn-sound').textContent=soundOn?'音效开':'音效关';
-  if(soundOn)sfx('tap');
+  document.getElementById('btn-sound').textContent=soundOn?'声音开':'声音关';
+  if(soundOn){startBgm();sfx('tap');}
+  else stopBgm();
 });
 document.getElementById('again').addEventListener('click',()=>{document.getElementById('settle').classList.remove('show');startLevel(levelIndex);});
 document.getElementById('next').addEventListener('click',()=>{document.getElementById('settle').classList.remove('show');startLevel(levelIndex<LEVELS.length-1?levelIndex+1:0);});
