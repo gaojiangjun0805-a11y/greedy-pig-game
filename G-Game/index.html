@@ -226,6 +226,10 @@
     <div class="bootTitle">六维脑力空间</div>
     <div class="bootSub">空间力 · 推理力 · 记忆力 · 观察力 · 创造力 · 计算力</div>
     <div class="bootProfile">
+      <label class="fieldLabel" for="bootPlayerId">
+        玩家ID
+        <input class="textInput" id="bootPlayerId" maxlength="24" autocomplete="username" placeholder="输入固定ID" required>
+      </label>
       <label class="fieldLabel" for="bootNickname">
         玩家昵称
         <input class="textInput" id="bootNickname" maxlength="12" autocomplete="nickname" placeholder="输入你的名字">
@@ -384,6 +388,7 @@ window.addEventListener('unhandledrejection', function(e){
   }
 }
 </script>
+<script src="./backend-config.js"></script>
 <script type="module">
 import * as THREE from './assets/vendor/three.module.min.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -419,6 +424,18 @@ const AVATAR_ACTIONS = {
   jump:{label:'跳跃', duration:1.05},
   pose:{label:'展示', duration:2.2}
 };
+const LEGACY_STORAGE_KEY = 'ggame-hub-v1';
+const PLAYER_ID_STORAGE_KEY = 'ggame-hub-player-id';
+const ACCOUNT_STORAGE_PREFIX = 'ggame-hub-v1:player:';
+const BACKEND_CONFIG = {
+  supabaseUrl:'',
+  supabaseAnonKey:'',
+  table:'ggame_player_states',
+  ...(window.GGAME_BACKEND_CONFIG || {})
+};
+let currentPlayerId = sanitizePlayerId(localStorage.getItem(PLAYER_ID_STORAGE_KEY) || '');
+let backendSaveTimer = null;
+let backendBusy = false;
 const AVATAR_PRESETS = {
   astronaut:{
     label:'宇航员',
@@ -628,43 +645,139 @@ setTimeout(openLinkedGameFromHub, 80);
 AUTOPLAY_RETRY_DELAYS.forEach(delay => setTimeout(()=>startHubAudio(true), delay));
 
 function loadState(){
-  const defaults = {
+  const defaults = createDefaultState();
+  try{
+    const raw = currentPlayerId ? localStorage.getItem(storageKeyForPlayer(currentPlayerId)) : localStorage.getItem(LEGACY_STORAGE_KEY);
+    const saved = JSON.parse(raw || '{}') || {};
+    return normalizeState(saved, defaults);
+  }catch(e){ return defaults; }
+}
+function createDefaultState(){
+  return {
     abilities:{space:20,logic:20,memory:20,observe:20,create:20,calc:20},
     completed:{},
     progress:{xp:0, games:{}, events:[], unlocks:{}},
     profile:{nickname:'玩家', preset:'astronaut'},
     avatar:{color:'#4aa8ff', skin:'#d9a982', face:'natural', expression:'neutral', gender:'neutral', hair:'short', height:'mid', build:'standard', suit:'sport', bottom:'pants', legwear:'bare', shoes:'boot'}
   };
-  try{
-    const saved = JSON.parse(localStorage.getItem('ggame-hub-v1')) || {};
-    const profile = {...defaults.profile, ...(saved.profile||{})};
-    profile.nickname = sanitizeNickname(profile.nickname);
-    if(!Object.prototype.hasOwnProperty.call(AVATAR_PRESETS, profile.preset)) profile.preset = 'astronaut';
-    const avatar = {...defaults.avatar, ...(saved.avatar||{})};
-    if(!/^#[0-9a-f]{6}$/i.test(avatar.skin || '')) avatar.skin = defaults.avatar.skin;
-    if(!Object.prototype.hasOwnProperty.call(FACE_PRESETS, avatar.face)) avatar.face = 'natural';
-    if(!Object.prototype.hasOwnProperty.call(EXPRESSION_PRESETS, avatar.expression)) avatar.expression = 'neutral';
-    if(!['neutral','female','male'].includes(avatar.gender)) avatar.gender = 'neutral';
-    if(!['short','bob','ponytail','curly'].includes(avatar.hair)) avatar.hair = 'short';
-    if(!['short','mid','tall'].includes(avatar.height)) avatar.height = 'mid';
-    if(!['slim','standard','strong'].includes(avatar.build)) avatar.build = 'standard';
-    if(!['sport','jacket','coat'].includes(avatar.suit)) avatar.suit = avatar.suit === 'long' ? 'coat' : 'sport';
-    if(!['pants','shorts'].includes(avatar.bottom)) avatar.bottom = 'pants';
-    avatar.legwear = 'bare';
-    if(!['sneaker','boot'].includes(avatar.shoes)) avatar.shoes = 'boot';
-    const abilities = normalizeAbilities({...defaults.abilities, ...(saved.abilities||{})});
-    const completed = {...(saved.completed||{})};
-    const progress = normalizeProgress(saved.progress, completed, abilities);
-    return {
-      abilities,
-      completed,
-      progress,
-      profile,
-      avatar
-    };
-  }catch(e){ return defaults; }
 }
-function saveState(){ localStorage.setItem('ggame-hub-v1', JSON.stringify(state)); }
+function normalizeState(saved={}, defaults=createDefaultState()){
+  const profile = {...defaults.profile, ...(saved.profile||{})};
+  profile.nickname = sanitizeNickname(profile.nickname);
+  if(!Object.prototype.hasOwnProperty.call(AVATAR_PRESETS, profile.preset)) profile.preset = 'astronaut';
+  const avatar = {...defaults.avatar, ...(saved.avatar||{})};
+  if(!/^#[0-9a-f]{6}$/i.test(avatar.skin || '')) avatar.skin = defaults.avatar.skin;
+  if(!Object.prototype.hasOwnProperty.call(FACE_PRESETS, avatar.face)) avatar.face = 'natural';
+  if(!Object.prototype.hasOwnProperty.call(EXPRESSION_PRESETS, avatar.expression)) avatar.expression = 'neutral';
+  if(!['neutral','female','male'].includes(avatar.gender)) avatar.gender = 'neutral';
+  if(!['short','bob','ponytail','curly'].includes(avatar.hair)) avatar.hair = 'short';
+  if(!['short','mid','tall'].includes(avatar.height)) avatar.height = 'mid';
+  if(!['slim','standard','strong'].includes(avatar.build)) avatar.build = 'standard';
+  if(!['sport','jacket','coat'].includes(avatar.suit)) avatar.suit = avatar.suit === 'long' ? 'coat' : 'sport';
+  if(!['pants','shorts'].includes(avatar.bottom)) avatar.bottom = 'pants';
+  avatar.legwear = 'bare';
+  if(!['sneaker','boot'].includes(avatar.shoes)) avatar.shoes = 'boot';
+  const abilities = normalizeAbilities({...defaults.abilities, ...(saved.abilities||{})});
+  const completed = {...(saved.completed||{})};
+  const progress = normalizeProgress(saved.progress, completed, abilities);
+  return {abilities, completed, progress, profile, avatar};
+}
+function stateSnapshot(){
+  return JSON.parse(JSON.stringify({
+    abilities:state.abilities,
+    completed:state.completed,
+    progress:state.progress,
+    profile:state.profile,
+    avatar:state.avatar
+  }));
+}
+function storageKeyForPlayer(playerId=currentPlayerId){
+  return playerId ? `${ACCOUNT_STORAGE_PREFIX}${playerId}` : LEGACY_STORAGE_KEY;
+}
+function saveState(){
+  const json = JSON.stringify(stateSnapshot());
+  localStorage.setItem(storageKeyForPlayer(currentPlayerId), json);
+  localStorage.setItem(LEGACY_STORAGE_KEY, json);
+  scheduleBackendSave();
+}
+function backendEnabled(){
+  return !!(BACKEND_CONFIG.supabaseUrl && BACKEND_CONFIG.supabaseAnonKey && currentPlayerId);
+}
+function backendEndpoint(query=''){
+  return `${String(BACKEND_CONFIG.supabaseUrl).replace(/\/$/,'')}/rest/v1/${BACKEND_CONFIG.table}${query}`;
+}
+function backendHeaders(extra={}){
+  return {
+    apikey:BACKEND_CONFIG.supabaseAnonKey,
+    Authorization:`Bearer ${BACKEND_CONFIG.supabaseAnonKey}`,
+    'Content-Type':'application/json',
+    ...extra
+  };
+}
+async function fetchBackendState(playerId){
+  if(!BACKEND_CONFIG.supabaseUrl || !BACKEND_CONFIG.supabaseAnonKey || !playerId) return null;
+  const query = `?player_id=eq.${encodeURIComponent(playerId)}&select=state&limit=1`;
+  const res = await fetch(backendEndpoint(query), {headers:backendHeaders()});
+  if(!res.ok) throw new Error(`load ${res.status}`);
+  const rows = await res.json();
+  return rows?.[0]?.state || null;
+}
+async function saveBackendStateNow(){
+  if(!backendEnabled() || backendBusy) return;
+  backendBusy = true;
+  try{
+    const body = {
+      player_id:currentPlayerId,
+      nickname:state.profile?.nickname || '玩家',
+      state:stateSnapshot(),
+      updated_at:new Date().toISOString()
+    };
+    const res = await fetch(backendEndpoint('?on_conflict=player_id'), {
+      method:'POST',
+      headers:backendHeaders({Prefer:'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify(body)
+    });
+    if(!res.ok) throw new Error(`save ${res.status}`);
+  }catch(e){
+    console.warn('G-Game backend save skipped:', e);
+  }finally{
+    backendBusy = false;
+  }
+}
+function scheduleBackendSave(){
+  if(!backendEnabled()) return;
+  clearTimeout(backendSaveTimer);
+  backendSaveTimer = setTimeout(saveBackendStateNow, 900);
+}
+function applyLoadedState(nextState){
+  const normalized = normalizeState(nextState || {});
+  Object.keys(state).forEach(key => delete state[key]);
+  Object.assign(state, normalized);
+  applyAvatarStyle();
+  loadRealAvatarModel();
+  updateAvatarNameLabel();
+  updateProfileUi();
+  updateAbilityGrid();
+  drawRadar();
+  if(focusedPortal) focusPortal(focusedPortal);
+}
+async function switchPlayerAccount(playerId){
+  const safeId = sanitizePlayerId(playerId);
+  if(!safeId) throw new Error('missing player id');
+  const hasLocalState = !!localStorage.getItem(storageKeyForPlayer(safeId));
+  currentPlayerId = safeId;
+  localStorage.setItem(PLAYER_ID_STORAGE_KEY, safeId);
+  let remoteState = null;
+  try{
+    remoteState = await fetchBackendState(safeId);
+  }catch(e){
+    console.warn('G-Game backend load skipped:', e);
+  }
+  const localState = loadState();
+  applyLoadedState(remoteState || localState);
+  saveState();
+  return !!(remoteState || hasLocalState);
+}
 
 function clampNumber(value, min, max, fallback=min){
   const n = Number(value);
@@ -760,6 +873,9 @@ function applyUnlocksToProgress(progress, abilities, now=Date.now(), collect=tru
 }
 
 function abilityByKey(key){ return ABILITIES.find(a=>a.key===key); }
+function sanitizePlayerId(value){
+  return String(value || '').replace(/\s+/g, '').replace(/[^\w\u4e00-\u9fa5-]/g, '').slice(0, 24).toLowerCase();
+}
 function sanitizeNickname(value){
   const cleaned = String(value || '').replace(/\s+/g, ' ').trim().slice(0, 12);
   return cleaned || '玩家';
@@ -2553,8 +2669,10 @@ function updateAvatarNameLabel(){
 
 function updateProfileUi(){
   const name = sanitizeNickname(state.profile?.nickname);
+  const playerInput = document.getElementById('bootPlayerId');
   const bootName = document.getElementById('bootNickname');
   const diyName = document.getElementById('nicknameInput');
+  if(playerInput && document.activeElement !== playerInput && playerInput.value !== currentPlayerId) playerInput.value = currentPlayerId;
   if(bootName && document.activeElement !== bootName && bootName.value !== name) bootName.value = name;
   if(diyName && document.activeElement !== diyName && diyName.value !== name) diyName.value = name;
   document.querySelectorAll('#presetChoices button, #bootPresetChoices button').forEach(button => {
@@ -3007,12 +3125,32 @@ function setupUi(){
   document.getElementById('radarToggle').onclick = () => document.getElementById('radarPanel').classList.toggle('showMobile');
   document.getElementById('soundToggle').onclick = toggleSound;
   const bootStart = document.getElementById('bootStart');
-  if(bootStart) bootStart.onclick = () => {
-    commitNickname(document.getElementById('bootNickname')?.value);
-    enterHub();
+  if(bootStart) bootStart.onclick = async () => {
+    const playerInput = document.getElementById('bootPlayerId');
+    const playerId = sanitizePlayerId(playerInput?.value);
+    const typedNickname = document.getElementById('bootNickname')?.value;
+    if(!playerId){
+      playerInput?.setCustomValidity?.('请输入玩家ID');
+      playerInput?.reportValidity?.();
+      playerInput?.setCustomValidity?.('');
+      playerInput?.focus();
+      return;
+    }
+    bootStart.disabled = true;
+    const oldText = bootStart.textContent;
+    bootStart.textContent = '读取进度...';
+    try{
+      const restored = await switchPlayerAccount(playerId);
+      if(!restored) commitNickname(typedNickname);
+      enterHub();
+    }finally{
+      bootStart.disabled = false;
+      bootStart.textContent = oldText;
+    }
   };
   document.getElementById('resetData').onclick = () => {
-    localStorage.removeItem('ggame-hub-v1');
+    localStorage.removeItem(storageKeyForPlayer(currentPlayerId));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
     location.reload();
   };
   document.getElementById('playGame').onclick = () => openGame(focusedPortal?.game);
