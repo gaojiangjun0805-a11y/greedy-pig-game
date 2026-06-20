@@ -404,7 +404,7 @@ function getBgm(){
   if(!bgmAudio){
     bgmAudio=new Audio(BGM_URL);
     bgmAudio.preload='auto';
-    bgmAudio.volume=0.36;
+    bgmAudio.volume=0.3;
     bgmAudio.addEventListener('loadedmetadata',()=>{
       if(bgmPendingSeek)applyBgmStart();
     });

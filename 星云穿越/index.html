@@ -922,7 +922,7 @@ function ensureBgm(){
   if(bgm)return bgm;
   bgm=new Audio(BGM_SRC);
   bgm.preload='auto';
-  bgm.volume=.62;
+  bgm.volume=.32;
   bgm.loop=false;
   bgm.addEventListener('loadedmetadata',()=>{ if(musicOn && bgm.currentTime<BGM_START-.1) bgm.currentTime=BGM_START; });
   bgm.addEventListener('ended',()=>{ if(musicOn){ bgm.currentTime=BGM_START; bgm.play().catch(()=>{}); } });

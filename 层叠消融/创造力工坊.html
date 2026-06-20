@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>创造力工坊 · 五游戏合集</title>
+<style>
+  :root{
+    --bg:#0e1018; --bg2:#161a28; --card:#1b2030; --card2:#222840;
+    --line:#2c3350; --txt:#e8ecf6; --dim:#9aa3c0; --accent:#6c8cff;
+    --accent2:#33d6a6; --warn:#ff8a5b; --good:#37e0a0; --bad:#ff6b6b;
+    --shadow:0 10px 30px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 70% -10%,#1d2542 0%,var(--bg) 55%);
+    color:var(--txt); min-height:100vh; padding:24px 16px 60px;
+  }
+  h1{font-size:26px; margin:0 0 4px;}
+  .sub{color:var(--dim); font-size:14px; margin-bottom:24px;}
+  .wrap{max-width:880px; margin:0 auto;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px;}
+  .gcard{
+    background:linear-gradient(160deg,var(--card),var(--card2)); border:1px solid var(--line);
+    border-radius:16px; padding:18px; cursor:pointer; transition:.18s; position:relative; overflow:hidden;
+  }
+  .gcard:hover{transform:translateY(-4px); border-color:var(--accent); box-shadow:var(--shadow);}
+  .gcard .no{font-size:12px; color:var(--accent2); letter-spacing:1px; font-weight:700;}
+  .gcard h3{margin:6px 0 6px; font-size:18px;}
+  .gcard p{margin:0; color:var(--dim); font-size:13px; line-height:1.5;}
+  .gcard .tag{display:inline-block; margin-top:12px; font-size:11px; color:var(--dim);
+    border:1px solid var(--line); border-radius:20px; padding:3px 10px;}
+  .screen{display:none;}
+  .topbar{display:flex; align-items:center; gap:12px; margin-bottom:16px;}
+  .back{background:var(--card); border:1px solid var(--line); color:var(--txt); border-radius:10px;
+    padding:8px 14px; cursor:pointer; font-size:14px;}
+  .back:hover{border-color:var(--accent);}
+  .gtitle{font-size:20px; font-weight:700;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px;}
+  .hint{color:var(--dim); font-size:13px; line-height:1.6;}
+  .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  button.act{background:linear-gradient(135deg,var(--accent),#8a6cff); border:none; color:#fff;
+    padding:9px 16px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:600;}
+  button.act:hover{filter:brightness(1.1);}
+  button.ghost{background:var(--bg2); border:1px solid var(--line); color:var(--txt);
+    padding:9px 14px; border-radius:10px; cursor:pointer; font-size:14px;}
+  button.ghost:hover{border-color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  canvas{background:#0b0e18; border-radius:12px; border:1px solid var(--line); display:block; max-width:100%;}
+  .meter{height:14px; background:var(--bg2); border-radius:10px; overflow:hidden; border:1px solid var(--line);}
+  .meter > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:.2s;}
+  .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:13px; font-weight:600;}
+  .badge.win{background:rgba(55,224,160,.18); color:var(--good); border:1px solid var(--good);}
+  .badge.bad{background:rgba(255,107,107,.16); color:var(--bad); border:1px solid var(--bad);}
+  .swatch{width:110px; height:110px; border-radius:14px; border:1px solid var(--line);}
+  table.tt{border-collapse:collapse; font-size:14px;}
+  table.tt th,table.tt td{border:1px solid var(--line); padding:6px 12px; text-align:center;}
+  table.tt th{background:var(--bg2); color:var(--dim);}
+  .sig{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;
+    display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom:8px;}
+  .sig.out{border-color:var(--accent2);}
+  select,input[type=number]{background:var(--bg2); color:var(--txt); border:1px solid var(--line);
+    border-radius:8px; padding:6px 8px; font-size:14px;}
+  .pill{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:8px 12px;
+    cursor:pointer; font-size:15px; font-weight:600; min-width:44px; text-align:center;}
+  .pill:hover{border-color:var(--accent);}
+  .pill.used{opacity:.35; pointer-events:none;}
+  .pill.op{color:var(--accent2);}
+  .seq{font-size:20px; letter-spacing:1px; min-height:30px;}
+  label.lbl{font-size:13px; color:var(--dim); min-width:54px;}
+  .gen{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:10px;}
+  input[type=range]{width:150px; accent-color:var(--accent);}
+  .val{font-variant-numeric:tabular-nums; color:var(--accent2); min-width:42px; display:inline-block;}
+  .toast{position:fixed; left:50%; top:24px; transform:translateX(-50%) translateY(-80px);
+    background:var(--card2); border:1px solid var(--accent2); color:var(--good); padding:12px 22px;
+    border-radius:12px; font-weight:700; box-shadow:var(--shadow); opacity:0; transition:.35s; z-index:50;}
+  .toast.show{transform:translateX(-50%) translateY(0); opacity:1;}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="wrap">
+
+  <!-- HUB -->
+  <section class="screen" id="screen-hub" style="display:block">
+    <h1>🎨 创造力工坊</h1>
+    <div class="sub">5 个谜题：答案唯一、客观可判，但解法千变万化。</div>
+    <div class="grid" id="hubgrid"></div>
+  </section>
+
+  <section class="screen" id="screen-wave"></section>
+  <section class="screen" id="screen-color"></section>
+  <section class="screen" id="screen-logic"></section>
+  <section class="screen" id="screen-pipe"></section>
+  <section class="screen" id="screen-bounce"></section>
+
+</div>
+
+<script>
+/* ============== 通用 ============== */
+const $ = (s,p=document)=>p.querySelector(s);
+const screens=['hub','wave','color','logic','pipe','bounce'];
+const inits={};
+let currentStop=null;
+function show(name){
+  if(currentStop){try{currentStop();}catch(e){} currentStop=null;}
+  screens.forEach(s=>document.getElementById('screen-'+s).style.display = (s===name?'block':'none'));
+  if(inits[name]) currentStop = inits[name]() || null;
+  window.scrollTo(0,0);
+}
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function topbar(title){
+  return `<div class="topbar"><button class="back" onclick="show('hub')">← 合集</button>
+    <span class="gtitle">${title}</span></div>`;
+}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const rint=(a,b)=>Math.floor(rnd(a,b+1));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+const GAMES=[
+  {id:'wave',no:'01',name:'波形重建',desc:'叠加正弦/方波/锯齿波，拼出目标曲线。判定：曲线误差<阈值。',tag:'声音 · 数学'},
+  {id:'color',no:'02',name:'配色炼金',desc:'用有限颜料一滴滴混合，逼近目标颜色。判定：色差ΔE<阈值。',tag:'色彩 · 感知'},
+  {id:'logic',no:'03',name:'真值黑箱',desc:'用逻辑门搭电路，命中目标真值表。判定：真值表逐行比对。',tag:'逻辑 · 电路'},
+  {id:'pipe',no:'04',name:'数字管道',desc:'让数字流过你摆的运算管道，到达目标值。判定：出口数=目标。',tag:'算术 · 空间'},
+  {id:'bounce',no:'05',name:'弹跳投递',desc:'摆挡板让小球正好弹N次再落进桶。判定：次数=N 且入桶。',tag:'物理 · 空间'},
+];
+(function buildHub(){
+  $('#hubgrid').innerHTML = GAMES.map(g=>`
+    <div class="gcard" onclick="show('${g.id}')">
+      <div class="no">${g.no}</div><h3>${g.name}</h3>
+      <p>${g.desc}</p><span class="tag">${g.tag}</span></div>`).join('');
+})();
+
+/* ============== 01 波形重建 ============== */
+inits.wave=function(){
+  const root=document.getElementById('screen-wave');
+  const TYPES=[['sin','正弦'],['square','方波'],['saw','锯齿'],['tri','三角']];
+  const N=256, WIN=0.08;
+  let target=[], gens=[], ac=null;
+
+  function wv(type,f,amp,phase,t){
+    const a=2*Math.PI*f*t+phase;
+    if(type==='sin') return amp*Math.sin(a);
+    if(type==='square') return amp*Math.sign(Math.sin(a)||1);
+    let x=(f*t+phase/(2*Math.PI))%1; if(x<0)x+=1;
+    if(type==='saw') return amp*(2*x-1);
+    return amp*(4*Math.abs(x-0.5)-1); // tri
+  }
+  function sumAt(comps,t){let s=0;for(const c of comps)s+=wv(c.type,c.f,c.amp,c.phase,t);return s;}
+  function newTarget(){
+    // 目标固定为 2 个分量，且参数落在滑块网格上 —— 保证一定有“精确还原”的解
+    target=[];
+    for(let i=0;i<2;i++) target.push({
+      type:TYPES[rint(0,3)][0], f:rint(1,4),
+      amp:+(rint(8,18)*0.05).toFixed(2),   // 0.40~0.90，步进0.05
+      phase:+(rint(0,124)*0.05).toFixed(2) // 0~6.20，步进0.05（与滑块一致）
+    });
+  }
+  function build(){
+    root.innerHTML = topbar('01 · 波形重建')+`
+    <div class="panel"><div class="hint">三个发生器叠加，去逼近<b>红色虚线</b>目标曲线。
+      同一条曲线可用不同波形组合拼出——直接选对波形，或用多个正弦近似。</div></div>
+    <div class="panel">
+      <canvas id="wcanvas" width="820" height="260"></canvas>
+      <div class="row" style="margin:12px 0 6px"><span class="badge" id="wmatch">匹配度 0%</span>
+        <button class="ghost" id="wplayT">▶ 试听目标</button>
+        <button class="ghost" id="wplayC">▶ 试听当前</button>
+        <button class="ghost" id="wnew">🔄 换一题</button></div>
+      <div class="meter"><i id="wbar"></i></div>
+    </div>
+    <div class="panel" id="wgens"></div>`;
+    gens=[0,1,2].map(()=>({type:'sin',f:1,amp:0,phase:0}));
+    const gw=$('#wgens');
+    gw.innerHTML=gens.map((g,i)=>`
+      <div class="gen">
+        <div class="row" style="margin-bottom:8px"><b>发生器 ${i+1}</b>
+          <select data-i="${i}" class="wtype">${TYPES.map(t=>`<option value="${t[0]}">${t[1]}</option>`).join('')}</select></div>
+        <div class="row"><label class="lbl">频率</label><input type="range" class="wf" data-i="${i}" min="1" max="6" step="1" value="1"><span class="val" id="wfv${i}">1</span></div>
+        <div class="row"><label class="lbl">振幅</label><input type="range" class="wa" data-i="${i}" min="0" max="1" step="0.05" value="0"><span class="val" id="wav${i}">0.00</span></div>
+        <div class="row"><label class="lbl">相位</label><input type="range" class="wp" data-i="${i}" min="0" max="6.28" step="0.05" value="0"><span class="val" id="wpv${i}">0.00</span></div>
+      </div>`).join('');
+    gw.querySelectorAll('.wtype').forEach(s=>s.onchange=e=>{gens[+e.target.dataset.i].type=e.target.value;render();});
+    gw.querySelectorAll('.wf').forEach(s=>s.oninput=e=>{const i=+e.target.dataset.i;gens[i].f=+e.target.value;$('#wfv'+i).textContent=e.target.value;render();});
+    gw.querySelectorAll('.wa').forEach(s=>s.oninput=e=>{const i=+e.target.dataset.i;gens[i].amp=+e.target.value;$('#wav'+i).textContent=(+e.target.value).toFixed(2);render();});
+    gw.querySelectorAll('.wp').forEach(s=>s.oninput=e=>{const i=+e.target.dataset.i;gens[i].phase=+e.target.value;$('#wpv'+i).textContent=(+e.target.value).toFixed(2);render();});
+    $('#wnew').onclick=()=>{newTarget(); won=false; render();};
+    $('#wplayT').onclick=()=>playTone(target);
+    $('#wplayC').onclick=()=>playTone(gens.filter(g=>g.amp>0));
+  }
+  function playTone(comps){
+    if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)();
+    const now=ac.currentTime, master=ac.createGain();
+    master.gain.value=0.0001; master.connect(ac.destination);
+    master.gain.linearRampToValueAtTime(0.6,now+0.05);
+    master.gain.linearRampToValueAtTime(0.0001,now+1.3);
+    comps.forEach(c=>{
+      const o=ac.createOscillator(), g=ac.createGain();
+      o.type = c.type==='sin'?'sine':c.type==='square'?'square':c.type==='saw'?'sawtooth':'triangle';
+      o.frequency.value=160*c.f; g.gain.value=c.amp*0.5;
+      o.connect(g); g.connect(master); o.start(now); o.stop(now+1.35);
+    });
+  }
+  let won=false;
+  function render(){
+    const cv=$('#wcanvas'); if(!cv){return;}
+    const ctx=cv.getContext('2d'), W=cv.width,H=cv.height, mid=H/2, sc=H/2.4;
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#222a44'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,mid); ctx.lineTo(W,mid); ctx.stroke();
+    // target dashed
+    ctx.strokeStyle='#ff6b6b'; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.beginPath();
+    for(let i=0;i<=N;i++){const t=i/N,x=t*W,y=mid-sumAt(target,t)*sc; i?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke();
+    // current
+    ctx.setLineDash([]); ctx.strokeStyle='#6c8cff'; ctx.lineWidth=2.4; ctx.beginPath();
+    let se=0; const active=gens.filter(g=>g.amp>0);
+    for(let i=0;i<=N;i++){const t=i/N,x=t*W,py=sumAt(active,t),ty=sumAt(target,t);
+      se+=(py-ty)*(py-ty); const y=mid-py*sc; i?ctx.lineTo(x,y):ctx.moveTo(x,y);} ctx.stroke();
+    const rmse=Math.sqrt(se/(N+1));
+    const m=clamp(Math.round(100*(1-rmse/0.9)),0,100);
+    $('#wbar').style.width=m+'%';
+    const mb=$('#wmatch'); mb.textContent='匹配度 '+m+'%';
+    mb.className='badge '+(rmse<WIN?'win':'');
+    if(rmse<WIN && !won){won=true; toast('🎉 波形重建成功！匹配度 '+m+'%');}
+    if(rmse>=WIN) won=false;
+  }
+  newTarget(); build(); render();
+  return ()=>{ if(ac){ac.close(); ac=null;} };
+};
+
+/* ============== 02 配色炼金 ============== */
+inits.color=function(){
+  const root=document.getElementById('screen-color');
+  const PIG=[
+    {n:'青',cmy:[1,0,0],sw:'#00b7ff'},{n:'品红',cmy:[0,1,0],sw:'#ff3da6'},
+    {n:'黄',cmy:[0,0,1],sw:'#ffe000'},{n:'黑',cmy:[1,1,1],sw:'#111'},{n:'白',cmy:[0,0,0],sw:'#fff'}];
+  const WIN=18;
+  let drops, order, targetRGB;
+  function mix(d){
+    const tot=d.reduce((a,b)=>a+b,0);
+    if(!tot) return [255,255,255];
+    const c=[0,0,0];
+    PIG.forEach((p,i)=>{c[0]+=p.cmy[0]*d[i];c[1]+=p.cmy[1]*d[i];c[2]+=p.cmy[2]*d[i];});
+    return [255*(1-c[0]/tot),255*(1-c[1]/tot),255*(1-c[2]/tot)].map(Math.round);
+  }
+  function newTarget(){
+    const d=PIG.map(()=>0); let tot=0;
+    while(tot<3||tot>8){const td=PIG.map(()=>rint(0,3)); if(td.reduce((a,b)=>a+b,0)>=3){d.forEach((_,i)=>d[i]=td[i]);tot=td.reduce((a,b)=>a+b,0);}}
+    targetRGB=mix(d);
+  }
+  const dist=(a,b)=>Math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2);
+  function build(){
+    root.innerHTML=topbar('02 · 配色炼金')+`
+    <div class="panel"><div class="hint">每滴颜料按减法混色叠加。用最少的滴数把<b>右侧目标色</b>调出来——
+      多条配方都能命中同一个颜色。</div></div>
+    <div class="panel"><div class="row" style="justify-content:space-around;align-items:flex-end">
+      <div style="text-align:center"><div class="swatch" id="cmix"></div><div class="hint" style="margin-top:6px">你的颜色</div></div>
+      <div style="text-align:center;font-size:30px;color:var(--dim)">≈</div>
+      <div style="text-align:center"><div class="swatch" id="ctgt"></div><div class="hint" style="margin-top:6px">目标颜色</div></div>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:14px"><span class="badge" id="cmatch">匹配度 0%</span>
+      <span class="hint">已用 <b id="cdrops">0</b> 滴</span></div>
+    <div class="meter" style="margin-top:10px"><i id="cbar"></i></div></div>
+    <div class="panel"><div class="row" id="cpig" style="justify-content:center"></div>
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <button class="ghost" id="cundo">↶ 撤销</button>
+        <button class="ghost" id="cclear">清空调色</button>
+        <button class="ghost" id="cnew">🔄 换一题</button></div></div>`;
+    $('#cpig').innerHTML=PIG.map((p,i)=>`<div style="text-align:center">
+      <div class="swatch" style="width:54px;height:54px;background:${p.sw}"></div>
+      <button class="ghost cadd" data-i="${i}" style="margin-top:6px;width:70px">+${p.n}</button></div>`).join('');
+    $('#cpig').querySelectorAll('.cadd').forEach(b=>b.onclick=()=>{drops[+b.dataset.i]++;order.push(+b.dataset.i);render();});
+    $('#cundo').onclick=()=>{if(order.length){drops[order.pop()]--;render();}};
+    $('#cclear').onclick=()=>{drops=PIG.map(()=>0);order=[];render();};
+    $('#cnew').onclick=()=>{newTarget();drops=PIG.map(()=>0);order=[];won=false;render();};
+  }
+  let won=false;
+  function render(){
+    const rgb=mix(drops);
+    $('#cmix').style.background=`rgb(${rgb.join(',')})`;
+    $('#ctgt').style.background=`rgb(${targetRGB.join(',')})`;
+    const d=dist(rgb,targetRGB), m=clamp(Math.round(100*(1-d/180)),0,100);
+    $('#cbar').style.width=m+'%';
+    $('#cdrops').textContent=order.length;
+    const mb=$('#cmatch'); mb.textContent='匹配度 '+m+'%'; mb.className='badge '+(d<WIN?'win':'');
+    if(d<WIN && !won){won=true; toast('🎉 配色命中！用了 '+order.length+' 滴');}
+    if(d>=WIN) won=false;
+  }
+  newTarget(); drops=PIG.map(()=>0); order=[]; build(); render();
+  return ()=>{};
+};
+
+/* ============== 03 真值黑箱 ============== */
+inits.logic=function(){
+  const root=document.getElementById('screen-logic');
+  let n, rows, inputs, signals, target, outIdx, gateCount;
+  const GATES=[['NOT','非'],['AND','与'],['OR','或'],['XOR','异或']];
+  function apply(g,a,b){g==='NOT'?0:0;
+    if(g==='NOT')return a?0:1; if(g==='AND')return a&&b?1:0;
+    if(g==='OR')return a||b?1:0; return (a^b)?1:0;}
+  function newTarget(){
+    n=rint(2,3); rows=1<<n;
+    inputs=[]; for(let v=0;v<n;v++){const col=[];for(let r=0;r<rows;r++)col.push((r>>(n-1-v))&1);
+      inputs.push({name:String.fromCharCode(65+v),vals:col});}
+    do{target=[];for(let r=0;r<rows;r++)target.push(rint(0,1));}
+    while(target.every(x=>x===target[0])); // 避免恒0/恒1
+    signals=inputs.map(s=>({name:s.name,vals:s.vals.slice(),formula:s.name,isIn:true}));
+    outIdx=-1; gateCount=0;
+  }
+  function build(){
+    root.innerHTML=topbar('03 · 真值黑箱')+`
+    <div class="panel"><div class="hint">用逻辑门把输入组合出新信号，让<b>某个信号 = 目标列</b>。
+      任何真值表都有无数等价电路——比谁用的门更少。</div></div>
+    <div class="panel" style="display:flex;gap:24px;flex-wrap:wrap">
+      <div><div class="hint" style="margin-bottom:6px">真值表</div><div id="ltable"></div></div>
+      <div style="flex:1;min-width:260px">
+        <div class="hint" style="margin-bottom:6px">添加逻辑门</div>
+        <div class="row" style="margin-bottom:10px">
+          <select id="lg">${GATES.map(g=>`<option value="${g[0]}">${g[1]} ${g[0]}</option>`).join('')}</select>
+          <select id="li1"></select><select id="li2"></select>
+          <button class="act" id="ladd">添加</button></div>
+        <div class="row" style="margin-bottom:10px"><span class="badge" id="lgc">门数 0</span>
+          <button class="ghost" id="lundo">↶ 撤销门</button>
+          <button class="ghost" id="lnew">🔄 换一题</button></div>
+        <div id="lsigs"></div>
+      </div></div>`;
+    $('#ladd').onclick=addGate; $('#lnew').onclick=()=>{newTarget();renderSigSelect();render();};
+    $('#lundo').onclick=()=>{ for(let i=signals.length-1;i>=0;i--){ if(!signals[i].isIn){signals.splice(i,1);gateCount--; if(outIdx===i)outIdx=-1; if(outIdx>i)outIdx--; break;} } renderSigSelect(); render();};
+    $('#lg').onchange=renderSigSelect;
+    renderSigSelect(); render();
+  }
+  function renderSigSelect(){
+    const g=$('#lg').value, i1=$('#li1'), i2=$('#li2');
+    const opts=signals.map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
+    i1.innerHTML=opts; i2.innerHTML=opts;
+    i2.style.display = g==='NOT' ? 'none':'';
+  }
+  function addGate(){
+    const g=$('#lg').value, a=+$('#li1').value, b=+$('#li2').value;
+    const sa=signals[a], sb=signals[b];
+    const vals=[]; for(let r=0;r<rows;r++) vals.push(apply(g,sa.vals[r], sb?sb.vals[r]:0));
+    gateCount++;
+    const name='S'+gateCount;
+    const formula = g==='NOT' ? `¬${sa.name}` : `(${sa.name} ${g==='AND'?'∧':g==='OR'?'∨':'⊕'} ${sb.name})`;
+    signals.push({name,vals,formula,isIn:false});
+    renderSigSelect(); render();
+  }
+  let won=false;
+  function render(){
+    // table
+    let html='<table class="tt"><tr>'+inputs.map(s=>`<th>${s.name}</th>`).join('')+
+      '<th>目标</th><th>当前</th></tr>';
+    const out = outIdx>=0?signals[outIdx]:null;
+    let allMatch = !!out;
+    for(let r=0;r<rows;r++){
+      html+='<tr>'+inputs.map(s=>`<td>${s.vals[r]}</td>`).join('');
+      html+=`<td>${target[r]}</td>`;
+      if(out){const v=out.vals[r], ok=v===target[r]; if(!ok)allMatch=false;
+        html+=`<td style="color:${ok?'var(--good)':'var(--bad)'}">${v}</td>`;}
+      else html+='<td style="color:var(--dim)">—</td>';
+      html+='</tr>';
+    }
+    html+='</table>'; $('#ltable').innerHTML=html;
+    // signals list
+    $('#lsigs').innerHTML=signals.map((s,i)=>`
+      <div class="sig ${i===outIdx?'out':''}">
+        <b style="color:var(--accent2)">${s.name}</b>
+        <span class="hint" style="flex:1">= ${s.formula}</span>
+        <button class="ghost" style="padding:4px 10px" onclick="window.__logicSetOut(${i})">${i===outIdx?'✓ 输出':'设为输出'}</button>
+      </div>`).join('');
+    $('#lgc').textContent='门数 '+gateCount;
+    if(allMatch && !won){won=true; toast('🎉 电路命中真值表！用了 '+gateCount+' 个门');}
+    if(!allMatch) won=false;
+  }
+  window.__logicSetOut=(i)=>{outIdx=i; render();};
+  newTarget(); build();
+  return ()=>{ delete window.__logicSetOut; };
+};
+
+/* ============== 04 数字管道 ============== */
+inits.pipe=function(){
+  const root=document.getElementById('screen-pipe');
+  let tiles, used, seq, target;
+  function newTarget(){
+    tiles=[]; const k=rint(4,5);
+    for(let i=0;i<k;i++) tiles.push(rint(2,9));
+    // 用随机管道生成保证可解的目标
+    let v=tiles[0]; const ops=['+','-','×'];
+    const idx=[...tiles.keys()]; shuffle(idx);
+    let order=idx.slice(); // seed=order[0]
+    v=tiles[order[0]];
+    for(let i=1;i<order.length;i++){
+      const op=ops[rint(0,2)];
+      const x=tiles[order[i]];
+      v = op==='+'?v+x : op==='-'?v-x : v*x;
+    }
+    target=v;
+    used=tiles.map(()=>false); seq=[]; // seq: 元素交替 {kind:'num',i} {kind:'op',v}
+  }
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rint(0,i);[a[i],a[j]]=[a[j],a[i]];}}
+  function expectNum(){return seq.length===0 || seq[seq.length-1].kind==='op';}
+  function value(){
+    if(!seq.length) return null;
+    let v=tiles[seq[0].i]; let op=null;
+    for(let i=1;i<seq.length;i++){
+      const s=seq[i];
+      if(s.kind==='op') op=s.v;
+      else{const x=tiles[s.i]; v= op==='+'?v+x : op==='-'?v-x : op==='×'?v*x : v/x;}
+    }
+    return v;
+  }
+  function build(){
+    root.innerHTML=topbar('04 · 数字管道')+`
+    <div class="panel"><div class="hint">先放一个数字作种子，再交替接入「运算 + 数字」，让管道出口的数等于目标。
+      每个数字只能用一次，到达目标的路径有很多条。</div></div>
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <span class="badge" id="ptarget"></span>
+        <span class="badge" id="pcur">出口 —</span></div>
+      <div class="seq" id="pseq" style="margin:14px 0;color:var(--accent2)">（空管道）</div>
+      <div class="row" id="pnums"></div>
+      <div class="row" style="margin-top:10px" id="pops"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="ghost" id="pback">⌫ 删除末项</button>
+        <button class="ghost" id="pclear">清空</button>
+        <button class="ghost" id="pnew">🔄 换一题</button></div>
+    </div>`;
+    $('#pops').innerHTML=['+','-','×','÷'].map(o=>`<div class="pill op" data-op="${o}">${o}</div>`).join('');
+    $('#pops').querySelectorAll('.pill').forEach(p=>p.onclick=()=>{
+      if(expectNum()){toast('现在该接一个数字');return;}
+      seq.push({kind:'op',v:p.dataset.op}); render();});
+    $('#pback').onclick=()=>{if(seq.length){const s=seq.pop(); if(s.kind==='num')used[s.i]=false; render();}};
+    $('#pclear').onclick=()=>{seq=[];used=tiles.map(()=>false);render();};
+    $('#pnew').onclick=()=>{newTarget();build();render();};
+    renderNums(); render();
+  }
+  function renderNums(){
+    $('#pnums').innerHTML=tiles.map((t,i)=>`<div class="pill ${used[i]?'used':''}" data-i="${i}">${t}</div>`).join('');
+    $('#pnums').querySelectorAll('.pill').forEach(p=>p.onclick=()=>{
+      const i=+p.dataset.i; if(used[i])return;
+      if(!expectNum()){toast('现在该接一个运算符');return;}
+      seq.push({kind:'num',i}); used[i]=true; render();});
+  }
+  let won=false;
+  function render(){
+    renderNums();
+    $('#ptarget').textContent='目标 = '+target;
+    const v=value();
+    $('#pcur').textContent='出口 '+(v===null?'—':(Number.isInteger(v)?v:v.toFixed(2)));
+    $('#pcur').className='badge '+(v===target?'win':'');
+    $('#pseq').textContent = seq.length? seq.map(s=>s.kind==='op'?s.v:tiles[s.i]).join(' ') : '（空管道）';
+    if(v===target && !won){won=true; toast('🎉 数字到达目标 '+target+'！');}
+    if(v!==target) won=false;
+  }
+  newTarget(); build();
+  return ()=>{};
+};
+
+/* ============== 05 弹跳投递 ============== */
+inits.bounce=function(){
+  const root=document.getElementById('screen-bounce');
+  const W=720,H=460, floorY=420, R=10, G=0.32, REST=0.78;
+  let segs, pending, ball, running, bounces, targetN, bucket, raf=0, result;
+  function newLevel(){
+    segs=[]; pending=null; running=false; bounces=0; result=null;
+    targetN=rint(2,4);
+    const bw=90; bucket={x:rint(60,W-60-bw), w:bw};
+    ball=spawn();
+  }
+  function spawn(){return {x:W/2+rnd(-40,40), y:30, vx:rnd(-0.6,0.6), vy:0};}
+  function reset(){running=false; bounces=0; result=null; ball=spawn();}
+  function closest(px,py,s){
+    const dx=s.x2-s.x1, dy=s.y2-s.y1, l2=dx*dx+dy*dy;
+    let t=l2?((px-s.x1)*dx+(py-s.y1)*dy)/l2:0; t=clamp(t,0,1);
+    return [s.x1+t*dx, s.y1+t*dy];
+  }
+  let cooldown=0;
+  function step(){
+    if(!running) return;
+    const sub=4;
+    for(let k=0;k<sub;k++){
+      ball.vy+=G/sub; ball.x+=ball.vx/sub; ball.y+=ball.vy/sub;
+      for(const s of segs){
+        const [cx,cy]=closest(ball.x,ball.y,s);
+        const dx=ball.x-cx, dy=ball.y-cy, d=Math.hypot(dx,dy);
+        if(d<R && d>0.0001){
+          const nx=dx/d, ny=dy/d, ov=R-d;
+          ball.x+=nx*ov; ball.y+=ny*ov;
+          const vdn=ball.vx*nx+ball.vy*ny;
+          if(vdn<0){
+            ball.vx-=(1+REST)*vdn*nx; ball.vy-=(1+REST)*vdn*ny;
+            if(cooldown<=0){bounces++; cooldown=6;}
+          }
+        }
+      }
+    }
+    if(cooldown>0)cooldown--;
+    // 落地判定
+    if(ball.y+R>=floorY){
+      ball.y=floorY-R; running=false;
+      const inBucket = ball.x>=bucket.x && ball.x<=bucket.x+bucket.w;
+      if(inBucket && bounces===targetN){result='win'; toast('🎉 弹了 '+bounces+' 次落进桶！');}
+      else if(!inBucket) result='miss';
+      else result='count';
+    }
+    if(ball.x< -40 || ball.x>W+40 || ball.y>H+60){running=false; result='miss';}
+  }
+  function draw(){
+    const cv=$('#bcanvas'); if(!cv){return;}
+    const ctx=cv.getContext('2d');
+    ctx.clearRect(0,0,W,H);
+    // floor
+    ctx.strokeStyle='#2c3350'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,floorY);ctx.lineTo(W,floorY);ctx.stroke();
+    // bucket
+    ctx.fillStyle='rgba(51,214,166,.16)'; ctx.fillRect(bucket.x,floorY-46,bucket.w,46);
+    ctx.strokeStyle='var(--accent2)'; ctx.strokeStyle='#33d6a6'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(bucket.x,floorY-46); ctx.lineTo(bucket.x,floorY);
+    ctx.lineTo(bucket.x+bucket.w,floorY); ctx.lineTo(bucket.x+bucket.w,floorY-46); ctx.stroke();
+    ctx.fillStyle='#33d6a6'; ctx.font='13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('桶',bucket.x+bucket.w/2,floorY-18);
+    // segs
+    ctx.strokeStyle='#6c8cff'; ctx.lineWidth=6; ctx.lineCap='round';
+    segs.forEach(s=>{ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();});
+    // pending
+    if(pending){ctx.fillStyle='#ff8a5b'; ctx.beginPath(); ctx.arc(pending.x,pending.y,5,0,7);ctx.fill();}
+    // ball
+    ctx.fillStyle='#ffd45b'; ctx.beginPath(); ctx.arc(ball.x,ball.y,R,0,7);ctx.fill();
+    // bounce counter big
+    ctx.fillStyle = bounces===targetN?'#37e0a0':'#e8ecf6';
+    ctx.font='bold 22px sans-serif'; ctx.textAlign='left';
+    ctx.fillText('弹跳 '+bounces+' / '+targetN, 16, 30);
+    if(result){
+      ctx.textAlign='center'; ctx.font='bold 26px sans-serif';
+      ctx.fillStyle = result==='win'?'#37e0a0':'#ff6b6b';
+      ctx.fillText(result==='win'?'✓ 投递成功':result==='count'?'✗ 入桶但弹跳次数不对':'✗ 没进桶', W/2, H/2);
+    }
+  }
+  function loop(){step(); draw(); raf=requestAnimationFrame(loop);}
+  function build(){
+    root.innerHTML=topbar('05 · 弹跳投递')+`
+    <div class="panel"><div class="hint">在画布上<b>点两下</b>放一块挡板（最多 5 块）。让小球正好弹跳
+      <b>目标次数</b>，再落进绿色的桶里。达成同一目标的摆法有无数种。</div></div>
+    <div class="panel">
+      <canvas id="bcanvas" width="${W}" height="${H}"></canvas>
+      <div class="row" style="margin-top:12px">
+        <button class="act" id="brun">▶ 投放小球</button>
+        <button class="ghost" id="breset">↺ 重置小球</button>
+        <button class="ghost" id="bundo">↶ 撤销挡板</button>
+        <button class="ghost" id="bclear">清空挡板</button>
+        <button class="ghost" id="bnew">🔄 新关卡</button>
+        <span class="hint" id="binfo"></span></div>
+    </div>`;
+    const cv=$('#bcanvas');
+    cv.onclick=(e)=>{
+      if(running)return;
+      const r=cv.getBoundingClientRect(), sx=cv.width/r.width, sy=cv.height/r.height;
+      const x=(e.clientX-r.left)*sx, y=(e.clientY-r.top)*sy;
+      if(y>floorY-6)return;
+      if(!pending){pending={x,y};}
+      else{ if(segs.length<5) segs.push({x1:pending.x,y1:pending.y,x2:x,y2:y}); pending=null; info();}
+    };
+    $('#brun').onclick=()=>{if(!running){reset();running=true;}};
+    $('#breset').onclick=()=>{reset();};
+    $('#bundo').onclick=()=>{if(segs.length){segs.pop();info();}};
+    $('#bclear').onclick=()=>{segs=[];pending=null;info();};
+    $('#bnew').onclick=()=>{newLevel();info();};
+    info();
+  }
+  function info(){const el=$('#binfo'); if(el)el.textContent='挡板 '+segs.length+'/5';}
+  newLevel(); build(); loop();
+  return ()=>{cancelAnimationFrame(raf);};
+};
+</script>
+</body>
+</html>

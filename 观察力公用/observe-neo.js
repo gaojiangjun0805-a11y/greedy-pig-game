@@ -23,7 +23,7 @@
   const now = () => performance.now() / 1000;
 
   let game, canvas, ctx, stars, starsCtx, dpr = 1, layout = null, raf = 0;
-  let audioCtx = null, starBits = [];
+  let audioCtx = null, masterGain = null, sfxGain = null, musicGain = null, musicTimer = null, musicStep = 0, starBits = [];
 
   function rng(seed){
     let t = seed >>> 0;
@@ -76,7 +76,7 @@
         <div id="buttons">
           <button class="btn" id="btn-new">重开本关</button>
           <button class="btn" id="btn-action">确认</button>
-          <button class="btn" id="btn-sound">音效开</button>
+          <button class="btn" id="btn-sound">声音开</button>
         </div>
         <div id="msg"></div>
       </main>
@@ -141,6 +141,7 @@
       game.started = true;
       $("welcome").classList.add("hide");
       setTimeout(() => $("welcome").style.display = "none", 380);
+      startMusic();
       sound("start");
       newRound(false);
     });
@@ -151,8 +152,9 @@
     });
     $("btn-sound").addEventListener("click", () => {
       game.sound = !game.sound;
-      $("btn-sound").textContent = game.sound ? "音效开" : "音效关";
-      if(game.sound) sound("tap");
+      $("btn-sound").textContent = game.sound ? "声音开" : "声音关";
+      if(game.sound){ startMusic(); sound("tap"); }
+      else stopMusic();
     });
     $("again").addEventListener("click", () => {
       $("settle").classList.remove("show");
@@ -640,7 +642,20 @@
 
   function ensureAudio(){
     if(!game.sound) return null;
-    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      sfxGain = audioCtx.createGain();
+      musicGain = audioCtx.createGain();
+      const comp = audioCtx.createDynamicsCompressor();
+      masterGain.gain.value = .86;
+      sfxGain.gain.value = CFG.sfxVolume ?? .82;
+      musicGain.gain.value = CFG.musicVolume ?? .16;
+      sfxGain.connect(masterGain);
+      musicGain.connect(masterGain);
+      masterGain.connect(comp);
+      comp.connect(audioCtx.destination);
+    }
     if(audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
@@ -656,8 +671,42 @@
     g.gain.setValueAtTime(.0001, t);
     g.gain.exponentialRampToValueAtTime(vol || .05, t+.012);
     g.gain.exponentialRampToValueAtTime(.0001, t+dur);
-    o.connect(g); g.connect(ac.destination);
+    o.connect(g); g.connect(sfxGain || ac.destination);
     o.start(t); o.stop(t+dur+.02);
+  }
+
+  function musicTone(freq, dur, vol, type, delay){
+    const ac = ensureAudio();
+    if(!ac) return;
+    const t = ac.currentTime + (delay || 0);
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol || .045, t + .02);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(musicGain || ac.destination);
+    o.start(t); o.stop(t + dur + .04);
+  }
+
+  function startMusic(){
+    if(!game || !game.sound || musicTimer) return;
+    const ac = ensureAudio();
+    if(!ac) return;
+    const scale = CFG.musicScale || [196,247,294,330,392,494,587,659];
+    musicTimer = setInterval(() => {
+      if(!game.sound) return;
+      const f = scale[musicStep % scale.length];
+      musicTone(f, .44, .042, "triangle");
+      if(musicStep % 4 === 0) musicTone(f / 2, .78, .032, "sine", .02);
+      musicStep++;
+    }, CFG.musicInterval || 520);
+  }
+
+  function stopMusic(){
+    if(musicTimer) clearInterval(musicTimer);
+    musicTimer = null;
   }
 
   function sound(kind){

@@ -65,6 +65,10 @@
   .levelBadge{font-size:10px;color:#07101d;background:linear-gradient(135deg,#ffdb8a,#7df0a0);font-weight:900;border-radius:999px;padding:3px 7px}
   .radarClose{display:none;width:26px;height:26px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.08);cursor:pointer}
   #radar{width:100%;height:100px;display:block}
+  .progressStats{display:none;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+  .progressStat{border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:7px 8px;background:rgba(255,255,255,.045)}
+  .progressStat span{display:block;color:var(--muted);font-size:10px;font-weight:800}
+  .progressStat b{display:block;margin-top:2px;color:var(--text);font-size:13px;font-variant-numeric:tabular-nums}
   .abilityGrid{display:none;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
   .abilityItem{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:7px 9px;background:rgba(255,255,255,.04)}
   .abilityItem b{color:var(--text);font-variant-numeric:tabular-nums}
@@ -76,6 +80,7 @@
   .radarPanel.expanded .levelBadge{font-size:11px;padding:4px 8px}
   .radarPanel.expanded .radarClose{display:inline-flex;align-items:center;justify-content:center}
   .radarPanel.expanded #radar{height:178px}
+  .radarPanel.expanded .progressStats{display:grid}
   .radarPanel.expanded .abilityGrid{display:grid}
   body.diyOpen .radarPanel{display:none}
 
@@ -124,6 +129,7 @@
   .toast{
     position:fixed;left:50%;top:84px;z-index:40;transform:translateX(-50%);
     background:rgba(10,18,32,.9);border:1px solid var(--line-strong);padding:11px 16px;border-radius:999px;display:none;font-weight:900;
+    max-width:calc(100vw - 28px);text-align:center;line-height:1.35;
   }
   .toast.show{display:block;animation:fadeUp .18s ease both}
   #bootCover{
@@ -259,6 +265,7 @@
     <button class="radarClose" id="radarClose" type="button" aria-label="关闭雷达详情">×</button>
   </div>
   <canvas id="radar" width="584" height="420"></canvas>
+  <div class="progressStats" id="progressStats"></div>
   <div class="abilityGrid" id="abilityGrid"></div>
 </aside>
 
@@ -476,6 +483,60 @@ const GAMES = [
   {id:'arrow-field', name:'箭阵谜域', zone:'space', difficulty:'进阶', path:'../箭阵谜域/index.html', desc:'观察箭头方向，在路径与空间中破阵。', abilities:{space:.46, logic:.34, observe:.2}}
 ];
 
+const REWARD_RULES = {
+  abilityCap:100,
+  difficultyBase:{'入门':4,'进阶':6,'高阶':8},
+  xpBase:{'入门':80,'进阶':120,'高阶':180},
+  levelXpBase:{'入门':12,'进阶':18,'高阶':26},
+  performance:{
+    complete:{label:'完成', multiplier:1},
+    excellent:{label:'优秀', multiplier:1.15},
+    perfect:{label:'完美', multiplier:1.25}
+  },
+  repeat:{first:1, newBest:.35, daily:.15, normal:0},
+  xpRepeat:{first:1, newBest:.55, daily:.35, normal:0},
+  levelXpRepeat:{first:1, newBest:.45, daily:.25, normal:0},
+  levelRampStep:.025,
+  levelRampCap:.45
+};
+const UNLOCK_RULES = [
+  {id:'space-50', type:'祭坛奖励', name:'星图罗盘', ability:'space', threshold:50},
+  {id:'logic-50', type:'祭坛奖励', name:'真相透镜', ability:'logic', threshold:50},
+  {id:'memory-50', type:'祭坛奖励', name:'记忆宫殿钥匙', ability:'memory', threshold:50},
+  {id:'observe-50', type:'祭坛奖励', name:'鹰眼大眼睛', ability:'observe', threshold:50},
+  {id:'create-50', type:'祭坛奖励', name:'灵感画笔', ability:'create', threshold:50},
+  {id:'calc-50', type:'祭坛奖励', name:'算符芯片', ability:'calc', threshold:50},
+  {id:'space-80', type:'高阶祭坛奖励', name:'折跃星门', ability:'space', threshold:80},
+  {id:'logic-80', type:'高阶祭坛奖励', name:'裁决之钥', ability:'logic', threshold:80},
+  {id:'memory-80', type:'高阶祭坛奖励', name:'时光典藏书', ability:'memory', threshold:80},
+  {id:'observe-80', type:'高阶祭坛奖励', name:'万象之眼', ability:'observe', threshold:80},
+  {id:'create-80', type:'高阶祭坛奖励', name:'造梦工坊', ability:'create', threshold:80},
+  {id:'calc-80', type:'高阶祭坛奖励', name:'数域核心', ability:'calc', threshold:80},
+  {id:'xp-1000', type:'称号', name:'脑力新星', xp:1000},
+  {id:'xp-2000', type:'称号', name:'六维挑战者', xp:2000},
+  {id:'xp-3000', type:'角色槽', name:'进阶角色许可', xp:3000},
+  {id:'xp-5000', type:'特效', name:'大师入场光效', xp:5000}
+];
+const LEVEL_REWARD_CONFIG = {
+  gcd:{levels:3, label:'3个难度'},
+  'black-white':{levels:36, label:'36关'},
+  'fold-color':{levels:5, label:'5阶挑战'},
+  'number-puzzle':{levels:1, label:'单局复原'},
+  nebula:{levels:20, label:'20关奖励周期', cycle:true},
+  'brush-world':{levels:24, label:'24关奖励周期', cycle:true},
+  'sand-blocks':{levels:20, label:'20关奖励周期', cycle:true},
+  'one-shutter':{levels:20, label:'20关'},
+  'light-cruise':{levels:12, label:'12条航线'},
+  'magic-wall-spot':{levels:18, label:'18关'},
+  'snake-weave':{levels:20, label:'20阶奖励周期', cycle:true},
+  tangshi:{levels:12, label:'12关奖励周期', cycle:true},
+  'hex-speed':{levels:20, label:'20关奖励周期', cycle:true},
+  'operator-factory':{levels:8, label:'8个目标'},
+  'rotate-array':{levels:20, label:'20关奖励周期', cycle:true},
+  calendar:{levels:3, label:'B/A/S三张卡'},
+  'arrow-field':{levels:36, label:'36关'}
+};
+
 const state = loadState();
 const canvas = document.getElementById('three');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:!LOW_POWER_DEVICE, alpha:false, powerPreference:LOW_POWER_DEVICE ? 'default' : 'high-performance'});
@@ -569,6 +630,7 @@ function loadState(){
   const defaults = {
     abilities:{space:20,logic:20,memory:20,observe:20,create:20,calc:20},
     completed:{},
+    progress:{xp:0, games:{}, events:[], unlocks:{}},
     profile:{nickname:'玩家', preset:'astronaut'},
     avatar:{color:'#4aa8ff', skin:'#d9a982', face:'natural', expression:'neutral', gender:'neutral', hair:'short', height:'mid', build:'standard', suit:'sport', bottom:'pants', legwear:'bare', shoes:'boot'}
   };
@@ -589,15 +651,112 @@ function loadState(){
     if(!['pants','shorts'].includes(avatar.bottom)) avatar.bottom = 'pants';
     avatar.legwear = 'bare';
     if(!['sneaker','boot'].includes(avatar.shoes)) avatar.shoes = 'boot';
+    const abilities = normalizeAbilities({...defaults.abilities, ...(saved.abilities||{})});
+    const completed = {...(saved.completed||{})};
+    const progress = normalizeProgress(saved.progress, completed, abilities);
     return {
-      abilities:{...defaults.abilities, ...(saved.abilities||{})},
-      completed:{...(saved.completed||{})},
+      abilities,
+      completed,
+      progress,
       profile,
       avatar
     };
   }catch(e){ return defaults; }
 }
 function saveState(){ localStorage.setItem('ggame-hub-v1', JSON.stringify(state)); }
+
+function clampNumber(value, min, max, fallback=min){
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+}
+function normalizeAbilities(raw){
+  const out = {};
+  ABILITIES.forEach(a => {
+    out[a.key] = clampNumber(raw?.[a.key], 0, REWARD_RULES.abilityCap, 20);
+  });
+  return out;
+}
+function createProgress(){
+  return {xp:0, games:{}, events:[], unlocks:{}};
+}
+function normalizeProgress(saved={}, completed={}, abilities){
+  const progress = createProgress();
+  progress.xp = Math.max(0, Math.round(Number(saved.xp) || 0));
+  progress.games = {...(saved.games || {})};
+  Object.entries(completed || {}).forEach(([gameId, record]) => {
+    if(!progress.games[gameId]){
+      progress.games[gameId] = {
+        completed:true,
+        completions:1,
+        firstAt:record?.at || Date.now(),
+        lastAt:record?.at || Date.now(),
+        lastDailyAt:null,
+        bestScore:0,
+        bestRank:''
+      };
+    }
+  });
+  Object.entries(progress.games).forEach(([gameId, record]) => {
+    progress.games[gameId] = {
+      completed:!!record?.completed,
+      completions:Math.max(0, Math.round(Number(record?.completions) || 0)),
+      levelCompletions:Math.max(0, Math.round(Number(record?.levelCompletions) || 0)),
+      firstAt:record?.firstAt || record?.at || null,
+      lastAt:record?.lastAt || record?.at || null,
+      lastDailyAt:record?.lastDailyAt || null,
+      bestScore:Number(record?.bestScore) || 0,
+      bestRank:String(record?.bestRank || ''),
+      levels:normalizeLevelRecords(record?.levels)
+    };
+  });
+  progress.events = Array.isArray(saved.events) ? saved.events.slice(0, 80) : [];
+  progress.unlocks = {...(saved.unlocks || {})};
+  applyUnlocksToProgress(progress, abilities, Date.now(), false);
+  return progress;
+}
+function normalizeLevelRecords(saved={}){
+  const levels = {};
+  Object.entries(saved || {}).forEach(([levelKey, record]) => {
+    const index = Math.max(1, Math.round(Number(record?.index || levelKey) || 1));
+    levels[index] = {
+      index,
+      completed:!!record?.completed,
+      completions:Math.max(0, Math.round(Number(record?.completions) || 0)),
+      firstAt:record?.firstAt || record?.at || null,
+      lastAt:record?.lastAt || record?.at || null,
+      lastDailyAt:record?.lastDailyAt || null,
+      bestScore:Number(record?.bestScore) || 0,
+      bestRank:String(record?.bestRank || '')
+    };
+  });
+  return levels;
+}
+function dayKey(time=Date.now()){
+  const d = new Date(time);
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+function getPlayerLevel(xp=state.progress.xp){
+  return Math.max(1, Math.floor(Math.sqrt(Math.max(0, xp) / 180)) + 1);
+}
+function getCompletedCount(){
+  return Object.values(state.progress.games || {}).filter(record => record?.completed).length;
+}
+function getUnlockCount(){
+  return Object.keys(state.progress.unlocks || {}).length;
+}
+function applyUnlocksToProgress(progress, abilities, now=Date.now(), collect=true){
+  const newly = [];
+  UNLOCK_RULES.forEach(rule => {
+    if(progress.unlocks[rule.id]) return;
+    const passed = rule.ability ? (abilities[rule.ability] || 0) >= rule.threshold : progress.xp >= rule.xp;
+    if(!passed) return;
+    progress.unlocks[rule.id] = {at:now, name:rule.name, type:rule.type};
+    if(collect) newly.push(rule);
+  });
+  return newly;
+}
 
 function abilityByKey(key){ return ABILITIES.find(a=>a.key===key); }
 function sanitizeNickname(value){
@@ -3359,8 +3518,15 @@ function setupJoystick(){
 }
 
 function updateAbilityGrid(){
-  const total = ABILITIES.reduce((sum,a)=>sum+state.abilities[a.key],0);
-  document.getElementById('levelBadge').textContent = `Lv.${Math.max(1, Math.floor(total / 95))}`;
+  document.getElementById('levelBadge').textContent = `Lv.${getPlayerLevel()}`;
+  const stats = document.getElementById('progressStats');
+  if(stats){
+    stats.innerHTML = [
+      ['XP', state.progress.xp],
+      ['解锁', `${getUnlockCount()}/${UNLOCK_RULES.length}`],
+      ['完成', `${getCompletedCount()}/${GAMES.length}`]
+    ].map(([label,value]) => `<div class="progressStat"><span>${label}</span><b>${value}</b></div>`).join('');
+  }
   const grid = document.getElementById('abilityGrid');
   grid.innerHTML = '';
   ABILITIES.forEach(a=>{
@@ -3473,6 +3639,26 @@ function focusPortal(portal){
   diff.className = 'tag';
   diff.textContent = portal.game.difficulty;
   tags.appendChild(diff);
+  const reward = previewReward(portal.game);
+  const levelTag = document.createElement('span');
+  levelTag.className = 'tag';
+  levelTag.textContent = `每关 +${reward.level.xp}XP · ${reward.level.config.label}`;
+  levelTag.style.borderColor = 'rgba(46,230,214,.48)';
+  levelTag.style.color = '#2ee6d6';
+  tags.appendChild(levelTag);
+  const rewardTag = document.createElement('span');
+  rewardTag.className = 'tag';
+  rewardTag.textContent = `通关${reward.label} +${reward.xp}XP`;
+  rewardTag.style.borderColor = 'rgba(255,209,102,.48)';
+  rewardTag.style.color = '#ffd166';
+  tags.appendChild(rewardTag);
+  const abilityTag = document.createElement('span');
+  abilityTag.className = 'tag';
+  abilityTag.textContent = reward.abilityText || '六维复练';
+  abilityTag.style.borderColor = 'rgba(159,216,255,.42)';
+  abilityTag.style.color = '#9fd8ff';
+  tags.appendChild(abilityTag);
+  document.getElementById('markDone').textContent = reward.first ? '首通结算' : '复练结算';
   panel.classList.add('show');
   document.getElementById('enterHint').classList.add('show');
 }
@@ -3502,19 +3688,233 @@ function closeGame(){
   }
   activeGame = null;
 }
-function completeGame(game){
-  if(!game) return;
-  const first = !state.completed[game.id];
-  state.completed[game.id] = {done:true, at:Date.now()};
-  const base = first ? 5 : 1.2;
-  Object.entries(game.abilities).forEach(([key,weight])=>{
-    state.abilities[key] = Math.min(100, state.abilities[key] + base * weight);
+function difficultyValue(game, table){
+  return table[game?.difficulty] || table['进阶'];
+}
+function levelRewardConfig(game){
+  const raw = LEVEL_REWARD_CONFIG[game?.id] || {};
+  const levels = Math.max(1, Math.round(Number(raw.levels) || 10));
+  return {
+    levels,
+    label:raw.label || `${levels}关奖励周期`,
+    cycle:!!raw.cycle
+  };
+}
+function normalizeLevelIndex(game, levelIndex=1){
+  const config = levelRewardConfig(game);
+  const raw = Math.max(1, Math.round(Number(levelIndex) || 1));
+  if(config.cycle) return ((raw - 1) % config.levels) + 1;
+  return Math.min(raw, config.levels);
+}
+function gameProgress(game){
+  state.progress.games[game.id] ||= {
+    completed:false,
+    completions:0,
+    levelCompletions:0,
+    firstAt:null,
+    lastAt:null,
+    lastDailyAt:null,
+    bestScore:0,
+    bestRank:'',
+    levels:{}
+  };
+  state.progress.games[game.id].levels ||= {};
+  return state.progress.games[game.id];
+}
+function levelProgress(game, levelIndex=1){
+  const progress = gameProgress(game);
+  const index = normalizeLevelIndex(game, levelIndex);
+  progress.levels[index] ||= {
+    index,
+    completed:false,
+    completions:0,
+    firstAt:null,
+    lastAt:null,
+    lastDailyAt:null,
+    bestScore:0,
+    bestRank:''
+  };
+  return progress.levels[index];
+}
+function rewardMode(game, result={}){
+  const progress = gameProgress(game);
+  const first = !progress.completed;
+  const score = Number(result.score) || 0;
+  const newBest = !first && score > 0 && score > (Number(progress.bestScore) || 0);
+  const today = dayKey();
+  const daily = !first && !newBest && progress.lastDailyAt !== today;
+  if(first) return {key:'first', label:'首通', first, newBest:false, daily:false};
+  if(newBest) return {key:'newBest', label:'新纪录', first:false, newBest, daily:false};
+  if(daily) return {key:'daily', label:'每日复练', first:false, newBest:false, daily:true};
+  return {key:'normal', label:'本日已记录', first:false, newBest:false, daily:false};
+}
+function levelRewardMode(game, levelIndex=1, result={}){
+  const record = levelProgress(game, levelIndex);
+  const first = !record.completed;
+  const score = Number(result.score) || 0;
+  const newBest = !first && score > 0 && score > (Number(record.bestScore) || 0);
+  const today = dayKey();
+  const daily = !first && !newBest && record.lastDailyAt !== today;
+  if(first) return {key:'first', label:'单关首通', first, newBest:false, daily:false};
+  if(newBest) return {key:'newBest', label:'单关新纪录', first:false, newBest, daily:false};
+  if(daily) return {key:'daily', label:'单关每日复练', first:false, newBest:false, daily:true};
+  return {key:'normal', label:'单关已记录', first:false, newBest:false, daily:false};
+}
+function abilityGainFor(game, mode, performanceKey='complete'){
+  const perf = REWARD_RULES.performance[performanceKey] || REWARD_RULES.performance.complete;
+  const base = difficultyValue(game, REWARD_RULES.difficultyBase);
+  const factor = REWARD_RULES.repeat[mode.key] ?? 0;
+  const gains = {};
+  Object.entries(game.abilities || {}).forEach(([key, weight]) => {
+    const value = base * weight * perf.multiplier * factor;
+    if(value > 0) gains[key] = value;
   });
+  return gains;
+}
+function previewReward(game){
+  const mode = rewardMode(game);
+  const perf = REWARD_RULES.performance.complete;
+  const xp = Math.max(0, Math.round(difficultyValue(game, REWARD_RULES.xpBase) * (REWARD_RULES.xpRepeat[mode.key] ?? 0) * perf.multiplier));
+  const gains = abilityGainFor(game, mode);
+  const abilityText = formatAbilityGains(gains);
+  const level = levelRewardFor(game, 1, {previewFirst:true});
+  return {label:mode.label, first:mode.first, xp, gains, abilityText, level};
+}
+function formatAbilityGains(gains){
+  const parts = Object.entries(gains || {})
+    .filter(([,value]) => value > 0)
+    .map(([key,value]) => `${abilityByKey(key)?.name || key}+${value.toFixed(1)}`);
+  return parts.join(' ');
+}
+function levelRewardFor(game, levelIndex=1, result={}){
+  const config = levelRewardConfig(game);
+  const index = normalizeLevelIndex(game, levelIndex);
+  const mode = result.previewFirst ? {key:'first', label:'单关首通', first:true, newBest:false, daily:false} : levelRewardMode(game, index, result);
+  const performanceKey = result.performance || 'complete';
+  const perf = REWARD_RULES.performance[performanceKey] || REWARD_RULES.performance.complete;
+  const ramp = 1 + Math.min(REWARD_RULES.levelRampCap, (index - 1) * REWARD_RULES.levelRampStep);
+  const xp = Math.max(0, Math.round(difficultyValue(game, REWARD_RULES.levelXpBase) * ramp * (REWARD_RULES.levelXpRepeat[mode.key] ?? 0) * perf.multiplier));
+  return {config, index, label:mode.label, first:mode.first, xp, ramp, mode};
+}
+function levelRewardSummary(game){
+  const config = levelRewardConfig(game);
+  const levels = Array.from({length:config.levels}, (_,i)=>levelRewardFor(game, i + 1, {previewFirst:true}));
+  const totalXp = levels.reduce((sum,item)=>sum + item.xp, 0);
+  return {
+    ...config,
+    firstXp:levels[0]?.xp || 0,
+    lastXp:levels[levels.length - 1]?.xp || 0,
+    totalXp
+  };
+}
+function awardLevel(game, levelIndex=1, result={}){
+  if(!game) return null;
+  const progress = gameProgress(game);
+  const record = levelProgress(game, levelIndex);
+  const reward = levelRewardFor(game, levelIndex, result);
+  const now = Date.now();
+  state.progress.xp += reward.xp;
+  record.completed = true;
+  record.completions += 1;
+  record.firstAt ||= now;
+  record.lastAt = now;
+  if(reward.mode.daily || reward.mode.first) record.lastDailyAt = dayKey(now);
+  const score = Number(result.score) || 0;
+  if(reward.mode.newBest || score > (Number(record.bestScore) || 0)){
+    record.bestScore = score || record.bestScore;
+    record.bestRank = result.rank || record.bestRank || '';
+  }
+  progress.levelCompletions = Math.max(0, Math.round(Number(progress.levelCompletions) || 0)) + 1;
+  progress.lastAt = now;
+  const unlocks = applyUnlocksToProgress(state.progress, state.abilities, now, true);
+  state.progress.events.unshift({
+    id:`${game.id}-L${reward.index}-${now}`,
+    type:'level',
+    gameId:game.id,
+    gameName:game.name,
+    levelIndex:reward.index,
+    mode:reward.mode.key,
+    xp:reward.xp,
+    gains:{},
+    unlocks:unlocks.map(item => item.id),
+    at:now
+  });
+  state.progress.events = state.progress.events.slice(0, 80);
   saveState();
   updateAbilityGrid();
   drawRadar();
-  toast(first ? `${game.name} 完成，六维能力提升` : `${game.name} 复练完成`);
+  if(focusedPortal?.game?.id === game.id) focusPortal(focusedPortal);
+  const cycleText = reward.config.cycle ? `（${reward.config.label}）` : '';
+  const unlockText = unlocks.length ? ` 解锁：${unlocks.map(item => item.name).join('、')}` : '';
+  toast(`${game.name} 第${reward.index}关${cycleText} ${reward.label} +${reward.xp}XP${unlockText}`);
+  return reward;
 }
+function completeGame(game, result={}){
+  if(!game) return;
+  const progress = gameProgress(game);
+  const now = Date.now();
+  const mode = rewardMode(game, result);
+  const performanceKey = result.performance || 'complete';
+  const perf = REWARD_RULES.performance[performanceKey] || REWARD_RULES.performance.complete;
+  const gains = abilityGainFor(game, mode, performanceKey);
+  const xp = Math.max(0, Math.round(difficultyValue(game, REWARD_RULES.xpBase) * (REWARD_RULES.xpRepeat[mode.key] ?? 0) * perf.multiplier));
+  Object.entries(gains).forEach(([key,value]) => {
+    state.abilities[key] = Math.min(REWARD_RULES.abilityCap, (state.abilities[key] || 20) + value);
+  });
+  state.progress.xp += xp;
+  progress.completed = true;
+  progress.completions += 1;
+  progress.firstAt ||= now;
+  progress.lastAt = now;
+  if(mode.daily || mode.first) progress.lastDailyAt = dayKey(now);
+  if(mode.newBest){
+    progress.bestScore = Number(result.score) || progress.bestScore;
+    progress.bestRank = result.rank || progress.bestRank || '';
+  }
+  state.completed[game.id] = {done:true, at:now};
+  const unlocks = applyUnlocksToProgress(state.progress, state.abilities, now, true);
+  state.progress.events.unshift({
+    id:`${game.id}-${now}`,
+    type:'project',
+    gameId:game.id,
+    gameName:game.name,
+    mode:mode.key,
+    xp,
+    gains,
+    unlocks:unlocks.map(item => item.id),
+    at:now
+  });
+  state.progress.events = state.progress.events.slice(0, 80);
+  saveState();
+  updateAbilityGrid();
+  drawRadar();
+  if(focusedPortal?.game?.id === game.id) focusPortal(focusedPortal);
+  const abilityText = formatAbilityGains(gains);
+  const unlockText = unlocks.length ? ` 解锁：${unlocks.map(item => item.name).join('、')}` : '';
+  toast(`${game.name} ${mode.label} +${xp}XP${abilityText ? ' ' + abilityText : ''}${unlockText}`);
+}
+function gameById(gameId){
+  return GAMES.find(game => game.id === gameId || game.name === gameId) || null;
+}
+window.GGameRewardBridge = {
+  games:()=>GAMES.map(game => ({id:game.id, name:game.name, difficulty:game.difficulty, level:levelRewardSummary(game)})),
+  preview(gameId){
+    const game = gameById(gameId);
+    return game ? previewReward(game) : null;
+  },
+  awardLevel(gameId, levelIndex=1, result={}){
+    const game = gameById(gameId);
+    return game ? awardLevel(game, levelIndex, result) : null;
+  },
+  completeGame(gameId, result={}){
+    const game = gameById(gameId);
+    completeGame(game, result);
+    return game ? previewReward(game) : null;
+  },
+  state(){
+    return JSON.parse(JSON.stringify(state.progress));
+  }
+};
 function toast(text){
   const el = document.getElementById('toast');
   el.textContent = text;

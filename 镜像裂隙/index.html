@@ -457,7 +457,7 @@ body[data-orientation="portrait"] #boot-start{background:linear-gradient(135deg,
   <div id="buttons">
     <button class="btn" id="btn-new">重开本关</button>
     <button class="btn" id="btn-reveal">显示答案</button>
-    <button class="btn" id="btn-sound">音效开</button>
+    <button class="btn" id="btn-sound">声音开</button>
   </div>
   <div id="guide">8x8 · 4 处不同</div>
 </main>
@@ -510,7 +510,9 @@ const bootHintEl=document.getElementById('boot-hint');
 const bg=document.getElementById('bg');
 const bgCtx=bg.getContext('2d');
 let levelIndex=0,level=LEVELS[0],left=[],right=[],diffs=new Set(),found=new Set();
-let misses=0,timeLeft=0,timer=null,ended=false,revealed=false,soundOn=true,audioCtx=null,floaters=[],gameStarted=false;
+let misses=0,timeLeft=0,timer=null,ended=false,revealed=false,soundOn=true,audioCtx=null,masterGain=null,sfxGain=null,musicGain=null,musicTimer=null,musicStep=0,floaters=[],gameStarted=false;
+const BGM_VOLUME=.14;
+const SFX_VOLUME=.84;
 
 function rng(seed){
   let t=seed>>>0;
@@ -569,7 +571,20 @@ function drawBg(){
 
 function ensureAudio(){
   if(!soundOn)return null;
-  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(!audioCtx){
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    masterGain=audioCtx.createGain();
+    sfxGain=audioCtx.createGain();
+    musicGain=audioCtx.createGain();
+    const comp=audioCtx.createDynamicsCompressor();
+    masterGain.gain.value=.86;
+    sfxGain.gain.value=SFX_VOLUME;
+    musicGain.gain.value=BGM_VOLUME;
+    sfxGain.connect(masterGain);
+    musicGain.connect(masterGain);
+    masterGain.connect(comp);
+    comp.connect(audioCtx.destination);
+  }
   if(audioCtx.state==='suspended')audioCtx.resume();
   return audioCtx;
 }
@@ -581,7 +596,33 @@ function tone(freq,dur,vol,type,delay){
   g.gain.setValueAtTime(.0001,t);
   g.gain.exponentialRampToValueAtTime(vol||.05,t+.012);
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+dur+.02);
+  o.connect(g);g.connect(sfxGain||ac.destination);o.start(t);o.stop(t+dur+.02);
+}
+function musicTone(freq,dur,vol,type,delay){
+  const ac=ensureAudio(); if(!ac)return;
+  const t=ac.currentTime+(delay||0);
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol||.045,t+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(musicGain||ac.destination);o.start(t);o.stop(t+dur+.04);
+}
+function startMusic(){
+  if(!soundOn||musicTimer)return;
+  const ac=ensureAudio(); if(!ac)return;
+  const scale=[165,220,247,294,330,392,440,523];
+  musicTimer=setInterval(()=>{
+    if(!soundOn)return;
+    const f=scale[musicStep%scale.length];
+    musicTone(f,.5,.04,'triangle');
+    if(musicStep%4===0)musicTone(f/2,.86,.03,'sine',.02);
+    musicStep++;
+  },560);
+}
+function stopMusic(){
+  if(musicTimer)clearInterval(musicTimer);
+  musicTimer=null;
 }
 function sfx(kind){
   if(kind==='tap')tone(620,.06,.032,'triangle');
@@ -738,6 +779,7 @@ function beginGame(){
   document.body.dataset.boot='0';
   bootEl.classList.add('hide');
   setTimeout(()=>{bootEl.style.display='none';},380);
+  startMusic();
   sfx('tap');
   startLevel(0);
 }
@@ -836,8 +878,9 @@ document.getElementById('btn-reveal').addEventListener('click',()=>{
 });
 document.getElementById('btn-sound').addEventListener('click',()=>{
   soundOn=!soundOn;
-  document.getElementById('btn-sound').textContent=soundOn?'音效开':'音效关';
-  if(soundOn)sfx('tap');
+  document.getElementById('btn-sound').textContent=soundOn?'声音开':'声音关';
+  if(soundOn){startMusic();sfx('tap');}
+  else stopMusic();
 });
 document.getElementById('again').addEventListener('click',()=>startLevel(levelIndex));
 document.getElementById('next').addEventListener('click',()=>startLevel(levelIndex<LEVELS.length-1?levelIndex+1:0));
@@ -849,7 +892,7 @@ window.addEventListener('resize',()=>{initBg();updateOrientationUI();if(gameStar
 initBg();
 drawBg();
 document.body.dataset.boot='1';
-document.getElementById('btn-sound').textContent='音效开';
+document.getElementById('btn-sound').textContent='声音开';
 updateOrientationUI();
 </script>
 </body>
