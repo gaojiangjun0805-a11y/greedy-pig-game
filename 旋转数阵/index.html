@@ -1798,10 +1798,15 @@
     if(pivot >= 0){
       url.pathname = parts.slice(0, pivot + 1).join('/') + '/G-Game/index.html';
       url.search = '?v=return-hub';
+      const myGameId = new URLSearchParams(location.search).get('gameId');
+      if(myGameId) url.searchParams.set('fromGame', myGameId);
       url.hash = '';
       return url.href;
     }
-    return new URL('../G-Game/index.html?v=return-hub', location.href).href;
+    const fallback = new URL('../G-Game/index.html?v=return-hub', location.href);
+    const myGameId = new URLSearchParams(location.search).get('gameId');
+    if(myGameId) fallback.searchParams.set('fromGame', myGameId);
+    return fallback.href;
   }
   function mount(){
     if(!document.body) return;

@@ -623,6 +623,7 @@ drawRadar();
 renderLoop();
 setTimeout(checkCanvasVisible, 1200);
 setTimeout(primeHubAudio, 40);
+setTimeout(handleHubReturnState, 70);
 setTimeout(openLinkedGameFromHub, 80);
 AUTOPLAY_RETRY_DELAYS.forEach(delay => setTimeout(()=>startHubAudio(true), delay));
 
@@ -3665,8 +3666,10 @@ function focusPortal(portal){
 
 function openGame(game){
   if(!game) return;
+  try{ localStorage.setItem('ggame-hub-last-game', game.id); }catch(e){}
   const gameUrl = new URL(game.path, location.href);
   gameUrl.searchParams.set('from', 'ggame-hub');
+  gameUrl.searchParams.set('gameId', game.id);
   window.location.assign(gameUrl.href);
 }
 function openLinkedGameFromHub(){
@@ -3677,6 +3680,58 @@ function openLinkedGameFromHub(){
   const game = GAMES.find(item => item.id.toLowerCase() === key || item.name.toLowerCase() === key);
   if(game) openGame(game);
   else toast('没有找到游戏：' + requested);
+}
+function getHubReturnGameId(){
+  const params = new URLSearchParams(location.search);
+  const fromParam = params.get('fromGame') || params.get('gameId') || params.get('lastGame');
+  if(fromParam) return fromParam;
+  try{ return localStorage.getItem('ggame-hub-last-game') || ''; }catch(e){ return ''; }
+}
+function isHubReturnVisit(){
+  const params = new URLSearchParams(location.search);
+  return params.get('v') === 'return-hub' || params.get('return') === 'hub' || !!params.get('fromGame');
+}
+function portalByGameId(gameId){
+  const game = gameById(gameId);
+  if(!game) return null;
+  return portals.find(portal => portal.game.id === game.id) || null;
+}
+function placeAvatarAtPortal(gameId){
+  const portal = portalByGameId(gameId);
+  if(!portal || !avatar?.group) return false;
+  const portalWorld = new THREE.Vector3();
+  portal.group.getWorldPosition(portalWorld);
+  const toCenter = new THREE.Vector3(-portalWorld.x, 0, -portalWorld.z);
+  if(toCenter.lengthSq() < .0001) toCenter.set(0, 0, 1);
+  toCenter.normalize();
+  const stand = portalWorld.clone().addScaledVector(toCenter, 3.25);
+  stand.y = sampleWalkSurfaceHeight(stand.x, stand.z);
+  avatar.group.position.copy(stand);
+  const look = portalWorld.clone().sub(stand);
+  look.y = 0;
+  if(look.lengthSq() > .0001){
+    avatar.group.rotation.y = Math.atan2(look.x, look.z);
+    yaw = avatar.group.rotation.y;
+  }
+  pitch = .56;
+  introOrbit = false;
+  focusedPortal = portal;
+  focusPortal(portal);
+  const radius = 8.4;
+  const height = 5.6 + pitch * 3.6;
+  camera.position.set(
+    avatar.group.position.x - Math.sin(yaw) * radius,
+    height + avatar.group.position.y,
+    avatar.group.position.z - Math.cos(yaw) * radius
+  );
+  camera.lookAt(avatar.group.position.x, avatar.group.position.y + 1.45, avatar.group.position.z);
+  return true;
+}
+function handleHubReturnState(){
+  if(!isHubReturnVisit()) return;
+  enterHub();
+  const gameId = getHubReturnGameId();
+  if(gameId) placeAvatarAtPortal(gameId);
 }
 function closeGame(){
   document.getElementById('gameDock').classList.remove('show');

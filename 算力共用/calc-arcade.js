@@ -1649,12 +1649,23 @@
       const decoded = parts.map(p => { try{return decodeURIComponent(p);}catch(e){return p;} });
       let pivot = -1;
       ['G-Game-发布版','写程序','g-game-hub'].forEach(m => { const i = decoded.lastIndexOf(m); if(i > pivot) pivot = i; });
+      const myGameId = new URLSearchParams(location.search).get('gameId');
       if(pivot >= 0){
         url.pathname = parts.slice(0,pivot + 1).join('/') + '/G-Game/index.html';
         url.search = '?v=return-hub';
+        if(myGameId) url.searchParams.set('fromGame', myGameId);
         link.href = url.href;
-      }else link.href = '../G-Game/index.html?v=return-hub';
-    }catch(e){ link.href = '../G-Game/index.html?v=return-hub'; }
+      }else{
+        const fallback = new URL('../G-Game/index.html?v=return-hub', location.href);
+        if(myGameId) fallback.searchParams.set('fromGame', myGameId);
+        link.href = fallback.href;
+      }
+    }catch(e){
+      const fallback = new URL('../G-Game/index.html?v=return-hub', location.href);
+      const myGameId = new URLSearchParams(location.search).get('gameId');
+      if(myGameId) fallback.searchParams.set('fromGame', myGameId);
+      link.href = fallback.href;
+    }
     document.body.appendChild(link);
   }
   function guardTouch(){
