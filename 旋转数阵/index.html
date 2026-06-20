@@ -624,14 +624,6 @@
       transform: translateX(-50%) translateY(-4px);
     }
 
-    @media (max-width: 640px) {
-      .toast {
-        bottom: calc(env(safe-area-inset-bottom) + 82px);
-        max-width: calc(100vw - 32px);
-        text-align: center;
-      }
-    }
-
     #welcome-mask {
       position: fixed;
       inset: 0;
@@ -972,7 +964,7 @@
     transition:transform .12s ease, border-color .16s ease, background .16s ease;
   }
   #hubReturnBtn:active{transform:scale(.96);border-color:rgba(46,230,214,.78);background:rgba(18,34,58,.82)}
-  @media (max-width:640px){#hubReturnBtn{top:calc(env(safe-area-inset-top) + 52px);height:30px;min-width:66px;padding:0 9px;font-size:12px}}
+  @media (max-width:640px){#hubReturnBtn{height:30px;min-width:66px;padding:0 9px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -1081,7 +1073,7 @@
     const welcomeMask = document.getElementById("welcome-mask");
     const welcomeStart = document.getElementById("welcome-start");
 
-    const BGM_URL = "https://cdn1.suno.ai/55609391-8898-4ad5-a602-6934f169d28d.mp3";
+    const BGM_URL = "audio/game-music.mp3";
     const LEVEL_STEP = 5;
     const gridPoints = [
       [3, 0], [2, 1], [4, 1],

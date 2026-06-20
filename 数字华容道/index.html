@@ -252,7 +252,7 @@
   const shuffleBtn = document.getElementById('shuffle');
   const undoBtn = document.getElementById('undo');
   const BEST_KEY = 'huarongdao15_best';
-  const GAME_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8dbcd6ec3.mp3';
+  const GAME_MUSIC = 'audio/game-music.mp3';
   const EMBEDDED = (()=>{ try{ return window.self !== window.top; }catch(e){ return true; } })();
   let audioCtx = null, bgm = null;
 
@@ -277,7 +277,7 @@
       bgm = new Audio(GAME_MUSIC);
       bgm.loop = true;
       bgm.preload = 'auto';
-      bgm.volume = .42;
+      bgm.volume = .32;
     }
     bgm.play().catch(()=>{});
   }

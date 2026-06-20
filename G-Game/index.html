@@ -347,7 +347,7 @@
 <div class="mobilePad" id="mobilePad"><div class="stick" id="stick"></div></div>
 <div class="enterHint" id="enterHint">进入挑战</div>
 <div class="toast" id="toast"></div>
-<audio id="hubBgm" preload="auto" autoplay muted playsinline crossorigin="anonymous" src="https://cdn1.suno.ai/c34a3068-7705-4fdc-871f-293541ca6b19.mp3"></audio>
+<audio id="hubBgm" preload="auto" autoplay muted playsinline src="audio/hub-bgm.mp3"></audio>
 
 <script>
 const fallbackButton = document.getElementById('showFallback');
@@ -391,9 +391,9 @@ const ABILITIES = [
   {key:'calc', name:'计算力', color:'#75e06f'}
 ];
 
-const NUMBER_PUZZLE_MUSIC = 'https://cdn1.suno.ai/95b417d9-14e4-4960-841a-72a8dbcd6ec3.mp3';
-const TANGSHI_MUSIC = 'https://cdn1.suno.ai/ccb5d5f3-7d95-4f7d-a96b-ba8a0b7a044f.mp3';
-const FOLD_COLOR_MUSIC = 'https://cdn1.suno.ai/55609391-8898-4ad5-a602-6934f169d28d.mp3';
+const NUMBER_PUZZLE_MUSIC = 'audio/number-puzzle.mp3';
+const TANGSHI_MUSIC = 'audio/tangshi.mp3';
+const FOLD_COLOR_MUSIC = 'audio/fold-color.mp3';
 const ASSET_VERSION = '20260619-character-pencil-1';
 const CHARACTER_MODELS = {
   astronaut:`./assets/characters/meshy-user-astronaut-run.glb?v=${ASSET_VERSION}`,
