@@ -23,7 +23,9 @@
   const now = () => performance.now() / 1000;
 
   let game, canvas, ctx, stars, starsCtx, dpr = 1, layout = null, raf = 0;
-  let audioCtx = null, masterGain = null, sfxGain = null, musicGain = null, musicTimer = null, musicStep = 0, starBits = [];
+  let audioCtx = null, masterGain = null, sfxGain = null, musicGain = null, musicTimer = null, musicStep = 0, bgmAudio = null, starBits = [];
+  const DEFAULT_BGM_URL = "../观察力公用/audio/observe-loop.m4a";
+  const BGM_VOLUME = .22;
 
   function rng(seed){
     let t = seed >>> 0;
@@ -690,23 +692,29 @@
     o.start(t); o.stop(t + dur + .04);
   }
 
+  function ensureBgmAudio(){
+    if(!bgmAudio){
+      bgmAudio = new Audio(CFG.bgmUrl || DEFAULT_BGM_URL);
+      bgmAudio.loop = true;
+      bgmAudio.preload = "auto";
+      bgmAudio.playsInline = true;
+      bgmAudio.volume = CFG.mediaMusicVolume ?? BGM_VOLUME;
+    }
+    return bgmAudio;
+  }
+
   function startMusic(){
-    if(!game || !game.sound || musicTimer) return;
-    const ac = ensureAudio();
-    if(!ac) return;
-    const scale = CFG.musicScale || [196,247,294,330,392,494,587,659];
-    musicTimer = setInterval(() => {
-      if(!game.sound) return;
-      const f = scale[musicStep % scale.length];
-      musicTone(f, .44, .042, "triangle");
-      if(musicStep % 4 === 0) musicTone(f / 2, .78, .032, "sine", .02);
-      musicStep++;
-    }, CFG.musicInterval || 520);
+    if(!game || !game.sound) return;
+    ensureAudio();
+    if(bgmAudio && !bgmAudio.paused) return;
+    const play = ensureBgmAudio().play();
+    if(play && play.catch) play.catch(() => {});
   }
 
   function stopMusic(){
     if(musicTimer) clearInterval(musicTimer);
     musicTimer = null;
+    if(bgmAudio) bgmAudio.pause();
   }
 
   function sound(kind){

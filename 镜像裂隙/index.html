@@ -510,8 +510,9 @@ const bootHintEl=document.getElementById('boot-hint');
 const bg=document.getElementById('bg');
 const bgCtx=bg.getContext('2d');
 let levelIndex=0,level=LEVELS[0],left=[],right=[],diffs=new Set(),found=new Set();
-let misses=0,timeLeft=0,timer=null,ended=false,revealed=false,soundOn=true,audioCtx=null,masterGain=null,sfxGain=null,musicGain=null,musicTimer=null,musicStep=0,floaters=[],gameStarted=false;
-const BGM_VOLUME=.14;
+let misses=0,timeLeft=0,timer=null,ended=false,revealed=false,soundOn=true,audioCtx=null,masterGain=null,sfxGain=null,musicGain=null,musicTimer=null,musicStep=0,floaters=[],gameStarted=false,bgmAudio=null;
+const BGM_URL="audio/magic-wall-loop.m4a";
+const BGM_VOLUME=.24;
 const SFX_VOLUME=.84;
 
 function rng(seed){
@@ -608,21 +609,27 @@ function musicTone(freq,dur,vol,type,delay){
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(musicGain||ac.destination);o.start(t);o.stop(t+dur+.04);
 }
+function ensureBgm(){
+  if(!bgmAudio){
+    bgmAudio=new Audio(BGM_URL);
+    bgmAudio.loop=true;
+    bgmAudio.preload="auto";
+    bgmAudio.playsInline=true;
+    bgmAudio.volume=BGM_VOLUME;
+  }
+  return bgmAudio;
+}
 function startMusic(){
-  if(!soundOn||musicTimer)return;
+  if(!soundOn)return;
   const ac=ensureAudio(); if(!ac)return;
-  const scale=[165,220,247,294,330,392,440,523];
-  musicTimer=setInterval(()=>{
-    if(!soundOn)return;
-    const f=scale[musicStep%scale.length];
-    musicTone(f,.5,.04,'triangle');
-    if(musicStep%4===0)musicTone(f/2,.86,.03,'sine',.02);
-    musicStep++;
-  },560);
+  if(bgmAudio&&!bgmAudio.paused)return;
+  const play=ensureBgm().play();
+  if(play&&play.catch)play.catch(()=>{});
 }
 function stopMusic(){
   if(musicTimer)clearInterval(musicTimer);
   musicTimer=null;
+  if(bgmAudio)bgmAudio.pause();
 }
 function sfx(kind){
   if(kind==='tap')tone(620,.06,.032,'triangle');

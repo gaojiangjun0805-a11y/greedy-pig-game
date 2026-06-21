@@ -1569,7 +1569,9 @@
     }
   };
 
-  let audioCtx = null, master = null, musicOn = false, musicTimer = null, musicStep = 0;
+  let audioCtx = null, master = null, musicOn = false, musicTimer = null, musicStep = 0, bgmAudio = null;
+  const DEFAULT_BGM_URL = '../算力共用/audio/calc-loop.m4a';
+  const BGM_VOLUME = .22;
   function ac(){
     if(!audioCtx){
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1596,21 +1598,33 @@
   function badSound(){ tone(230,.12,.06,'sawtooth'); tone(170,.16,.035,'triangle',.04); }
   function hintSound(){ tone(880,.12,.045,'sine'); tone(1320,.16,.034,'triangle',.05); }
   function winSound(){ [523,659,784,1046].forEach((f,i) => tone(f,.28,.065,'triangle',i * .07)); }
+  function ensureBgmAudio(){
+    if(!bgmAudio){
+      bgmAudio = new Audio(cfg.bgmUrl || DEFAULT_BGM_URL);
+      bgmAudio.loop = true;
+      bgmAudio.preload = 'auto';
+      bgmAudio.playsInline = true;
+      bgmAudio.volume = BGM_VOLUME;
+    }
+    return bgmAudio;
+  }
   function startMusic(){
     musicOn = true;
     el.btnMusic.textContent = '🔇 音乐';
     clearInterval(musicTimer);
-    const scale = cfg.music || [196,247,294,370,440,494];
-    musicTimer = setInterval(() => {
-      if(!musicOn || !state.active) return;
-      const f = scale[musicStep % scale.length];
-      tone(f,.34,.032,'sine');
-      if(musicStep % 4 === 0) tone(f / 2,.66,.02,'triangle');
-      musicStep++;
-    },380);
+    const play = ensureBgmAudio().play();
+    if(play && play.catch) play.catch(() => {
+      musicOn = false;
+      el.btnMusic.textContent = '🎵 音乐';
+    });
     ac();
   }
-  function stopMusic(){ musicOn = false; clearInterval(musicTimer); el.btnMusic.textContent = '🎵 音乐'; }
+  function stopMusic(){
+    musicOn = false;
+    clearInterval(musicTimer);
+    if(bgmAudio) bgmAudio.pause();
+    el.btnMusic.textContent = '🎵 音乐';
+  }
   function toggleMusic(){ musicOn ? stopMusic() : startMusic(); }
 
   function initBg(){

@@ -425,6 +425,9 @@ function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.ra
 // ══════════════════════════════════════════════════════════
 let audioCtx=null,masterGain=null,masterFilter=null;
 let musicPlaying=false,musicNodes=new Set(),nextNoteTime=0,noteIndex=0,schedulerTimer=null;
+const BGM_URL='audio/gcd-loop.m4a';
+const BGM_VOLUME=.28;
+let bgmAudio=null;
 let _autoStartDone=false; // 首次交互自动开音乐
 // 跟踪发声节点：播完自动从集合移除，避免内存泄漏
 function track(node){
@@ -569,19 +572,33 @@ function scheduleMusic(){
   }
   schedulerTimer=setTimeout(scheduleMusic,60);
 }
+function ensureBgm(){
+  if(!bgmAudio){
+    bgmAudio=new Audio(BGM_URL);
+    bgmAudio.loop=true;
+    bgmAudio.preload='auto';
+    bgmAudio.playsInline=true;
+    bgmAudio.volume=BGM_VOLUME;
+  }
+  return bgmAudio;
+}
 
 function startMusic(){
   const ac=getAC();
   if(ac.state==='suspended')ac.resume();
-  if(!song)song=buildSong();
-  musicPlaying=true;evIdx=0;loopStart=ac.currentTime+0.15;
-  scheduleMusic();
+  musicPlaying=true;clearTimeout(schedulerTimer);
+  const audio=ensureBgm();
   const btn=document.getElementById('btn-music');
   btn.textContent='🔇 关音乐';btn.style.opacity='0.75';
+  const play=audio.play();
+  if(play&&play.catch)play.catch(()=>{
+    musicPlaying=false;
+    btn.textContent='🎵 开音乐';btn.style.opacity='1';
+  });
 }
 function stopMusic(){
   musicPlaying=false;clearTimeout(schedulerTimer);
-  musicNodes.forEach(n=>{try{n.stop();}catch(e){}});musicNodes.clear();
+  if(bgmAudio)bgmAudio.pause();
   const btn=document.getElementById('btn-music');
   btn.textContent='🎵 开音乐';btn.style.opacity='1';
 }
