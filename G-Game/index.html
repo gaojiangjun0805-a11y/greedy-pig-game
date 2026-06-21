@@ -144,6 +144,13 @@
   .bootSub{color:var(--muted);font-size:15px;line-height:1.7;margin:10px auto 20px;max-width:560px}
   .bootPulse{width:118px;height:3px;border-radius:999px;margin:18px auto 0;background:linear-gradient(90deg,transparent,#9fd8ff,#7df0a0,transparent);animation:pulseLine 1.2s ease-in-out infinite}
   @keyframes pulseLine{0%,100%{opacity:.28;transform:scaleX(.62)}50%{opacity:1;transform:scaleX(1)}}
+  .bootLoading{display:none;place-items:center;gap:12px;margin:18px auto 4px;color:var(--muted)}
+  .bootSpinner{width:54px;height:54px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:#7df0a0;border-right-color:#9fd8ff;animation:spin .85s linear infinite;box-shadow:0 0 26px rgba(127,240,160,.16)}
+  .bootLoadingTitle{font-size:18px;font-weight:900;color:var(--text)}
+  .bootLoadingText{max-width:520px;font-size:13px;line-height:1.65}
+  .bootCard.loading .bootProfile,.bootCard.loading .bootActions{display:none}
+  .bootCard.loading .bootLoading{display:grid}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .bootActions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
   .bootActions button,.bootActions a{height:44px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.08);padding:0 20px;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
   .bootActions .start{border:none;background:linear-gradient(135deg,#9fd8ff,#7df0a0);color:#06101c}
@@ -241,6 +248,11 @@
     </div>
     <div class="bootActions">
       <button class="start" id="bootStart" type="button">进入大厅</button>
+    </div>
+    <div class="bootLoading" id="bootLoading">
+      <div class="bootSpinner" aria-hidden="true"></div>
+      <div class="bootLoadingTitle" id="bootLoadingTitle">正在加载大厅</div>
+      <div class="bootLoadingText" id="bootLoadingText">正在读取真实角色模型和大厅资源，完成后直接进入。</div>
     </div>
     <div class="bootPulse"></div>
   </div>
@@ -406,7 +418,7 @@ const ABILITIES = [
 const NUMBER_PUZZLE_MUSIC = 'audio/number-puzzle.mp3';
 const TANGSHI_MUSIC = 'audio/tangshi.mp3';
 const FOLD_COLOR_MUSIC = 'audio/fold-color.mp3';
-const ASSET_VERSION = '20260619-character-pencil-1';
+const ASSET_VERSION = '20260621-load-real-avatar-1';
 const CHARACTER_MODELS = {
   astronaut:`./assets/characters/meshy-user-astronaut-run.glb?v=${ASSET_VERSION}`,
   robot:`./assets/characters/meshy-robot-run.glb?v=${ASSET_VERSION}`,
@@ -604,10 +616,17 @@ let last = performance.now();
 let avatarMoving = false;
 let avatarAction = {name:'idle', time:999, duration:0};
 let avatarModelLoadToken = 0;
+let avatarModelReady = Promise.resolve(false);
+let avatarModelReadyResolver = null;
+let avatarModelStatus = 'idle';
+const MIN_HUB_LOADING_MS = 760;
 
 buildWorld();
 const avatar = buildAvatar();
 scene.add(avatar.group);
+avatar.group.visible = false;
+if(avatar.bodyRoot) avatar.bodyRoot.visible = false;
+if(avatar.realModelRoot) avatar.realModelRoot.visible = false;
 applyAvatarStyle();
 loadRealAvatarModel();
 
@@ -2703,10 +2722,53 @@ function updateAvatarMorphs(t){
   }
 }
 
+function getAvatarPresetLabel(){
+  return (AVATAR_PRESETS[getAvatarModelKind()] || AVATAR_PRESETS.astronaut).label;
+}
+
+function wait(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function setBootLoading(on, title='正在加载大厅', text='正在读取真实角色模型和大厅资源，完成后直接进入。'){
+  const card = document.querySelector('#bootCover .bootCard');
+  if(card) card.classList.toggle('loading', Boolean(on));
+  const titleEl = document.getElementById('bootLoadingTitle');
+  const textEl = document.getElementById('bootLoadingText');
+  if(titleEl) titleEl.textContent = title;
+  if(textEl) textEl.textContent = text;
+}
+
+function resetAvatarModelReady(loadToken){
+  avatarModelStatus = 'loading';
+  avatarModelReady = new Promise(resolve => {
+    avatarModelReadyResolver = ok => {
+      if(loadToken !== avatarModelLoadToken) return;
+      avatarModelStatus = ok ? 'ready' : 'failed';
+      resolve(ok);
+    };
+  });
+}
+
+function finishAvatarModelReady(loadToken, ok){
+  if(loadToken !== avatarModelLoadToken) return;
+  const resolver = avatarModelReadyResolver;
+  avatarModelReadyResolver = null;
+  if(resolver) resolver(ok);
+}
+
 function loadRealAvatarModel(){
   const modelUrl = getAvatarModelUrl();
   const modelKind = getAvatarModelKind();
   const loadToken = ++avatarModelLoadToken;
+  resetAvatarModelReady(loadToken);
+  if(!avatar.realModel){
+    avatar.bodyRoot.visible = false;
+    avatar.realModelRoot.visible = false;
+    avatar.realClothesRoot.visible = false;
+    avatar.astronautKitRoot.visible = false;
+    avatar.styleKitRoot.visible = false;
+  }
   const loader = new GLTFLoader();
   loader.setCrossOrigin?.('anonymous');
   loader.load(modelUrl, gltf => {
@@ -2755,18 +2817,28 @@ function loadRealAvatarModel(){
     setupAvatarAnimations(model, gltf.animations || []);
     bindAvatarBones();
     applyAvatarStyle();
+    if(hubEntered) avatar.group.visible = true;
+    finishAvatarModelReady(loadToken, true);
   }, undefined, err => {
     if(loadToken !== avatarModelLoadToken) return;
     console.warn('Real avatar model failed to load', err);
-    avatar.realModelRoot.visible = false;
-    avatar.realClothesRoot.visible = false;
-    avatar.astronautKitRoot.visible = false;
-    avatar.styleKitRoot.visible = false;
-    avatar.bodyRoot.visible = true;
+    if(avatar.realModel){
+      avatar.realModelRoot.visible = true;
+      avatar.bodyRoot.visible = false;
+      if(hubEntered) avatar.group.visible = true;
+    }else{
+      avatar.realModelRoot.visible = false;
+      avatar.realClothesRoot.visible = false;
+      avatar.astronautKitRoot.visible = false;
+      avatar.styleKitRoot.visible = false;
+      avatar.bodyRoot.visible = false;
+      avatar.group.visible = false;
+    }
     avatar.nativeStyle = false;
     avatar.astronautMode = false;
     avatar.externalCharacterMode = false;
-    toast('人物模型加载失败，已临时显示备用角色');
+    finishAvatarModelReady(loadToken, false);
+    toast('人物模型加载失败，请检查网络后重试');
   });
 }
 
@@ -3142,7 +3214,7 @@ function setupUi(){
     try{
       const restored = await switchPlayerAccount(playerId);
       if(!restored) commitNickname(typedNickname);
-      enterHub();
+      await enterHub();
     }finally{
       bootStart.disabled = false;
       bootStart.textContent = oldText;
@@ -3291,11 +3363,29 @@ function setupUi(){
   updateSoundButton();
 }
 
-function enterHub(){
+async function enterHub(options={}){
   hubEntered = true;
+  const title = options.title || `正在加载${getAvatarPresetLabel()}模型`;
+  const text = options.text || '正在读取真实角色模型和大厅资源，完成后直接进入。';
+  setBootLoading(true, title, text);
+  avatar.group.visible = false;
   const cover = document.getElementById('bootCover');
-  if(cover) cover.classList.add('hide');
+  if(cover) cover.classList.remove('hide');
   startHubAudio(true);
+  const started = performance.now();
+  const ready = await avatarModelReady.catch(() => false);
+  const remain = Math.max(0, MIN_HUB_LOADING_MS - (performance.now() - started));
+  if(remain) await wait(remain);
+  if(!ready){
+    hubEntered = false;
+    setBootLoading(false);
+    toast('人物模型加载失败，请检查网络后重试');
+    return false;
+  }
+  avatar.group.visible = true;
+  setBootLoading(false);
+  if(cover) cover.classList.add('hide');
+  return true;
 }
 
 function ensureAudioContext(){
@@ -3865,11 +3955,14 @@ function placeAvatarAtPortal(gameId){
   camera.lookAt(avatar.group.position.x, avatar.group.position.y + 1.45, avatar.group.position.z);
   return true;
 }
-function handleHubReturnState(){
+async function handleHubReturnState(){
   if(!isHubReturnVisit()) return;
-  enterHub();
   const gameId = getHubReturnGameId();
   if(gameId) placeAvatarAtPortal(gameId);
+  await enterHub({
+    title:'正在返回大厅',
+    text:'正在恢复角色模型和上次所在的游戏入口。'
+  });
 }
 function closeGame(){
   document.getElementById('gameDock').classList.remove('show');
