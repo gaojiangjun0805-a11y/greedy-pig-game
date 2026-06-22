@@ -418,7 +418,8 @@ const ABILITIES = [
 const NUMBER_PUZZLE_MUSIC = 'audio/number-puzzle.mp3';
 const TANGSHI_MUSIC = 'audio/tangshi.mp3';
 const FOLD_COLOR_MUSIC = 'audio/fold-color.mp3';
-const ASSET_VERSION = '20260621-load-real-avatar-1';
+const ASSET_VERSION = '20260622-avatar-fast-1';
+const DRACO_DECODER_PATH = 'https://cdn.jsdelivr.net/npm/three@0.164.0/examples/jsm/libs/draco/';
 const CHARACTER_MODELS = {
   astronaut:`./assets/characters/meshy-user-astronaut-run.glb?v=${ASSET_VERSION}`,
   robot:`./assets/characters/meshy-robot-run.glb?v=${ASSET_VERSION}`,
@@ -619,6 +620,8 @@ let avatarModelLoadToken = 0;
 let avatarModelReady = Promise.resolve(false);
 let avatarModelReadyResolver = null;
 let avatarModelStatus = 'idle';
+let avatarModelUrlLoading = '';
+let avatarModelUrlReady = '';
 const MAX_HUB_LOADING_MS = 650;
 
 buildWorld();
@@ -628,7 +631,6 @@ avatar.group.visible = false;
 if(avatar.bodyRoot) avatar.bodyRoot.visible = false;
 if(avatar.realModelRoot) avatar.realModelRoot.visible = false;
 applyAvatarStyle();
-loadRealAvatarModel();
 
 const keys = new Set();
 let pointerDown = false;
@@ -769,11 +771,17 @@ function scheduleBackendSave(){
   backendSaveTimer = setTimeout(saveBackendStateNow, 900);
 }
 function applyLoadedState(nextState){
+  const previousModel = getAvatarModelUrl();
   const normalized = normalizeState(nextState || {});
   Object.keys(state).forEach(key => delete state[key]);
   Object.assign(state, normalized);
   applyAvatarStyle();
-  loadRealAvatarModel();
+  if(previousModel !== getAvatarModelUrl()){
+    avatarModelStatus = 'idle';
+    avatarModelUrlReady = '';
+    avatarModelUrlLoading = '';
+    if(hubEntered) loadRealAvatarModel();
+  }
   updateAvatarNameLabel();
   updateProfileUi();
   updateAbilityGrid();
@@ -916,7 +924,12 @@ function applyAvatarPreset(key){
   updateAvatarNameLabel();
   updateProfileUi();
   updateDiyActive();
-  if(previousModel !== getAvatarModelUrl()) loadRealAvatarModel();
+  if(previousModel !== getAvatarModelUrl()){
+    avatarModelStatus = 'idle';
+    avatarModelUrlReady = '';
+    avatarModelUrlLoading = '';
+    if(hubEntered) loadRealAvatarModel();
+  }
 }
 function commitNickname(value){
   state.profile.nickname = sanitizeNickname(value);
@@ -2767,8 +2780,18 @@ function finishAvatarModelReady(loadToken, ok){
 function loadRealAvatarModel(){
   const modelUrl = getAvatarModelUrl();
   const modelKind = getAvatarModelKind();
+  if(avatarModelStatus === 'ready' && avatarModelUrlReady === modelUrl && avatar.realModel){
+    avatarModelReady = Promise.resolve(true);
+    if(hubEntered) avatar.group.visible = true;
+    return avatarModelReady;
+  }
+  if(avatarModelStatus === 'loading' && avatarModelUrlLoading === modelUrl){
+    return avatarModelReady;
+  }
   const loadToken = ++avatarModelLoadToken;
   resetAvatarModelReady(loadToken);
+  avatarModelUrlLoading = modelUrl;
+  avatarModelUrlReady = '';
   if(!avatar.realModel){
     avatar.bodyRoot.visible = false;
     avatar.realModelRoot.visible = false;
@@ -2778,6 +2801,9 @@ function loadRealAvatarModel(){
   }
   const loader = new GLTFLoader();
   loader.setCrossOrigin?.('anonymous');
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath(DRACO_DECODER_PATH);
+  loader.setDRACOLoader(dracoLoader);
   loader.load(modelUrl, gltf => {
     if(loadToken !== avatarModelLoadToken) return;
     const model = gltf.scene;
@@ -2824,11 +2850,14 @@ function loadRealAvatarModel(){
     setupAvatarAnimations(model, gltf.animations || []);
     bindAvatarBones();
     applyAvatarStyle();
+    avatarModelUrlReady = modelUrl;
+    avatarModelUrlLoading = '';
     if(hubEntered) avatar.group.visible = true;
     finishAvatarModelReady(loadToken, true);
   }, undefined, err => {
     if(loadToken !== avatarModelLoadToken) return;
     console.warn('Real avatar model failed to load', err);
+    avatarModelUrlLoading = '';
     if(avatar.realModel){
       avatar.realModelRoot.visible = true;
       avatar.bodyRoot.visible = false;
@@ -3379,6 +3408,7 @@ async function enterHub(options={}){
   const cover = document.getElementById('bootCover');
   if(cover) cover.classList.remove('hide');
   startHubAudio(true);
+  loadRealAvatarModel();
   const ready = await waitForAvatarModelReady();
   avatar.group.visible = Boolean(ready || avatar.realModelRoot?.visible);
   setBootLoading(false);
