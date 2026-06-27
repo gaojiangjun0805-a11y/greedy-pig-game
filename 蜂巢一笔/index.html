@@ -402,10 +402,38 @@ function layout(){
   paint();   // 算完坐标立刻同步画一帧，保证棋盘出现（不等 rAF）
 }
 
-// ---- generation (guaranteed solvable: scramble a solved board along a simple path) ----
+// ---- generation (levels 1-5 are solvable; level 6+ is fully randomized) ----
 function isUniform(colors){
   for(let r=1;r<=S.board.R;r++){const g=S.board.ringCells[r],c0=colors[g[0]];
     for(const id of g)if(colors[id]!==c0)return false;}
+  return true;
+}
+function colorComponentStats(colors,color){
+  const n=S.board.cells.length,seen=new Uint8Array(n);
+  let total=0,components=0;
+  for(let i=0;i<n;i++)if(colors[i]===color)total++;
+  for(let start=0;start<n;start++){
+    if(colors[start]!==color||seen[start])continue;
+    components++;
+    const q=[start];seen[start]=1;
+    for(let h=0;h<q.length;h++){
+      for(const nb of S.board.neigh[q[h]]){
+        if(!seen[nb]&&colors[nb]===color){seen[nb]=1;q.push(nb);}
+      }
+    }
+  }
+  return {total,components};
+}
+function hasSingleColorSheet(colors){
+  for(let color=0;color<=1;color++){
+    const stat=colorComponentStats(colors,color);
+    if(stat.total>1&&stat.components===1)return true;
+  }
+  return false;
+}
+function isValidPuzzle(colors){
+  if(isUniform(colors))return false;
+  if(S.level>=3&&hasSingleColorSheet(colors))return false;
   return true;
 }
 // Warnsdorff 启发式：优先走「剩余未访问邻居最少」的格子，能可靠走出又长又曲折的简单路径
@@ -428,7 +456,37 @@ function buildLongPath(target){
   }
   return best;
 }
+function buildSplitFallbackPuzzle(){
+  const n=S.board.cells.length;
+  const outer=S.board.ringCells[S.board.R],outerSet=new Uint8Array(n);
+  outer.forEach(id=>outerSet[id]=1);
+  for(const start of outer){
+    const used=new Uint8Array(n),path=[start];used[start]=1;
+    while(path.length<3){
+      const next=S.board.neigh[path[path.length-1]].find(id=>outerSet[id]&&!used[id]);
+      if(next===undefined)break;
+      used[next]=1;path.push(next);
+    }
+    if(path.length<3)continue;
+    const out=new Uint8Array(n);
+    S.board.cells.forEach((c,i)=>out[i]=c.ring%2);
+    for(const id of path)out[id]^=1;
+    if(isValidPuzzle(out)){S.puzzle=out;S.solution=path;return true;}
+  }
+  const P=buildLongPath(3),out=new Uint8Array(n);
+  S.board.cells.forEach((c,i)=>out[i]=c.ring%2);
+  for(const id of P)out[id]^=1;
+  if(isValidPuzzle(out)){S.puzzle=out;S.solution=P;return true;}
+  return false;
+}
+function genRandomPuzzle(){
+  const n=S.board.cells.length,out=new Uint8Array(n);
+  for(let i=0;i<n;i++)out[i]=(Math.random()*2)|0;
+  S.puzzle=out;
+  S.solution=[];
+}
 function genPuzzle(){
+  if(S.level>=6){genRandomPuzzle();return;}
   const n=S.board.cells.length,target=scrambleLenFor(S.level,n);
   for(let a=0;a<400;a++){
     const ringColor=[];for(let r=0;r<=S.board.R;r++)ringColor.push((Math.random()*2)|0);
@@ -437,8 +495,9 @@ function genPuzzle(){
     const P=buildLongPath(target);
     const out=puzzle.slice();
     for(const id of P)out[id]^=1;
-    if(!isUniform(out)){S.puzzle=out;S.solution=P;return;}
+    if(isValidPuzzle(out)){S.puzzle=out;S.solution=P;return;}
   }
+  if(buildSplitFallbackPuzzle())return;
   // fallback
   const out=new Uint8Array(n);out[0]=1;S.puzzle=out;S.solution=[0];
 }
@@ -484,6 +543,7 @@ function updateHUD(){
   $('hTotal').textContent=S.board.R;
   $('hDone').textContent=doneCount();
   $('prev').disabled=S.level<=1;
+  $('hint').disabled=!S.solution.length;
 }
 let msgT=null;
 function flash(t,col){const m=$('msg');m.textContent=t;m.style.color=col||'#ffe08a';m.classList.add('show');
@@ -579,7 +639,7 @@ cv.addEventListener('pointercancel',endStroke);
 // ---- buttons ----
 $('reset').onclick=()=>{clearPath();updateHUD();paint();};
 $('newp').onclick=()=>loadLevel(S.level);
-$('hint').onclick=()=>{if(!S.drawing&&!S.path.length&&!S.won){S.hint=performance.now();startLoop();paint();}};
+$('hint').onclick=()=>{if(!S.drawing&&!S.path.length&&!S.won&&S.solution.length){S.hint=performance.now();startLoop();paint();}};
 $('prev').onclick=()=>{if(S.level>1)loadLevel(S.level-1);};
 $('next').onclick=()=>loadLevel(S.level+1);
 $('wReplay').onclick=()=>{$('winOv').classList.remove('show');loadLevel(S.level);};
